@@ -21,7 +21,9 @@ blueprints
 image
 themes
 tts
-www
+www/lovelace
+www/custom-lovelace
+www/community
 *.yaml
 
 
