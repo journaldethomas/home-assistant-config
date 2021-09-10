@@ -56,7 +56,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 entities.append(MiotPwznRelaySwitchEntity(config, srv))
         else:
             for srv in spec.get_services(
-                ENTITY_DOMAIN, 'outlet', 'washer', 'massager',
+                ENTITY_DOMAIN, 'outlet', 'washer', 'massager', 'towel_rack',
                 'fish_tank', 'pet_drinking_fountain', 'mosquito_dispeller',
             ):
                 if not srv.get_property('on'):
@@ -143,7 +143,7 @@ class SwitchSubEntity(ToggleSubEntity, SwitchEntity):
         super().update()
 
 
-class MiotSwitchSubEntity(MiotSensorSubEntity):
+class MiotSwitchSubEntity(MiotSensorSubEntity, SwitchSubEntity):
     def __init__(self, parent, miot_property: MiotProperty, option=None):
         super().__init__(parent, miot_property, option)
         self._name = self.format_name_by_property(miot_property)

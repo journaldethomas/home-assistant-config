@@ -91,6 +91,7 @@ SERVICE_TO_METHOD_BASE = {
                 vol.Required('siid'): int,
                 vol.Required('piid'): int,
                 vol.Required('value'): cv.match_all,
+                vol.Optional('throw', default=False): cv.boolean,
             },
         ),
     },
@@ -99,7 +100,7 @@ SERVICE_TO_METHOD_BASE = {
         'schema': XIAOMI_MIIO_SERVICE_SCHEMA.extend(
             {
                 vol.Required('mapping'): dict,
-                vol.Optional('throw', default=False): cv.boolean,
+                vol.Optional('throw', default=True): cv.boolean,
             },
         ),
     },
@@ -144,7 +145,10 @@ SERVICE_TO_METHOD_BASE = {
         'schema': XIAOMI_MIIO_SERVICE_SCHEMA.extend(
             {
                 vol.Required('api'): cv.string,
-                vol.Optional('params', default={}): dict,
+                vol.Optional('data', default={}): vol.Any(dict, list),
+                vol.Optional('params', default={}): vol.Any(dict, list, None),  # deprecated
+                vol.Optional('method', default='POST'): cv.string,
+                vol.Optional('crypt', default=False): cv.boolean,
                 vol.Optional('throw', default=False): cv.boolean,
             },
         ),
@@ -453,7 +457,7 @@ class MiotDevice(MiotDeviceBase):
         if mapping is None:
             mapping = self.mapping
         properties = [
-            {'did': k if did is None else str(did), **v}
+            {'did': f'prop.{v["siid"]}.{v["piid"]}' if did is None else str(did), **v}
             for k, v in mapping.items()
         ]
         return self.get_properties(
@@ -667,13 +671,20 @@ class MiioEntity(BaseEntity):
                 self._add_entities = self.hass.data[DOMAIN][eid].get('add_entities') or {}
 
     def custom_config(self, key=None, default=None):
-        ret = super().custom_config(key, default)
-        if ret is not None:
-            return ret
-        cfg = {}
+        ret = super().custom_config(key)
+        if key is not None:
+            if ret is not None:
+                return ret
+            cfg = {}
+        else:
+            cfg = ret or {}
         if self._model:
+            gcs = GLOBAL_CUSTOMIZES['models']
+            ucs = self.global_config('device_customizes') or {}
+            if ucs and isinstance(ucs, dict):
+                gcs.update(ucs)
             for m in self.wildcard_models:
-                cus = GLOBAL_CUSTOMIZES['models'].get(m) or {}
+                cus = gcs.get(m) or {}
                 if key is not None and key not in cus:
                     continue
                 if cus:
@@ -840,6 +851,7 @@ class MiotEntity(MiioEntity):
         if lan and isinstance(TRANSLATION_LANGUAGES.get(lan), dict):
             dic = {**TRANSLATION_LANGUAGES[lan], **dic}
         self._miot_service.set_translations(dic)
+        self._vars['exclude_services'] = self.custom_config_list('exclude_miot_services') or []
 
     @property
     def miot_device(self):
@@ -921,13 +933,31 @@ class MiotEntity(MiioEntity):
     @property
     def miot_mapping(self):
         dic = self.custom_config_json('miot_mapping')
+        mmp = None
         if dic:
-            return dic
-        if self._miot_mapping:
-            return self._miot_mapping
-        if self._device and hasattr(self._device, 'mapping'):
-            return self._device.mapping
-        return None
+            mmp = dic
+        elif self._miot_mapping:
+            mmp = self._miot_mapping
+        elif self._device and hasattr(self._device, 'mapping'):
+            mmp = self._device.mapping
+
+        exs = self._vars.get('exclude_services') or []
+        if exs and mmp and self._miot_service:
+            sls = self._miot_service.spec.get_services(*exs)
+            sis = map(lambda x: x.iid, sls)
+            if sis:
+                mmp = {
+                    k: v
+                    for k, v in mmp.items()
+                    if v.get('siid') not in sis
+                }
+        return mmp
+
+    @property
+    def entity_id_prefix(self):
+        if not self._miot_service:
+            return None
+        return self._miot_service.spec.generate_entity_id(self)
 
     async def _try_command(self, mask_error, func, *args, **kwargs):
         result = None
@@ -981,20 +1011,28 @@ class MiotEntity(MiioEntity):
                     rmp[f'{s}-{p}'] = k
                 max_properties = self.custom_config_integer('chunk_properties') or max_properties
                 results = await self.hass.async_add_executor_job(
-                    partial(self._device.get_properties_for_mapping, did=self.miot_did, max_properties=max_properties)
+                    partial(
+                        self._device.get_properties_for_mapping,
+                        max_properties=max_properties,
+                        did=self.miot_did,
+                        mapping=mmp,
+                    )
                 )
             else:
-                _LOGGER.error('Local device and miot cloud not ready %s', self.name)
+                _LOGGER.error('%s: Local device and miot cloud not ready.', self.name)
         except DeviceException as exc:
             self._available = False
             _LOGGER.error(
-                'Got MiioException while fetching the state for %s: %s, mapping: %s, max_properties: %s',
-                self.name, exc, self.miot_mapping, max_properties,
+                '%s: Got MiioException while fetching the state: %s, mapping: %s, max_properties: %s',
+                self.name, exc, mmp, max_properties,
             )
             return
         except MiCloudException as exc:
             self._available = False
-            _LOGGER.error('Got MiCloudException while fetching the state for %s: %s', self.name, exc)
+            _LOGGER.error(
+                '%s: Got MiCloudException while fetching the state: %s, mapping: %s',
+                self.name, exc, mmp,
+            )
             return
         attrs = {}
         for prop in results or []:
@@ -1070,12 +1108,15 @@ class MiotEntity(MiioEntity):
         if self._subs:
             attrs['sub_entities'] = list(self._subs.keys())
         self.update_attrs(attrs)
-        _LOGGER.debug('Got new state from %s: %s', self.name, attrs)
+        _LOGGER.debug('%s: Got new state: %s', self.name, attrs)
 
         # update miio prop/event in cloud
         cls = self.custom_config_list('miio_cloud_records')
         if cls:
             await self.hass.async_add_executor_job(partial(self.update_miio_cloud_records, cls))
+        pls = self.custom_config_list('miio_cloud_props')
+        if pls:
+            await self.hass.async_add_executor_job(partial(self.update_miio_cloud_props, pls))
 
         # update miio properties in lan
         pls = self.custom_config_list('miio_properties')
@@ -1093,7 +1134,7 @@ class MiotEntity(MiioEntity):
         try:
             attrs = self._device.get_properties(props)
         except DeviceException as exc:
-            _LOGGER.warning('Got miio properties for %s (%s) failed: %s', self.name, props, exc)
+            _LOGGER.warning('%s: Got miio properties %s failed: %s', self.name, props, exc)
             return
         if len(props) != len(attrs):
             self.update_attrs({
@@ -1101,7 +1142,7 @@ class MiotEntity(MiioEntity):
             })
             return
         attrs = dict(zip(map(lambda x: f'miio.{x}', props), attrs))
-        _LOGGER.debug('Got miio properties from %s: %s', self.name, attrs)
+        _LOGGER.debug('%s: Got miio properties: %s', self.name, attrs)
         self.update_attrs(attrs)
 
     def update_miio_command_sensors(self, commands):
@@ -1125,6 +1166,33 @@ class MiotEntity(MiioEntity):
             _LOGGER.debug('Got miio properties from %s: %s', self.name, attrs)
             self.update_attrs(attrs)
 
+    def update_miio_cloud_props(self, keys):
+        did = str(self.miot_did)
+        mic = self.miot_cloud
+        if not did or not mic:
+            return
+        kls = []
+        for k in keys:
+            if '.' not in k:
+                k = f'prop.{k}'
+            kls.append(k)
+        pms = {
+            'did': did,
+            'props': kls,
+        }
+        rdt = mic.request_miot_api('device/batchdevicedatas', [pms]) or {}
+        _LOGGER.debug('Got miio cloud props from %s: %s', self.name, rdt)
+        props = (rdt.get('result') or {}).get(did, {})
+
+        tpl = self.custom_config('miio_cloud_props_template')
+        if tpl and props:
+            tpl = cv.template(tpl)
+            tpl.hass = self.hass
+            attrs = tpl.render({'props': props})
+        else:
+            attrs = props
+        self.update_attrs(attrs)
+
     def update_miio_cloud_records(self, keys):
         did = self.miot_did
         mic = self.miot_cloud
@@ -1137,12 +1205,11 @@ class MiotEntity(MiioEntity):
                 continue
             typ, key, lmt = mat.groups()
             stm = int(time.time()) - 86400 * 32
-            rdt = mic.get_user_device_data(did, key, typ, time_start=stm, limit=int(lmt)) or []
+            rdt = mic.get_user_device_data(did, key, typ, time_start=stm, limit=int(lmt or 1)) or []
             tpl = self.custom_config(f'miio_{typ}_{key}_template')
             if tpl:
                 tpl = cv.template(tpl)
                 tpl.hass = self.hass
-            if tpl:
                 rls = tpl.render({'result': rdt})
             else:
                 rls = [
@@ -1150,22 +1217,27 @@ class MiotEntity(MiioEntity):
                     for v in rdt
                     if 'value' in v
                 ]
-            attrs[f'{typ}.{key}'] = rls
+            if isinstance(rls, dict) and rls.pop('_entity_attrs', False):
+                attrs.update(rls)
+            else:
+                attrs[f'{typ}.{key}'] = rls
         if attrs:
             self.update_attrs(attrs)
 
-    def get_properties(self, mapping: dict, throw=False, **kwargs):
-        if not self.miot_device:
-            return
+    def get_properties(self, mapping: dict, throw=True, **kwargs):
+        results = []
         try:
-            results = self.miot_device.get_properties_for_mapping(mapping=mapping)
+            if self.miot_cloud:
+                results = self.miot_cloud.get_properties_for_mapping(self.miot_did, mapping)
+            elif self.miot_device:
+                results = self.miot_device.get_properties_for_mapping(mapping=mapping)
         except (ValueError, DeviceException) as exc:
-            if throw:
-                raise exc
             _LOGGER.error(
                 'Got exception while get properties from %s: %s, mapping: %s, miio: %s',
                 self.name, exc, mapping, self._miio_info.data,
             )
+            if throw:
+                raise exc
             return
         attrs = {
             prop['did']: prop['value'] if prop['code'] == 0 else None
@@ -1179,7 +1251,6 @@ class MiotEntity(MiioEntity):
                 'Miot properties',
                 f'{DOMAIN}-debug',
             )
-            raise Warning(f'Miot properties: {results}')
         return attrs
 
     async def async_get_properties(self, mapping, **kwargs):
@@ -1218,7 +1289,7 @@ class MiotEntity(MiioEntity):
             return False
         return await self.hass.async_add_executor_job(partial(self.set_property, *args, **kwargs))
 
-    def set_miot_property(self, siid, piid, value, did=None):
+    def set_miot_property(self, siid, piid, value, did=None, **kwargs):
         if did is None:
             did = self.miot_did or f'property-{siid}-{piid}'
         pms = {
@@ -1228,10 +1299,12 @@ class MiotEntity(MiioEntity):
             'value': value,
         }
         ret = None
+        dly = 1
         try:
             mcw = self.miot_cloud_write
             if isinstance(mcw, MiotCloud):
                 results = mcw.set_props([pms])
+                dly = self.custom_config_integer('cloud_delay_update', 5)
             else:
                 results = self.miot_device.send('set_properties', [pms])
             for ret in (results or []):
@@ -1241,12 +1314,24 @@ class MiotEntity(MiioEntity):
         except MiCloudException as exc:
             _LOGGER.warning('Set miot property to cloud for %s (%s) failed: %s', self.name, pms, exc)
         if ret:
-            self._vars['delay_update'] = 5
-            _LOGGER.debug('Set miot property to %s (%s), result: %s', self.name, pms, ret)
+            self._vars['delay_update'] = dly
+            if dict(ret).get('code'):
+                _LOGGER.warning('Set miot property to %s (%s) failed, result: %s', self.name, pms, ret)
+            else:
+                _LOGGER.debug('Set miot property to %s (%s), result: %s', self.name, pms, ret)
+        if kwargs.get('throw'):
+            persistent_notification.create(
+                self.hass,
+                f'{ret}',
+                'Set miot property result',
+                f'{DOMAIN}-debug',
+            )
         return ret
 
-    async def async_set_miot_property(self, siid, piid, value, did=None):
-        return await self.hass.async_add_executor_job(partial(self.set_miot_property, siid, piid, value, did))
+    async def async_set_miot_property(self, siid, piid, value, did=None, **kwargs):
+        return await self.hass.async_add_executor_job(
+            partial(self.set_miot_property, siid, piid, value, did, **kwargs)
+        )
 
     def call_action(self, action: MiotAction, params=None, did=None, **kwargs):
         aiid = action.iid
@@ -1266,11 +1351,13 @@ class MiotEntity(MiioEntity):
             'in':   params or [],
         }
         result = None
+        dly = 1
         eno = 1
         try:
             mca = self.miot_cloud_action
             if isinstance(mca, MiotCloud):
                 result = mca.do_action(pms)
+                dly = self.custom_config_integer('cloud_delay_update', 5)
             else:
                 result = self.miot_device.send('action', pms)
             eno = dict(result or {}).get('code', eno)
@@ -1282,7 +1369,7 @@ class MiotEntity(MiioEntity):
             _LOGGER.warning('Call miot action to %s (%s) failed: %s, result: %s', self.name, pms, exc, result)
         ret = eno == self._success_code
         if ret:
-            self._vars['delay_update'] = 5
+            self._vars['delay_update'] = dly
             _LOGGER.debug('Call miot action to %s (%s), result: %s', self.name, pms, result)
         else:
             self._state_attrs['miot_action_error'] = MiotSpec.spec_error(eno)
@@ -1295,8 +1382,7 @@ class MiotEntity(MiioEntity):
                 'Miot action result',
                 f'{DOMAIN}-debug',
             )
-            raise Warning(f'Miot action result: {result}')
-        return ret
+        return result if ret else ret
 
     async def async_miot_action(self, siid, aiid, params=None, did=None, **kwargs):
         return await self.hass.async_add_executor_job(
@@ -1339,7 +1425,10 @@ class MiotEntity(MiioEntity):
         add_covers = self._add_entities.get('cover')
         add_numbers = self._add_entities.get('number')
         add_selects = self._add_entities.get('select')
+        exclude_services = self._vars.get('exclude_services') or []
         for s in sls:
+            if s.name in exclude_services:
+                continue
             if not properties:
                 fnm = s.unique_name
                 tms = self._check_same_sub_entity(fnm, domain)
@@ -1453,20 +1542,20 @@ class MiotEntity(MiioEntity):
             _LOGGER.warning('Miot bindkey for %s: %s', self.name, result)
         return (result or {}).get('beaconkey')
 
-    async def async_request_xiaomi_api(self, api, params=None, throw=False):
+    async def async_request_xiaomi_api(self, api, data=None, method='POST', crypt=False, **kwargs):
         mic = self.miot_cloud
         if not isinstance(mic, MiotCloud):
             return None
-        result = await self.hass.async_add_executor_job(
-            partial(mic.request_miot_api, str(api).lstrip('/'), params)
-        )
+        dat = data or kwargs.get('params')
+        fun = partial(mic.request_miot_api, api, data=dat, method=method, crypt=crypt)
+        result = await self.hass.async_add_executor_job(fun)
         persistent_notification.async_create(
             self.hass,
-            f'{result}',
+            json.dumps(result),
             f'Xiaomi Api: {api}',
             f'{DOMAIN}-debug',
         )
-        if throw:
+        if kwargs.get('throw'):
             raise Warning(f'Xiaomi Api {api}: {result}')
         else:
             _LOGGER.debug('Xiaomi Api %s: %s', api, result)
@@ -1476,7 +1565,9 @@ class MiotEntity(MiioEntity):
 class MiotToggleEntity(MiotEntity, ToggleEntity):
     def __init__(self, miot_service=None, device=None, **kwargs):
         super().__init__(miot_service, device, **kwargs)
-        self._prop_power = miot_service.bool_property('on', 'power', 'switch')
+        self._prop_power = None
+        if miot_service:
+            self._prop_power = miot_service.bool_property('on', 'power', 'switch')
 
     @property
     def is_on(self):
@@ -1516,6 +1607,13 @@ class BaseSubEntity(BaseEntity):
             self._unique_id = self._option.get('unique_id')
         if self._option.get('name'):
             self._name = self._option.get('name')
+        if hasattr(parent, 'entity_id_prefix'):
+            eip = getattr(parent, 'entity_id_prefix')
+            if eip:
+                suf = attr
+                if self._dict_key:
+                    suf = f'{suf}_{self._dict_key}'
+                self.entity_id = f'{eip}_{suf}'
         self._supported_features = int(self._option.get('supported_features', 0))
         self._extra_attrs = {
             'parent_entity_id': parent.entity_id,
@@ -1552,6 +1650,10 @@ class BaseSubEntity(BaseEntity):
         return self._supported_features
 
     @property
+    def parent_attributes(self):
+        return self._parent.extra_state_attributes or {}
+
+    @property
     def extra_state_attributes(self):
         return {
             **self._extra_attrs,
@@ -1574,6 +1676,13 @@ class BaseSubEntity(BaseEntity):
     def unit_of_measurement(self):
         return self._option.get('unit')
 
+    @property
+    def miot_cloud(self):
+        mic = self._parent.miot_cloud
+        if not isinstance(mic, MiotCloud):
+            raise RuntimeError('The parent entity of %s does not have Mi Cloud.', self.name)
+        return mic
+
     def custom_config(self, key=None, default=None):
         ret = super().custom_config(key, default)
         if ret is not None:
@@ -1590,8 +1699,12 @@ class BaseSubEntity(BaseEntity):
                 prop = getattr(self, '_miot_property')
                 if prop:
                     mar.append(f'{self._model}:{prop.name}')
+            gcs = GLOBAL_CUSTOMIZES['models']
+            ucs = self.global_config('device_customizes') or {}
+            if ucs and isinstance(ucs, dict):
+                gcs.update(ucs)
             for m in mar:
-                cus = GLOBAL_CUSTOMIZES['models'].get(m) or {}
+                cus = gcs.get(m) or {}
                 if key is not None and key not in cus:
                     continue
                 if cus:
@@ -1608,8 +1721,8 @@ class BaseSubEntity(BaseEntity):
         if not self.device_class:
             self._option['device_class'] = self.custom_config('device_class')
 
-    def update(self):
-        attrs = self._parent.extra_state_attributes or {}
+    def update(self, data=None):
+        attrs = self.parent_attributes
         self._parent_attrs = attrs
         if self._attr in attrs:
             self._available = True
@@ -1627,6 +1740,8 @@ class BaseSubEntity(BaseEntity):
                 for k, v in attrs.items()
                 if k in keys
             }
+        if data:
+            self.update_attrs(data, update_parent=False)
 
     async def async_update(self):
         await self.hass.async_add_executor_job(self.update)
@@ -1636,6 +1751,8 @@ class BaseSubEntity(BaseEntity):
         if update_parent:
             if self._parent and hasattr(self._parent, 'update_attrs'):
                 getattr(self._parent, 'update_attrs')(attrs or {}, update_parent=False)
+        if self.hass:
+            self.async_write_ha_state()
         return self._state_attrs
 
     def call_parent(self, method, *args, **kwargs):
@@ -1663,7 +1780,7 @@ class ToggleSubEntity(BaseSubEntity, ToggleEntity):
         self._prop_power = None
         super().__init__(parent, attr, option)
 
-    def update(self):
+    def update(self, data=None):
         super().update()
         if self._available:
             attrs = self._state_attrs
@@ -1723,7 +1840,7 @@ class MiotSensorSubEntity(BaseSubEntity):
             'property_description': miot_property.description,
         })
 
-    def update(self):
+    def update(self, data=None):
         super().update()
         if not self._available:
             return
