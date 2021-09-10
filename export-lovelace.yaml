@@ -1,0 +1,1867 @@
+title: Maison
+views:
+  - path: default_view
+    title: Accueil
+    visible:
+      - user: b7dc10ea17f14fb8986cb0c130e3a556
+      - user: 557caeb022be40f1bcf99af86a5fcf5b
+    icon: mdi:home
+    badges: []
+    cards:
+      - type: custom:digital-clock
+        dateFormat:
+          weekday: long
+          day: 2-digit
+          month: short
+        timeFormat:
+          hour: 2-digit
+          minute: 2-digit
+      - type: custom:meteofrance-weather-card
+        entity: weather.sillingy
+        number_of_forecasts: '5'
+        name: Sillingy
+        detailEntity: sensor.netatmo_maison_piece_de_vie_jardin_temperature
+        one_hour_forecast: false
+        cloudCoverEntity: sensor.sillingy_cloud_cover
+        uvEntity: sensor.sillingy_uv
+        current: true
+        details: false
+        alertEntity: sensor.74_weather_alert
+        alert_forecast: true
+        forecast: true
+      - type: entities
+        entities:
+          - person.delphine
+          - person.thomas
+        title: Personne
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                show_entity_picture: true
+                state:
+                  - value: open
+                    color: rgb(201, 244, 254)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 0, 0, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
+                      card:
+                        - background-color: rgb(0, 191, 255, 100%)
+                  - value: closed
+                    color: rgb(91, 96, 93)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 191, 255, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                styles:
+                  card:
+                    - margin: 0
+                    - padding: 1
+                    - font: 20px/35px Roboto
+                    - background: null
+                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                entity: cover.volet_salon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    command: popup
+                    deviceID:
+                      - this
+                      - dashboard
+                    title: Volet Salon
+                    style:
+                      $: >
+                        .mdc-dialog .mdc-dialog__container {
+                          width: 30%;
+                        }
+
+                        .mdc-dialog .mdc-dialog__container .mdc-dialog__surface
+                        {
+                          width:50%;
+                          box-shadow:none;
+                        }
+                      .: |
+                        :host {
+                          --mdc-theme-surface: rgba(0,0,0,0);
+                          --secondary-background-color: rgba(0,0,0,0);
+                          --ha-card-background: rgba(0,0,0,0);
+                          --mdc-dialog-scrim-color: rgba(0,0,0,0.8);
+                          --mdc-dialog-min-height: 100%;
+                          --mdc-dialog-min-width: 100%;
+                          --mdc-dialog-max-width: 100%;
+                        }
+                        mwc-icon-button {
+                          color: #FFF;
+                        }
+                    card:
+                      type: custom:cover-popup-card
+                      entity: cover.volet_salon
+                      sliderService: cover.set_cover_position
+                      actionsInARow: 2
+                      actions:
+                        - service: cover.open_cover
+                          service_data:
+                            entity_id: cover.volet_salon
+                          name: open
+                          icon: mdi:window-shutter-open
+                        - service: cover.close_cover
+                          service_data:
+                            entity_id: cover.volet_salon
+                          name: close
+                          icon: mdi:window-shutter
+              - color_type: blank-card
+                type: custom:button-card
+              - color_type: blank-card
+                type: custom:button-card
+              - type: custom:button-card
+                show_entity_picture: true
+                state:
+                  - value: open
+                    color: rgb(201, 244, 254)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 0, 0, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
+                      card:
+                        - background-color: rgb(0, 191, 255, 100%)
+                  - value: closed
+                    color: rgb(91, 96, 93)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 191, 255, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                styles:
+                  card:
+                    - margin: 0
+                    - padding: 1
+                    - font: 20px/35px Roboto
+                    - background: null
+                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                entity: cover.volet_cuisine
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    command: popup
+                    deviceID:
+                      - this
+                      - dashboard
+                    title: Volet Cuisine
+                    style:
+                      $: >
+                        .mdc-dialog .mdc-dialog__container {
+                          width: 30%;
+                        }
+
+                        .mdc-dialog .mdc-dialog__container .mdc-dialog__surface
+                        {
+                          width:50%;
+                          box-shadow:none;
+                        }
+                      .: |
+                        :host {
+                          --mdc-theme-surface: rgba(0,0,0,0);
+                          --secondary-background-color: rgba(0,0,0,0);
+                          --ha-card-background: rgba(0,0,0,0);
+                          --mdc-dialog-scrim-color: rgba(0,0,0,0.8);
+                          --mdc-dialog-min-height: 100%;
+                          --mdc-dialog-min-width: 100%;
+                          --mdc-dialog-max-width: 100%;
+                        }
+                        mwc-icon-button {
+                          color: #FFF;
+                        }
+                    card:
+                      type: custom:cover-popup-card
+                      entity: cover.cuisine
+                      sliderService: cover.set_cover_position
+                      actionsInARow: 2
+                      actions:
+                        - service: cover.open_cover
+                          service_data:
+                            entity_id: cover.volet_cuisine
+                          name: open
+                          icon: mdi:window-shutter-open
+                        - service: cover.close_cover
+                          service_data:
+                            entity_id: cover.volet_cuisine
+                          name: close
+                          icon: mdi:window-shutter
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                show_entity_picture: true
+                state:
+                  - value: open
+                    color: rgb(201, 244, 254)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 0, 0, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
+                      card:
+                        - background-color: rgb(0, 191, 255, 100%)
+                  - value: closed
+                    color: rgb(91, 96, 93)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 191, 255, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                styles:
+                  card:
+                    - margin: 0
+                    - padding: 1
+                    - font: 20px/35px Roboto
+                    - background: null
+                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                entity: cover.volet_parent
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    command: popup
+                    deviceID:
+                      - this
+                      - dashboard
+                    title: Volet Parents
+                    style:
+                      $: >
+                        .mdc-dialog .mdc-dialog__container {
+                          width: 30%;
+                        }
+
+                        .mdc-dialog .mdc-dialog__container .mdc-dialog__surface
+                        {
+                          width:50%;
+                          box-shadow:none;
+                        }
+                      .: |
+                        :host {
+                          --mdc-theme-surface: rgba(0,0,0,0);
+                          --secondary-background-color: rgba(0,0,0,0);
+                          --ha-card-background: rgba(0,0,0,0);
+                          --mdc-dialog-scrim-color: rgba(0,0,0,0.8);
+                          --mdc-dialog-min-height: 100%;
+                          --mdc-dialog-min-width: 100%;
+                          --mdc-dialog-max-width: 100%;
+                        }
+                        mwc-icon-button {
+                          color: #FFF;
+                        }
+                    card:
+                      type: custom:cover-popup-card
+                      entity: cover.volet_parent
+                      sliderService: cover.set_cover_position
+                      actionsInARow: 2
+                      actions:
+                        - service: cover.open_cover
+                          service_data:
+                            entity_id: cover.volet_parent
+                          name: open
+                          icon: mdi:window-shutter-open
+                        - service: cover.close_cover
+                          service_data:
+                            entity_id: cover.volet_parent
+                          name: close
+                          icon: mdi:window-shutter
+              - color_type: blank-card
+                type: custom:button-card
+              - type: custom:button-card
+                show_entity_picture: true
+                state:
+                  - value: open
+                    color: rgb(201, 244, 254)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 0, 0, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
+                      card:
+                        - background-color: rgb(0, 191, 255, 100%)
+                  - value: closed
+                    color: rgb(91, 96, 93)
+                    entity_picture: null
+                    spin: false
+                    styles:
+                      name:
+                        - color: rgb(0, 191, 255, 100%)
+                        - font: bold italic 15px/30px roboto
+                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                styles:
+                  card:
+                    - margin: 0
+                    - padding: 1
+                    - font: 20px/35px Roboto
+                    - background: null
+                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                entity: cover.volet_pitchouns
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    command: popup
+                    deviceID:
+                      - this
+                      - dashboard
+                    title: Volet Pitchouns
+                    style:
+                      $: >
+                        .mdc-dialog .mdc-dialog__container {
+                          width: 30%;
+                        }
+
+                        .mdc-dialog .mdc-dialog__container .mdc-dialog__surface
+                        {
+                          width:50%;
+                          box-shadow:none;
+                        }
+                      .: |
+                        :host {
+                          --mdc-theme-surface: rgba(0,0,0,0);
+                          --secondary-background-color: rgba(0,0,0,0);
+                          --ha-card-background: rgba(0,0,0,0);
+                          --mdc-dialog-scrim-color: rgba(0,0,0,0.8);
+                          --mdc-dialog-min-height: 100%;
+                          --mdc-dialog-min-width: 100%;
+                          --mdc-dialog-max-width: 100%;
+                        }
+                        mwc-icon-button {
+                          color: #FFF;
+                        }
+                    card:
+                      type: custom:cover-popup-card
+                      entity: cover.volet_pitchouns
+                      sliderService: cover.set_cover_position
+                      actionsInARow: 2
+                      actions:
+                        - service: cover.open_cover
+                          service_data:
+                            entity_id: cover.volet_pitchouns
+                          name: open
+                          icon: mdi:window-shutter-open
+                        - service: cover.close_cover
+                          service_data:
+                            entity_id: cover.volet_pitchouns
+                          name: close
+                          icon: mdi:window-shutter
+              - color_type: blank-card
+                type: custom:button-card
+      - type: thermostat
+        entity: climate.netatmo_piece_de_vie
+      - type: horizontal-stack
+        cards:
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;    
+                }
+            entities:
+              - sensor.netatmo_maison_piece_de_vie_temperature
+            name: Piece de vie
+            height: 80
+            font_size: 80
+            line_color: '#3498db'
+            line_width: 8
+            hours_to_show: 24
+            graph: line
+            detail: 2
+            show:
+              extrema: true
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;    
+                }
+            entities:
+              - sensor.bureau
+            name: Bureau
+            height: 80
+            font_size: 80
+            line_color: '#e74c3c'
+            line_width: 8
+            hours_to_show: 24
+            graph: line
+            detail: 2
+            show:
+              extrema: true
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;    
+                }
+            entities:
+              - sensor.salle_de_jeux
+            name: Salle de jeu
+            height: 80
+            font_size: 80
+            line_color: '#3498db'
+            line_width: 8
+            hours_to_show: 24
+            graph: line
+            detail: 2
+            show:
+              extrema: true
+      - type: horizontal-stack
+        cards:
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;    
+                }
+            entities:
+              - sensor.netatmo_maison_piece_de_vie_chambre_parentale_temperature
+            name: Parents
+            height: 80
+            font_size: 80
+            line_color: '#3498db'
+            line_width: 8
+            hours_to_show: 24
+            graph: line
+            detail: 2
+            show:
+              extrema: true
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;    
+                }
+            entities:
+              - sensor.chambre_chloe
+            name: Cuisine
+            height: 80
+            font_size: 80
+            line_color: '#e74c3c'
+            line_width: 8
+            hours_to_show: 24
+            graph: line
+            detail: 2
+            show:
+              extrema: true
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;    
+                }
+            entities:
+              - sensor.chambre_maxence
+            name: Pitchouns
+            height: 80
+            font_size: 80
+            line_color: '#3498db'
+            line_width: 8
+            hours_to_show: 24
+            graph: line
+            detail: 2
+            show:
+              extrema: true
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: group.all_lights_salon
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Salon
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_salon'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_salon'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_sam
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: SàM
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return Math.floor(states['sensor.all_lights_sam'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_sam'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_cuisine
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Cuisine
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_cuisine'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_cuisine'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_salon
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Bureau
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_salon'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_salon'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: group.all_lights_parents
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Parents
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_parents'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_parents'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_chloe
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Chloé
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_chloe'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_chloe'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_maxence
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Maxence
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_maxence'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_maxence'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_salon
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Salle de jeux
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_salon'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_salon'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: var(--primary-background-color)
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px var(--primary-color)
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+  - visible:
+      - user: b7dc10ea17f14fb8986cb0c130e3a556
+    title: Monitoring
+    path: monitoring
+    icon: mdi:server
+    badges: []
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: binary_sensor.updater
+                icon: mdi:home-assistant
+                name: HOME ASSISTANT
+                double_tap_action:
+                  action: call-service
+                  service: homeassistant.restart
+                card_mod:
+                  style: |
+                    ha-card {
+                      --paper-card-background-color: 'rgba(11, 11, 11, 0.00)';
+                      box-shadow: 2px 2px rgba(0,0,0,0.0);
+                      border-radius: 15px;
+                    }
+                aspect_ratio: 1/1
+                styles:
+                  card:
+                    - color: var(--text-medium-color)
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: var(--primary-background-color)
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                    - text-transform: capitalize
+                  grid:
+                    - grid-template-areas: '"i i" "n n" "cpu cpu" "ram ram" "sd sd"'
+                    - grid-template-columns: 1fr 1fr
+                    - grid-template-rows: 1fr min-content min-content min-content min-content
+                  name:
+                    - font-weight: bold
+                    - font-size: 13px
+                    - align-self: middle
+                    - justify-self: start
+                    - padding-bottom: 4px
+                    - color: var(--text-color)
+                  icon:
+                    - color: |
+                        [[[ if (entity.state == 'on') return 'orange';
+                          return 'deepskyblue';
+                        ]]]
+                    - width: 70%
+                    - animation: >
+                        [[[ if (entity.state == 'on') return 'blink 2s ease
+                        infinite'; ]]]
+                  custom_fields:
+                    cpu:
+                      - '--text-color-sensor': >-
+                          [[[if (states["sensor.version_disponible"].state !=
+                          states["sensor.version_installee"].state) return
+                          "red";else return "deepskyblue"]]]
+                      - padding-bottom: 2px
+                      - justify-self: start
+                    ram:
+                      - padding-bottom: 2px
+                      - justify-self: start
+                    sd:
+                      - justify-self: start
+                custom_fields:
+                  cpu: |
+                    [[[
+                      return `<ha-icon icon="mdi:home-assistant" style="width: 20px; height: 20px; color: deepskyblue;"></ha-icon>
+                      <span>Disponible: <span style="color: var(--text-color-sensor);">${states['sensor.version_disponible'].state}</span></span>`
+                    ]]]
+                  ram: |
+                    [[[
+                      return `<ha-icon icon='mdi:home-assistant' style='width: 20px; height: 20px; color: deepskyblue;'></ha-icon>
+                      <span>Instalée: <span style='color: var(--text-color-sensor);'>${states['sensor.version_installee'].state}</span></span>`
+                    ]]]
+                  sd: |
+                    [[[
+                      return `<ha-icon icon='hacs:hacs' style='width: 20px; height: 20px; color: deepskyblue;'></ha-icon>
+                      <span>MàJ HACS: <span style='color: var(--text-color-sensor);'>${states['sensor.hacs'].state} intégrations</span></span>`
+                    ]]]
+              - type: custom:button-card
+                entity: sensor.ups_status
+                icon: mdi:flash
+                name: ONDULEUR
+                double_tap_action:
+                  action: call-service
+                  service: homeassistant.restart
+                card_mod:
+                  style: |
+                    ha-card {
+                      --paper-card-background-color: 'rgba(11, 11, 11, 0.00)';
+                      box-shadow: 2px 2px rgba(0,0,0,0.0);
+                      border-radius: 15px;
+                    }
+                aspect_ratio: 1/1
+                styles:
+                  card:
+                    - color: var(--text-medium-color)
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: var(--primary-background-color)
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                    - text-transform: capitalize
+                  grid:
+                    - grid-template-areas: '"i i" "n n" "cpu cpu" "ram ram" "sd sd"'
+                    - grid-template-columns: 1fr 1fr
+                    - grid-template-rows: 1fr min-content min-content min-content min-content
+                  name:
+                    - font-weight: bold
+                    - font-size: 13px
+                    - align-self: middle
+                    - justify-self: start
+                    - padding-bottom: 4px
+                    - color: var(--text-color)
+                  icon:
+                    - color: |
+                        [[[ if (entity.state == 'on') return 'orange';
+                          return 'deepskyblue';
+                        ]]]
+                    - width: 70%
+                    - animation: >
+                        [[[ if (entity.state == 'on') return 'blink 2s ease
+                        infinite'; ]]]
+                  custom_fields:
+                    cpu:
+                      - '--text-color-sensor': >-
+                          [[[if (states["sensor.version_disponible"].state !=
+                          states["sensor.version_installee"].state) return
+                          "red";else return "deepskyblue"]]]
+                      - padding-bottom: 2px
+                      - justify-self: start
+                    ram:
+                      - padding-bottom: 2px
+                      - justify-self: start
+                    sd:
+                      - justify-self: start
+                custom_fields:
+                  cpu: |
+                    [[[
+                      return `<ha-icon icon='mdi:flash' style='width: 20px; height: 20px; color: deepskyblue;'></ha-icon>
+                      <span>BATTERIE: <span style='color: var(--text-color-sensor);'>${states['sensor.ups_battery_charge'].state}%</span></span>`
+                    ]]]
+                  ram: |
+                    [[[
+                      return `<ha-icon icon='mdi:timer-outline' style='width: 20px; height: 20px; color: deepskyblue;'></ha-icon>
+                      <span>TEMPS DISPO: <span style='color: var(--text-color-sensor);'>${((states['sensor.ups_battery_runtime'].state) / 60)} minutes</span></span>`
+                    ]]]
+                  sd: |
+                    [[[
+                      return `<ha-icon icon='mdi:gauge' style='width: 20px; height: 20px; color: deepskyblue;'></ha-icon>
+                      <span>LOAD: <span style='color: var(--text-color-sensor);'>${states['sensor.ups_load'].state}%</span></span>`
+                    ]]]
+          - type: horizontal-stack
+            cards:
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Serveur NUC
+                  show_states: true
+                  colorize_states: true
+                chart_type: radialBar
+                series:
+                  - entity: sensor.processor_use_percent
+                    name: CPU
+                  - entity: sensor.memory_use_percent
+                    name: Mémoire
+                  - entity: sensor.disk_use_percent
+                    name: Disque
+                apex_config:
+                  plotOptions:
+                    radialBar:
+                      offsetY: 0
+                      startAngle: 0
+                      endAngle: 350
+                      hollow:
+                        margin: 20,
+                        size: 40%
+                        background: transparent
+                  legend:
+                    show: false
+                    fontSize: 10px
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: NAS DS418j
+                  show_states: true
+                  colorize_states: true
+                chart_type: radialBar
+                series:
+                  - entity: sensor.ds418j_cpu_utilization_total
+                    name: CPU
+                  - entity: sensor.ds418j_memory_usage_real
+                    name: Mémoire
+                  - entity: sensor.ds418j_volume_1_volume_used
+                    name: Disque
+                apex_config:
+                  plotOptions:
+                    radialBar:
+                      offsetY: 0
+                      startAngle: 0
+                      endAngle: 350
+                      hollow:
+                        margin: 20,
+                        size: 40%
+                        background: transparent
+                  legend:
+                    show: false
+          - type: entities
+            entities:
+              - entity: binary_sensor.raspberrypi_eau
+              - entity: binary_sensor.raspberrypi_vpn
+      - type: picture-elements
+        image: /local/images/docker2.png
+        elements:
+          - type: state-label
+            entity: sensor.docker_containers_running
+            prefix: 'Nombre de conteneurs: '
+            style:
+              top: 25%
+              left: 25%
+              color: black
+          - type: state-icon
+            entity: sensor.docker_containers_running
+            style:
+              top: 20%
+              left: 25%
+          - type: state-label
+            entity: sensor.docker_version
+            prefix: 'Version installée: '
+            style:
+              top: 12%
+              left: 25%
+              color: black
+          - type: state-icon
+            entity: sensor.docker_version
+            style:
+              top: 07%
+              left: 25%
+          - type: state-label
+            entity: sensor.docker_homeassistant_prod_state
+            style:
+              top: 47%
+              left: 15%
+              color: black
+          - type: image
+            entity: sensor.docker_homeassistant_prod_state
+            image: /local/lovelace/icons/ha.png
+            style:
+              top: 40%
+              left: 15%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_portainer_state
+            style:
+              top: 87%
+              left: 15%
+              color: black
+          - type: image
+            entity: sensor.docker_portainer_state
+            image: /local/lovelace/icons/portainer.png
+            style:
+              top: 80%
+              left: 15%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_deconz_state
+            style:
+              top: 47%
+              left: 30%
+              color: black
+          - type: image
+            entity: sensor.docker_deconz_state
+            image: /local/lovelace/icons/zigbee.png
+            style:
+              top: 40%
+              left: 30%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_mqtt_state
+            style:
+              top: 47%
+              left: 45%
+              color: black
+          - type: image
+            entity: sensor.docker_mqtt_state
+            image: /local/lovelace/icons/mosquitto.png
+            style:
+              top: 40%
+              left: 45%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_zwavejs2mqtt_state
+            style:
+              top: 47%
+              left: 60%
+              color: black
+          - type: image
+            entity: sensor.docker_zwavejs2mqtt_state
+            image: /local/lovelace/icons/zwave2mqtt.png
+            style:
+              top: 40%
+              left: 60%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_node_red_state
+            style:
+              top: 47%
+              left: 75%
+              color: black
+          - type: image
+            entity: sensor.docker_node_red_state
+            image: /local/lovelace/icons/nodered.png
+            style:
+              top: 40%
+              left: 75%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_adguardhome_state
+            style:
+              top: 87%
+              left: 45%
+              color: black
+          - type: image
+            entity: sensor.docker_adguardhome_state
+            image: /local/lovelace/icons/adguard.png
+            style:
+              top: 80%
+              left: 45%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_unifi_controller_state
+            style:
+              top: 87%
+              left: 60%
+              color: black
+          - type: image
+            entity: sensor.docker_unifi_controller_state
+            image: /local/lovelace/icons/unifi.png
+            style:
+              top: 80%
+              left: 60%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_traefik_state
+            style:
+              top: 87%
+              left: 30%
+              color: black
+          - type: image
+            entity: sensor.docker_traefik_state
+            image: /local/lovelace/icons/traefik.png
+            style:
+              top: 80%
+              left: 30%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_influxdb_state
+            style:
+              top: 67%
+              left: 15%
+              color: black
+          - type: image
+            entity: sensor.docker_influxdb_state
+            image: /local/lovelace/icons/influxdb.png
+            style:
+              top: 60%
+              left: 15%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_grafana_state
+            style:
+              top: 67%
+              left: 30%
+              color: black
+          - type: image
+            entity: sensor.docker_grafana_state
+            image: /local/lovelace/icons/grafana.png
+            style:
+              top: 60%
+              left: 30%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_bitwarden_state
+            style:
+              top: 87%
+              left: 75%
+              color: black
+          - type: image
+            entity: sensor.docker_bitwarden_state
+            image: /local/lovelace/icons/bitwarden.png
+            style:
+              top: 80%
+              left: 75%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_iobroker_state
+            style:
+              top: 67%
+              left: 45%
+              color: black
+          - type: image
+            entity: sensor.docker_iobroker_state
+            image: /local/lovelace/icons/iobroker.png
+            style:
+              top: 60%
+              left: 45%
+              width: 6%
+          - type: state-label
+            entity: sensor.docker_heimdall_state
+            style:
+              top: 67%
+              left: 75%
+              color: black
+          - type: image
+            entity: sensor.docker_heimdall_state
+            image: /local/lovelace/icons/heimdall.png
+            style:
+              top: 60%
+              left: 75%
+              width: 6%
+        style: |
+          ha-card {
+          background-color: rgba(50,50,50,0.5); /*DARKGRAY*/
+          border: 1px solid rgba(245,245,245,0.2); /*GRAY*/
+          border-radius: 10px;
+          }
+      - type: picture-elements
+        elements:
+          - type: state-icon
+            entity: sensor.home_assistant_v2_db
+            icon: mdi:database-check
+            style:
+              top: 30%
+              left: 85%
+          - type: state-label
+            entity: sensor.home_assistant_v2_db
+            prefix: 'DB: '
+            style:
+              top: 40%
+              left: 85%
+          - type: state-icon
+            entity: sensor.version_disponible
+            prefix: 'Version dispo: '
+            style:
+              top: 30%
+              left: 55%
+          - type: state-label
+            entity: sensor.version_disponible
+            prefix: 'Version dispo: '
+            style:
+              top: 40%
+              left: 20%
+          - type: state-icon
+            entity: sensor.version_installee
+            prefix: 'Version dispo: '
+            style:
+              top: 30%
+              left: 20%
+          - type: state-label
+            entity: sensor.version_installee
+            prefix: 'Version dispo: '
+            style:
+              top: 40%
+              left: 55%
+          - type: state-badge
+            entity: sensor.count_sensors
+            style:
+              top: 75%
+              left: 20%
+          - type: state-badge
+            entity: sensor.count_automations
+            style:
+              top: 75%
+              left: 40%
+          - type: state-badge
+            entity: sensor.count_lights
+            style:
+              top: 75%
+              left: 60%
+          - type: state-badge
+            entity: sensor.count_switches
+            style:
+              top: 75%
+              left: 80%
+        image: /local/images/home_assistant.png
+      - type: custom:banner-card
+        heading: null
+        background: url("/local/lovelace/background/adguard.png")
+        entities:
+          - entity: sensor.adguard_dns_queries
+            name: Requêtes
+          - entity: sensor.adguard_dns_queries_blocked_ratio
+            name: Requêtes bloquées
+          - entity: switch.adguard_protection
+            name: Protection
+      - type: custom:banner-card
+        heading: null
+        background: url("/local/lovelace/background/speedtest.png")
+        entities:
+          - entity: sensor.speedtest_upload
+            name: UPLOAD
+          - entity: sensor.speedtest_download
+            name: DOWNLOAD
+          - entity: sensor.speedtest_ping
+            name: PING

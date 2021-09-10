@@ -1,0 +1,12 @@
+clean_zone:
+  description: Start the cleaning operation in the selected area.
+  fields:
+    entity_id:
+      description: Name of the vacuum entity.
+      example: "vacuum.xiaomi_vacuum_cleaner"
+    zone:
+      description: Coordinates.
+      example: '819,-263,4424,2105'
+    repeats:
+      description: Number of cleaning repeats for each zone between 1 and 3. Does nothing at the moment!.
+      example: "1"

@@ -24,8 +24,13 @@ tts
 www/lovelace
 www/custom-lovelace
 www/community
-*.yaml
-
+automations.yaml
+configuration.yaml
+groups.yaml
+panel_iframe.yaml
+scenes.yaml
+scripts.yaml
+themes.yaml
 
 # I do not use yet
 .google.token
