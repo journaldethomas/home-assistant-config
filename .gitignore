@@ -1,0 +1,31 @@
+# Directory (contents) ignores
+.storage
+.cloud
+home-assistant*
+deps
+core
+
+# Generic ignores
+*.log
+*.db
+*.pyc
+._*
+*.backup
+__pycache__
+
+# Specific file ignores
+secrets.yaml
+
+# I do not want to share yet
+blueprints
+image
+themes
+tts
+www
+*.yaml
+
+
+# I do not use yet
+.google.token
+ip_bans.yaml
+known_devices.yaml
