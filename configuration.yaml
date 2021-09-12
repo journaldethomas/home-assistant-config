@@ -1,0 +1,668 @@
+homeassistant:
+  name: Maison
+  latitude: !secret homeassistant_latitude
+  longitude: !secret homeassistant_longitude
+  elevation: !secret homeassistant_elevation
+  time_zone: Europe/Paris
+  external_url: !secret homeassistant_external
+  internal_url: !secret homeassistant_interne
+  allowlist_external_dirs:
+    - /config
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - !secret proxyserver
+
+default_config:
+
+###################################################################
+########    Configuration de la partie systeme     ###############
+###################################################################
+
+########    Configuration de la partie materiel    ###############
+
+# Ajout du bluetooth
+ble_monitor:
+  hci_interface: 0
+  discovery: True
+
+# Configuration de la cle ConBee2
+deconz:
+  host: !secret ip_deconz
+  port: !secret port_deconz
+
+# Configuration NetAtmo à utiliser pour que Caméra Welcome remonte
+netatmo:
+  client_id: !secret netatmo_id
+  client_secret: !secret netatmo_secret
+
+# Mise en place du serveur MQTT
+# Supprimé du fichier de configuration pour une utilisation directement via Intégrations
+
+# InfluxDB
+influxdb:
+  host: !secret ip_influxdb
+  port: !secret port_influxdb
+  database: !secret influxdb_database_ha
+  username: !secret influxdb_username_ha
+  password: !secret influxdb_password_ha
+  max_retries: 3
+  default_measurement: state
+
+# Aspirateur Dreame D9
+vacuum:
+  - platform: xiaomi_vacuum
+    host: !secret dreamed9_ip
+    token: !secret dreamed9_token
+    name: dreamed9
+
+###################################################################
+##########            Les compte-à-rebous            ##############
+###################################################################
+
+timer:
+  test:
+    duration: "00:00:10"
+  coton40:
+    duration: "03:00:00"
+  synthetique30:
+    duration: "02:30:00"
+  rapide:
+    duration: "00:30:00"
+
+###################################################################
+##########              Les lumieres                 ##############
+###################################################################
+
+light:
+  - platform: group
+    name: Sam
+    entities:
+      - light.salle_a_manger_01
+      - light.salle_a_manger_02
+      - light.salle_a_manger_03
+      - light.salle_a_manger_04
+      - light.salle_a_manger_05
+      - light.salle_a_manger_06
+
+  - platform: group
+    name: Parents
+    entities:
+      - light.hue_ambiance_spot_1
+      - light.hue_ambiance_spot_1_2
+      - light.entree
+      - light.salon
+
+  - platform: group
+    name: Maxence
+    entities:
+      - light.color_temperature_light_5
+      - light.color_temperature_light_6
+
+  - platform: group
+    name: Chloe
+    entities:
+      - light.color_temperature_light_7
+
+###################################################################
+##########                   Switch                  ##############
+###################################################################
+
+switch:
+
+# Pour arrêter ou démarrer la vidéo surveillance des Eufy Cam 2
+
+  - platform: template
+    switches:
+      eufy_surveillance:
+        friendly_name: "Cameras extérieures - Surveillance"
+        icon_template: mdi:video
+        value_template: "{{ is_state('sensor.eufy_status', 'Home') }}"
+        turn_on:
+          service: rest_command.eufy_guard_mode_home
+        turn_off:
+          service: rest_command.eufy_guard_mode_disarmed  
+
+###################################################################
+##########               Input Number                ##############
+###################################################################
+
+input_number:
+
+  cout_m3_eau:
+    name: Cout €/m3
+    icon: mdi:currency-eur
+    initial: 5.4176
+    min: 5.00
+    max: 10.00
+    unit_of_measurement: "€"
+    mode: box
+
+###################################################################
+##########               Les volets                  ##############
+###################################################################
+
+cover:
+
+  - platform: mqtt
+    name: "Volet cuisine"
+    command_topic: "volet/cuisine"
+    payload_open: "u"
+    payload_close: "d"
+    payload_stop: "s"
+    state_open: "open"
+    state_closed: "closed"
+
+  - platform: mqtt
+    name: "Volet salon"
+    command_topic: "volet/salon"
+    payload_open: "u"
+    payload_close: "d"
+    payload_stop: "s"
+    state_open: "open"
+    state_closed: "closed"
+
+  - platform: mqtt
+    name: "Volet parent"
+    command_topic: "volet/chambre_parentale"
+    payload_open: "u"
+    payload_close: "d"
+    payload_stop: "s"
+    state_open: "open"
+    state_closed: "closed"
+  
+  - platform: mqtt
+    name: "Volet pitchouns"
+    command_topic: "volet/chambre_pitchouns"
+    payload_open: "u"
+    payload_close: "d"
+    payload_stop: "s"
+    state_open: "open"
+    state_closed: "closed"
+
+###################################################################
+##########              Les sensors                  ##############
+###################################################################
+
+sensor:
+
+# Consommation d'eau via MQTT
+
+  - platform: mqtt
+    name: "consommation total"
+    state_topic: "tele/eau/consommation"
+    unit_of_measurement: "m³"
+    value_template: "{{ value_json['total_m3']}}"
+    icon: mdi:counter
+  
+  - platform: mqtt
+    name: "compteur eau status"
+    state_topic: "tele/eau/consommation"
+    value_template: "{{ value_json['status']}}"
+
+  - platform: template
+    sensors:
+      consommation_eau_quotidien_litre_precedent:
+        friendly_name: "consommation historique"
+        unit_of_measurement: "L"
+        value_template: >-
+            {{ states.sensor.eau_quotidien.attributes.last_period | float * 1000}}
+
+  - platform: template
+    sensors:
+      consommation_eau_semaine_litre_precedent:
+        friendly_name: "consommation historique"
+        unit_of_measurement: "L"
+        value_template: >-
+            {{ states.sensor.eau_semaine.attributes.last_period | float * 1000}}
+
+  - platform: template
+    sensors:
+      consommation_eau_mois_litre_precedent:
+        friendly_name: "consommation historique"
+        unit_of_measurement: "L"
+        value_template: >-
+            {{ states.sensor.eau_mois.attributes.last_period | float * 1000}}
+
+  - platform: template
+    sensors:
+    ## consommation depuis le 12/02/2021
+      consommation_eau:
+        friendly_name: "consommation m3"
+        value_template:  >-
+            {{ (states("sensor.consommation_total")|float - 160.314)|round(3)}}
+        unit_of_measurement: "m3"
+        availability_template: >
+          {% if is_state("sensor.consommation_total", "unknown") %}
+            false
+          {% else %}
+            true
+          {%- endif %}
+
+  - platform: template
+    sensors:
+    ## consommation en L
+      consommation_eau_heure_litre:
+        friendly_name: "consommation"
+        value_template:  >-
+            {{ (states("sensor.eau_heure")|float * 1000)|round(2)}}
+        unit_of_measurement: "L"
+        availability_template: >-
+            {% if is_state("sensor.eau_heure", "unknown") %}
+              false
+            {% else %}
+              true
+            {%- endif %}
+
+  - platform: template
+    sensors:
+    ## consommation en L
+      consommation_eau_quotidien_litre:
+        friendly_name: "consommation"
+        value_template:  >-
+            {{ (states("sensor.eau_quotidien")|float * 1000)|round(2)}}
+        unit_of_measurement: "L"
+        availability_template: >-
+            {% if is_state("sensor.eau_quotidien", "unknown") %}
+              false
+            {% else %}
+              true
+            {%- endif %}
+
+  - platform: template
+    sensors:
+    ## consommation en L
+      consommation_eau_semaine_litre:
+        friendly_name: "consommation"
+        value_template:  >-
+            {{ (states("sensor.eau_semaine")|float * 1000)|round(2)}}
+        unit_of_measurement: "L"
+        availability_template: >-
+            {% if is_state("sensor.eau_semaine", "unknown") %}
+              false
+            {% else %}
+              true
+            {%- endif %}
+
+  - platform: template
+    sensors:
+    ## consommation en L
+      consommation_eau_annee_litre:
+        friendly_name: "consommation"
+        value_template:  >-
+            {{ (states("sensor.eau_annee")|float * 1000)|round(2)}}
+        unit_of_measurement: "L"
+        availability_template: >-
+            {% if is_state("sensor.eau_annee", "unknown") %}
+              false
+            {% else %}
+              true
+            {%- endif %}
+
+  - platform: template
+    sensors:
+    ## consommation en L
+      consommation_eau_mois_litre:
+        friendly_name: "consommation"
+        value_template:  >-
+            {{ (states("sensor.eau_mois")|float * 1000)|round(2)}}
+        unit_of_measurement: "L"
+        availability_template: >-
+            {% if is_state("sensor.eau_mois", "unknown") %}
+              false
+            {% else %}
+              true
+            {%- endif %}
+
+  - platform: template
+    sensors:
+    ## calcul cout de ma consommation d'eau
+      eau_cout_jour:
+        friendly_name: "Cout eau jour"
+        value_template:  >-
+            {{ (states("sensor.eau_quotidien")|float * states.input_number.cout_m3_eau.state|float)|round(2)}}
+        unit_of_measurement: "€"
+      eau_cout_semaine:
+        friendly_name: "Cout eau semaine"
+        value_template:  >-
+             {{ (states("sensor.eau_semaine")|float * states.input_number.cout_m3_eau.state|float)|round(2)}}
+      eau_cout_mois:
+        friendly_name: "Cout eau mois"
+        value_template:  >-
+            {{ (states("sensor.eau_mois")|float * states.input_number.cout_m3_eau.state|float)|round(2)}}
+        unit_of_measurement: "€"
+      eau_cout_annee:
+        friendly_name: "Cout eau annee"
+        value_template:  >-
+             {{ (states("sensor.eau_annee")|float * states.input_number.cout_m3_eau.state|float)|round(2)}}
+        unit_of_measurement: "€"
+      
+# Informations remontant de HASS
+
+  - platform: version
+    name: version installée
+    source: local
+
+  - platform: version
+    name: version disponible
+    source: docker
+
+  - platform: filesize
+    file_paths:
+      - /config/home-assistant_v2.db
+
+# CHECK DE LA MISE A JOUR DE VALETUDO
+#  - platform: mqtt
+#    name: version_valetudo
+#    state_topic: "homeassistant/vacuum/valetudo_conchita/config"
+#    value_template: "2021.03.0"
+#    scan_interval: 21600
+
+#  - platform: command_line
+#    name: latest_valetudo
+#    command: curl -s https://github.com/Hypfer/Valetudo/releases/latest | cut -d'"' -f2 | rev | cut -d'/' -f1 | rev
+#    scan_interval: 21600
+
+# Quelques statistiques sur HASS
+
+  - platform: template
+    sensors:
+
+    #----- Nombre d'automations
+      count_automations:
+        entity_id: sensor.date
+        icon_template: mdi:robot
+        value_template: "{{ states.automation | list | length }}"
+
+    #----- Nombre de Scripts
+      count_scripts:
+        entity_id: sensor.date
+        icon_template: mdi:script-text
+        value_template: "{{ states.script| list | length }}"
+
+    #----- Nombre de Device Trackers
+      count_device_trackers:
+        entity_id: sensor.date
+        value_template: "{{ states.device_tracker | list | length }}"
+
+    #----- Nombre de Binary Sensors
+      count_binary_sensors:
+        entity_id: sensor.date
+        value_template: "{{ states.binary_sensor| list | length }}"
+
+    #----- Nombre de Sensors
+      count_sensors:
+        entity_id: sensor.date
+        icon_template: mdi:leak
+        value_template: "{{ states.sensor | list | length }}"
+
+    #----- Nombre de Switches
+      count_switches:
+        entity_id: sensor.date
+        icon_template: mdi:light-switch
+        value_template: "{{ states.switch | list | length }}"
+
+    #----- Nombre de Zones
+      count_zones:
+        entity_id: sensor.date
+        value_template: "{{ states.zone | list | length }}"
+
+    #----- Nombre de Lights
+      count_lights:
+        entity_id: sensor.date
+        icon_template: mdi:lightbulb-group
+        value_template: "{{ states.light | list | length }}"
+
+  # Lumieres
+
+  - platform: template
+    sensors:
+      all_lights_salon:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_salon','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_sam:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_sam','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_cuisine:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_cuisine','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_chloe:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_chloe','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_maxence:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_maxence','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_parents:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_parents','entity_id')) | selectattr('state','eq','on') | list | count }}
+
+  # NUC
+  - platform: systemmonitor
+    resources:
+      - type: disk_use_percent
+        arg: /
+      - type: memory_use_percent
+      - type: processor_use
+      - type: last_boot
+      - type: network_in
+        arg: eth0
+      - type: network_out
+        arg: eth0
+      - type: ipv4_address
+        arg: eth0
+
+  # POUR CONNAITRE SON IP PUBLIQUE
+  - platform: dnsip
+
+  - platform: uptime
+
+  - platform: time_date
+    display_options:
+      ['time', 'date']
+
+  # CREATION DE VARIABLE POUR LE THERMOSTAT
+  - platform: template
+    sensors:
+      temperature_thermostat:
+        friendly_name: 'Temperature thermostat'
+        value_template: "{{ state_attr('climate.netatmo_piece_de_vie', 'current_temperature') }}"
+        attribute_templates:
+          unit_of_measurement: "°C"
+
+  - platform: template
+    sensors:
+      temperature_cible:
+        friendly_name: 'Temperature cible'
+        value_template: "{{ state_attr('climate.netatmo_piece_de_vie', 'temperature') }}"
+        attribute_templates:
+          unit_of_measurement: "°C"
+
+  - platform: template
+    sensors:
+      netatmo_hvac_action:
+        friendly_name: 'chauffage'
+        value_template: "{{ 0 if state_attr('climate.netatmo_piece_de_vie', 'hvac_action') == 'idle' else 1}}"
+
+  # POUR LES CAMERAS EUFY
+
+  # POUR OBTENIR L'ETAT DES CMARERAS EUFY
+  - platform: rest
+    name: eufy_status
+    resource: !secret eufy_guard_mode
+    scan_interval: 10
+    value_template: >-
+      {% set v = value | replace('"', "")|int  %}
+      {{ {0: "Away",
+          1: "Home",
+          2: "Schedule",
+          3: "Custom1",
+          4: "Custom2",
+          5: "Custom3",
+          47: "Geofence",
+          63: "Disarmed"}[v] | default("Unknown state:" + (value|urlencode)) }}
+
+  # QUELQUES REMONTEES D'INFOS DES CAMERAS EUFY
+  - platform: rest
+    name: camera_jardin_battery_level
+    resource: !secret eufy_jardin_batterie
+    scan_interval: 10
+    device_class: battery
+    unit_of_measurement: '%'
+
+  - platform: rest
+    name: camera_arriere_maison_battery_level
+    resource: !secret eufy_arriere_batterie
+    scan_interval: 10
+    device_class: battery
+    unit_of_measurement: '%'
+
+  - platform: rest
+    name: camera_arriere_maison_motion_detection
+    resource: !secret eufy_arriere_mouvement
+    scan_interval: 10
+
+  - platform: rest
+    name: camera_jardin_motion_detection
+    resource: !secret eufy_jardin_mouvement
+    scan_interval: 10
+
+###################################################################
+########                   BINARY SENSOR                  #########
+###################################################################
+
+binary_sensor:
+
+  #TEST BONNE REPONSE EQUIPEMENT RESEAU
+  - platform: ping
+    host: !secret rasp_eau
+    name: "RaspberryPi Eau"
+
+  - platform: ping
+    host: !secret rasp_vpn
+    name: "RaspberryPi VPN"
+
+###################################################################
+########              CALCUL CONSOMMATION EAU             #########
+###################################################################
+
+utility_meter:
+  eau_mois:
+    source: sensor.consommation_total
+    cycle: monthly
+
+  eau_semaine:
+    source: sensor.consommation_total
+    cycle: weekly
+
+  eau_quotidien:
+    source: sensor.consommation_total
+    cycle: daily
+
+  eau_heure:
+    source: sensor.consommation_total
+    net_consumption: true
+    cycle: hourly
+  eau_annee:
+    source: sensor.consommation_total
+    net_consumption: true
+    cycle: yearly
+
+###################################################################
+########                   CAMERAS                        #########
+###################################################################
+
+camera:
+
+#caméra EUFY
+  - platform: generic
+    name: Jardin
+    still_image_url: !secret eufy_jardin_images
+  - platform: generic
+    name: Arriere maison
+    still_image_url: !secret eufy_arriere_images
+
+#caméra Ezviz C1C
+  - platform: ffmpeg
+    name: C1C
+    input: !secret ezviz_c1c
+
+#pour la carte du robot aspirateur
+#pas encore opérationnel pour le D9
+
+###################################################################
+########                   CONTROLE                        #########
+###################################################################
+
+rest_command:
+
+#pour désactiver la surveillance des caméras EUFY
+  eufy_guard_mode_home:
+    url: !secret eufy_surveillance_activation
+
+#pour activer la surveillance des caméras EUFY
+  eufy_guard_mode_disarmed:
+    url: !secret eufy_surveillance_desactivation
+
+###################################################################
+########   Management de Docker et des divers Conteneurs  #########
+###################################################################
+
+monitor_docker:
+  - name: Docker
+    containers:
+      - appdaemon
+      - vscode
+      - portainer
+      - traefik
+      - grafana
+      - zwavejs2mqtt
+      - deconz
+      - adguardhome
+      - homeassistant_prod
+      - influxdb
+      - mqtt
+      - 'node-red'
+      - 'unifi-controller'
+      - iobroker
+      - bitwarden
+      - heimdall
+      - homeassistant_qualif
+    rename:
+      appdaemon: AppDaemon
+      deconz: DeCONZ
+      adguardhome: AdGuard
+      homeassistant_prod: Home Assistant
+    monitored_conditions:
+      - version
+      - containers_running
+      - containers_total
+      - state
+      - status
+      - memory
+
+###################################################################
+##########   Interactionn vocale et Notification  ################
+##################################################################
+
+# Ajout de télégram pour les notifications - A VOIR POUR METTRE DANS FICHIER SPECIFIQUE
+telegram_bot:
+  - platform: polling
+    api_key: !secret telegram_token
+    allowed_chat_ids: 
+    - !secret id_telegram_thomas
+      
+notify:
+  - platform: telegram
+    name: telegram
+    chat_id: !secret id_telegram_thomas
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+panel_iframe: !include panel_iframe.yaml
+scene: !include scenes.yaml
