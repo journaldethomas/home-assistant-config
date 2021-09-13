@@ -337,7 +337,62 @@ sensor:
         value_template:  >-
              {{ (states("sensor.eau_annee")|float * states.input_number.cout_m3_eau.state|float)|round(2)}}
         unit_of_measurement: "€"
-      
+
+# calcul du nombre de personnes présentes
+  - platform: template
+    sensors:
+      number_of_doors_home:
+        friendly_name: "Number of doors home"
+        icon_template: hass:door-open
+        value_template: >-
+          {% set count = namespace(value=0) %}
+          {% for entity_id in state_attr('group.all_doors_sensor_entities','entity_id') %}
+            {% if (states(entity_id) == 'On') %}
+              {% set count.value = count.value + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ count.value }}
+
+      number_of_smoke_home:
+        friendly_name: "Number of smoke home"
+        icon_template: mdi:smoke-detector
+        value_template: >-
+          {% set count = namespace(value=0) %}
+          {% for entity_id in state_attr('group.all_smoke_sensor_entities','entity_id') %}
+            {% if (states(entity_id) == 'On') %}
+              {% set count.value = count.value + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ count.value }}
+
+# calcul du nombre de personnes présentes
+  - platform: template
+    sensors:
+      number_of_persons_home:
+        friendly_name: "Number of persons home"
+        icon_template: mdi:account-circle
+        value_template: >-
+          {% set count = namespace(value=0) %}
+          {% for entity_id in state_attr('group.all_person_entities','entity_id') %}
+            {% if (states(entity_id) == 'home') %}
+              {% set count.value = count.value + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ count.value }}
+
+# calcul du nombre de détecteurs de présence
+      number_of_motion_sensors_on:
+        friendly_name: "Number of Motion Sensors On"
+        icon_template: mdi:run
+        value_template: >-
+          {% set count = namespace(value=0) %}
+          {% for entity_id in state_attr('group.all_motion_sensor_entities','entity_id') %}
+            {% if (states(entity_id) == 'on') %}
+              {% set count.value = count.value + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ count.value }}
+
 # Informations remontant de HASS
 
   - platform: version

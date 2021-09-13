@@ -1,0 +1,67 @@
+   ############################################################
+   ##                    ALL LIGHTS GROUPS                   ##
+   ############################################################
+
+  all_lights_sam:
+    name: Sam
+    entities:
+      - light.salle_a_manger_01
+      - light.salle_a_manger_02
+      - light.salle_a_manger_03
+      - light.salle_a_manger_04
+      - light.salle_a_manger_05
+      - light.salle_a_manger_06
+
+  all_lights_parents:
+    name: Parents
+    entities:
+      - light.hue_ambiance_spot_1
+      - light.hue_ambiance_spot_1_2
+      - light.entree
+      - light.salon
+
+  all_lights_cuisine:
+    name: Cuisine
+    entities:  
+      - light.cuisine
+
+  all_lights_salon:
+    name: salon
+    entities:  
+      - light.lampe_salon
+
+  all_lights_maxence:
+    name: Maxence
+    entities:
+      - light.maxence_1
+      - light.maxence_2
+
+  all_lights_chloe:
+    name: Chloe
+    entities:
+      - light.chloe_1
+
+############################################################
+##                     SECURITY GROUPS                    ##
+############################################################
+
+  all_motion_sensor_entities:
+    name: All Motion Sensor Entities
+    entities:
+      - binary_sensor.presence_30
+
+  all_person_entities:
+    name: All Persons Entities
+    entities:
+      - person.thomas
+      - person.delphine
+
+  all_doors_sensor_entities:
+    name: All Doors Sensor Entities
+    entities:
+      - binary_sensor.door_window_sensor_7_access_control_window_door_is_open
+
+  all_smoke_sensor_entities:
+    name: All Smoke Sensor Entities
+    entities:
+      - binary_sensor.smoke_detector_smoke_alarm_smoke_detected

@@ -25,7 +25,6 @@ www/lovelace
 www/custom-lovelace
 www/community
 automations.yaml
-groups.yaml
 panel_iframe.yaml
 scenes.yaml
 scripts.yaml
