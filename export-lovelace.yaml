@@ -1,3 +1,166 @@
+button_card_templates:
+  scene:
+    template:
+      - rouge_on
+      - vert_off
+    size: 20px
+    show_label: true
+    label: |
+      [[[ return (entity.attributes.value )]]]
+    styles:
+      card:
+        - border-radius: 20px
+        - box-shadow: none
+        - padding: 10px 0px 8px 0px
+      grid:
+        - grid-template-areas: '"i" "n" "l"'
+      name:
+        - margin-top: 10px
+        - justify-self: center
+        - font-weight: bold
+        - font-size: 14px
+      label:
+        - justify-self: center
+        - align-self: start
+        - font-weight: bolder
+        - font-size: 12px
+        - filter: opacity(40%)
+      icon:
+        - color: rgba(51,51,51,0.2)
+      img_cell:
+        - background-color: rgba(51,51,51,0.05)
+        - border-radius: 50%
+        - place-self: center
+        - width: 42px
+        - height: 42px
+  ouverture:
+    template:
+      - rouge_on
+      - vert_off
+    state:
+      - label: Ouvert(e)
+        id: 'on'
+        value: 'on'
+      - label: Fermé(e)
+        id: 'off'
+        value: 'off'
+  ouverture_fenetre:
+    template:
+      - rouge_on
+      - vert_off
+    state:
+      - icon: mdi:window-open-variant
+        label: Fenêtre Ouverte
+        id: rouge_on
+        value: 'on'
+      - icon: mdi:window-closed-variant
+        label: Fenêtre Fermée
+        id: vert_off
+        value: 'off'
+  vert_off:
+    state:
+      - id: vert_off
+        styles:
+          icon:
+            - color: rgba(1, 200, 82, 1)
+          img_cell:
+            - background-color: rgba(1, 200, 82, 0.2)
+        value: 'off'
+  vert_on:
+    state:
+      - id: vert_on
+        styles:
+          icon:
+            - color: rgba(1, 200, 82, 1)
+          img_cell:
+            - background-color: rgba(1, 200, 82, 0.2)
+        value: 'on'
+  rouge_on:
+    state:
+      - id: rouge_on
+        styles:
+          icon:
+            - color: rgba(245, 68, 54, 1)
+          img_cell:
+            - background-color: rgba(245, 68, 54, 0.2)
+        value: 'on'
+  rouge_off:
+    state:
+      - id: rouge_off
+        styles:
+          icon:
+            - color: rgba(245, 68, 54, 1)
+          img_cell:
+            - background-color: rgba(245, 68, 54, 0.2)
+        value: 'off'
+  icon_info_bg:
+    color: rgba(187, 187, 187)
+    show_icon: true
+    show_name: true
+    show_label: true
+    size: 20px
+    custom_fields:
+      notification: |
+        [[[
+          if (entity.state =='unavailable'){
+            return `<ha-icon icon="mdi:exclamation" style="width: 12px; height: 12px; color: '#EFEFEF';"></ha-icon>`
+          }
+        ]]]
+    state:
+      - styles:
+          custom_fields:
+            notification:
+              - border-radius: 50%
+              - position: absolute
+              - left: 38px
+              - top: 8px
+              - height: 16px
+              - width: 16px
+              - border: 2px solid '#FAFAFA'
+              - font-size: 12px
+              - line-height: 14px
+              - background-color: |
+                  [[[
+                    return "rgba(245, 68, 54, 1)";
+                  ]]]
+        value: unavailable
+    styles:
+      card:
+        - border-radius: 20px
+        - box-shadow: none
+        - padding: 12px
+      grid:
+        - grid-template-areas: '"i n" "i l"'
+        - grid-template-columns: min-content auto
+        - grid-template-rows: min-content min-content
+      icon:
+        - color: rgba(255,255,255,0.2)
+      img_cell:
+        - background-color: rgba(255,255,255,0.05)
+        - border-radius: 50%
+        - place-self: center
+        - width: 42px
+        - height: 42px
+      name:
+        - align-self: end
+        - justify-self: start
+        - font-weight: bold
+        - font-size: 14px
+        - margin-left: 12px
+      label:
+        - justify-self: start
+        - align-self: start
+        - font-weight: bold
+        - font-size: 12px
+        - filter: opacity(40%)
+        - margin-left: 12px
+      state:
+        - justify-self: start
+        - align-self: start
+        - font-weight: bold
+        - font-size: 12px
+        - filter: opacity(40%)
+        - margin-left: 12px
 title: Maison
 views:
   - path: default_view
@@ -8,34 +171,970 @@ views:
     icon: mdi:home
     badges: []
     cards:
-      - type: custom:digital-clock
-        dateFormat:
-          weekday: long
-          day: 2-digit
-          month: short
-        timeFormat:
-          hour: 2-digit
-          minute: 2-digit
-      - type: custom:meteofrance-weather-card
-        entity: weather.sillingy
-        number_of_forecasts: '5'
-        name: Sillingy
-        detailEntity: sensor.netatmo_maison_piece_de_vie_jardin_temperature
-        one_hour_forecast: false
-        cloudCoverEntity: sensor.sillingy_cloud_cover
-        uvEntity: sensor.sillingy_uv
-        current: true
-        details: false
-        alertEntity: sensor.74_weather_alert
-        alert_forecast: true
-        forecast: true
-      - type: entities
-        entities:
-          - person.delphine
-          - person.thomas
-        title: Personne
       - type: vertical-stack
         cards:
+          - type: custom:button-card
+            entity: ''
+            styles:
+              card:
+                - padding: 4%
+                - font-size: 52px
+                - border-radius: 20px
+                - color: '#212121'
+              grid:
+                - grid-template-areas: '"time date" "time school"'
+                - grid-template-columns: 2fr 3fr
+                - grid-template-rows: 1fr
+              custom_fields:
+                time:
+                  - justify-self: start
+                date:
+                  - justify-self: end
+                  - font-size: 22px
+            custom_fields:
+              time: |
+                [[[ return states['sensor.time'].state ]]]
+              date: |
+                [[[ return states['sensor.date'].state ]]]
+            tap_action: none
+            hold_action: none
+          - type: horizontal-stack
+            cards:
+              - entity: alarm_control_panel.alarmo
+                template: scene
+                type: custom:button-card
+                name: Alarme
+                state:
+                  - label: ouverte
+                    id: vert_off
+                    value: armed
+                  - label: désactivée
+                    id: rouge_on
+                    value: disarmed
+              - entity: sensor.number_of_persons_home
+                template: scene
+                type: custom:button-card
+                name: Personnes
+                state:
+                  - label: RAS
+                    id: vert_off
+                    value: '2'
+                  - label: désactivée
+                    id: rouge_on
+                    value: '0'
+              - entity: group.all_doors_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Ouvertures
+                state:
+                  - icon: mdi:door-open
+                    label: 1
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:door-closed
+                    label: RAS
+                    id: vert_off
+                    value: 'off'
+              - entity: group.all_smoke_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Fumée
+                state:
+                  - icon: mdi:fire
+                    label: Incendie
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:shield-check
+                    label: RAS
+                    id: vert_off
+                    value: 'off'
+              - entity: sensor.number_of_motion_sensors_on
+                template: scene
+                type: custom:button-card
+                name: Mouvements
+                state:
+                  - label: RAS
+                    id: vert_off
+                    value: '0'
+                  - label: détectés
+                    id: rouge_on
+                    value: '1'
+          - type: custom:meteofrance-weather-card
+            entity: weather.sillingy
+            number_of_forecasts: '5'
+            details: false
+            current: true
+            one_hour_forecast: false
+            forecast: true
+            alert_forecast: true
+            detailEntity: sensor.netatmo_maison_piece_de_vie_jardin_temperature
+            rainChanceEntity: sensor.sillingy_daily_precipitation
+            uvEntity: sensor.sillingy_uv
+            freezeChanceEntity: sensor.sillingy_freeze_chance
+            snowChanceEntity: sensor.sillingy_snow_chance
+            alertEntity: sensor.74_weather_alert
+            cloudCoverEntity: sensor.sillingy_cloud_cover
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: group.all_lights_salon
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Salon
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_salon'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_salon'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_sam
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: SàM
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return Math.floor(states['sensor.all_lights_sam'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_sam'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_cuisine
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Cuisine
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_cuisine'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_cuisine'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_salon
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Bureau
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_salon'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_salon'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: group.all_lights_parents
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Parents
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_parents'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_parents'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_chloe
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Chloé
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_chloe'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_chloe'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_maxence
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Maxence
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_maxence'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_maxence'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_salon
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Salle de jeux
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_salon'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_salon'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
           - type: horizontal-stack
             cards:
               - type: custom:button-card
@@ -49,8 +1148,9 @@ views:
                       name:
                         - color: rgb(0, 0, 0, 100%)
                         - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
                       card:
+                        - border-radius: 20px
+                        - padding: 10px 0px 8px 0px
                         - background-color: rgb(0, 191, 255, 100%)
                   - value: closed
                     color: rgb(91, 96, 93)
@@ -58,16 +1158,15 @@ views:
                     spin: false
                     styles:
                       name:
-                        - color: rgb(0, 191, 255, 100%)
-                        - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                        - font: bold 15px/30px roboto
                 styles:
                   card:
+                    - border-radius: 20px
+                    - padding: 10px 0px 8px 0px
                     - margin: 0
-                    - padding: 1
                     - font: 20px/35px Roboto
                     - background: null
-                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                    - box-shadow: 0px 0px 5px rgb(0, 191, 255, 100%)
                 entity: cover.volet_salon
                 tap_action:
                   action: toggle
@@ -134,8 +1233,9 @@ views:
                       name:
                         - color: rgb(0, 0, 0, 100%)
                         - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
                       card:
+                        - border-radius: 20px
+                        - padding: 10px 0px 8px 0px
                         - background-color: rgb(0, 191, 255, 100%)
                   - value: closed
                     color: rgb(91, 96, 93)
@@ -143,16 +1243,15 @@ views:
                     spin: false
                     styles:
                       name:
-                        - color: rgb(0, 191, 255, 100%)
-                        - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                        - font: bold 15px/30px roboto
                 styles:
                   card:
+                    - border-radius: 20px
+                    - padding: 10px 0px 8px 0px
                     - margin: 0
-                    - padding: 1
                     - font: 20px/35px Roboto
                     - background: null
-                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                    - box-shadow: 0px 0px 5px rgb(0, 191, 255, 100%)
                 entity: cover.volet_cuisine
                 tap_action:
                   action: toggle
@@ -217,8 +1316,9 @@ views:
                       name:
                         - color: rgb(0, 0, 0, 100%)
                         - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
                       card:
+                        - border-radius: 20px
+                        - padding: 10px 0px 8px 0px
                         - background-color: rgb(0, 191, 255, 100%)
                   - value: closed
                     color: rgb(91, 96, 93)
@@ -226,17 +1326,17 @@ views:
                     spin: false
                     styles:
                       name:
-                        - color: rgb(0, 191, 255, 100%)
-                        - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                        - font: bold 15px/30px roboto
                 styles:
                   card:
+                    - border-radius: 20px
+                    - padding: 10px 0px 8px 0px
                     - margin: 0
-                    - padding: 1
                     - font: 20px/35px Roboto
                     - background: null
-                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                    - box-shadow: 0px 0px 5px rgb(0, 191, 255, 100%)
                 entity: cover.volet_parent
+                name: Volet parents
                 tap_action:
                   action: toggle
                 hold_action:
@@ -300,8 +1400,9 @@ views:
                       name:
                         - color: rgb(0, 0, 0, 100%)
                         - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(255, 255, 254)
                       card:
+                        - border-radius: 20px
+                        - padding: 10px 0px 8px 0px
                         - background-color: rgb(0, 191, 255, 100%)
                   - value: closed
                     color: rgb(91, 96, 93)
@@ -309,16 +1410,15 @@ views:
                     spin: false
                     styles:
                       name:
-                        - color: rgb(0, 191, 255, 100%)
-                        - font: bold italic 15px/30px roboto
-                        - text-shadow: 2px 5px 8px rgb(0, 191, 255)
+                        - font: bold 15px/30px roboto
                 styles:
                   card:
+                    - border-radius: 20px
+                    - padding: 10px 0px 8px 0px
                     - margin: 0
-                    - padding: 1
                     - font: 20px/35px Roboto
                     - background: null
-                    - box-shadow: 0px 0px 10px rgb(0, 191, 255, 100%)
+                    - box-shadow: 0px 0px 5px rgb(0, 191, 255, 100%)
                 entity: cover.volet_pitchouns
                 tap_action:
                   action: toggle
@@ -372,6 +1472,37 @@ views:
                           icon: mdi:window-shutter
               - color_type: blank-card
                 type: custom:button-card
+      - type: custom:vacuum-card
+        entity: vacuum.dreame_p2009_86d4_robot_cleaner
+        stats:
+          default:
+            - attribute: filter.filter_left_time
+              unit: heures
+              subtitle: avant remplacement du filtre
+            - attribute: brush_cleaner.brush_left_time
+              unit: heures
+              subtitle: avant remplacement de la brosse
+          cleaning:
+            - attribute: cleaned_area
+              unit: m2
+              subtitle: Cleaning area
+            - attribute: cleaning_time
+              unit: minutes
+              subtitle: Cleaning time
+        actions:
+          - name: Clean living room
+            service: script.clean_living_room
+            icon: mdi:sofa
+          - name: Clean bedroom
+            service: script.clean_bedroom
+            icon: mdi:bed-empty
+          - name: Clean kitchen
+            service: script.clean_kitchen
+            icon: mdi:silverware-fork-knife
+        show_name: false
+        show_status: true
+        show_toolbar: true
+        compact_view: true
       - type: thermostat
         entity: climate.netatmo_piece_de_vie
       - type: horizontal-stack
@@ -492,867 +1623,6 @@ views:
             detail: 2
             show:
               extrema: true
-      - type: vertical-stack
-        cards:
-          - type: horizontal-stack
-            cards:
-              - type: custom:button-card
-                entity: group.all_lights_salon
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Salon
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_salon'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_salon'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-              - type: custom:button-card
-                entity: group.all_lights_sam
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: SàM
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return Math.floor(states['sensor.all_lights_sam'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_sam'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-              - type: custom:button-card
-                entity: group.all_lights_cuisine
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Cuisine
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_cuisine'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_cuisine'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-              - type: custom:button-card
-                entity: group.all_lights_salon
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Bureau
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_salon'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_salon'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-          - type: horizontal-stack
-            cards:
-              - type: custom:button-card
-                entity: group.all_lights_parents
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Parents
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_parents'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_parents'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-              - type: custom:button-card
-                entity: group.all_lights_chloe
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Chloé
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_chloe'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_chloe'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-              - type: custom:button-card
-                entity: group.all_lights_maxence
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Maxence
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_maxence'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_maxence'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
-              - type: custom:button-card
-                entity: group.all_lights_salon
-                icon: mdi:lightbulb
-                show_icon: false
-                aspect_ratio: 1/1
-                name: Salle de jeux
-                card_mod:
-                  style: |
-                    ha-card {
-                      box-shadow: 
-                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
-                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
-                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
-                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
-                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
-                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
-                        {% endif %}     
-                    }
-                custom_fields:
-                  notification: >
-                    [[[ return
-                    Math.floor(states['sensor.all_lights_salon'].state)
-                    ]]]           
-                  icon_hue: >
-                    [[[ const state = entity.state === 'on' ? 'animate' : null;
-                    return `<svg viewBox="0 0 50 50"><style>@keyframes
-                    animate{0%{transform: scale(0.85);}20%{transform:
-                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
-                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
-                    scale(1);}}.animate{animation: animate 0.8s;
-                    transform-origin: center;}</style> <path fill="#9da0a2"
-                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
-                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
-                    0-.8.8.6.9.8.9h11.5c.2 0
-                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
-                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
-                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
-                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
-                    fill="var(--button-card-light-color-no-temperature)"
-                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
-                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
-                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
-                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
-                styles:
-                  custom_fields:
-                    icon_hue:
-                      - top: 20%
-                      - left: 27%
-                      - width: 45%
-                      - height: 45%
-                      - position: absolute
-                    notification:
-                      - background-color: |
-                          [[[
-                            if (states['sensor.all_lights_salon'].state == 0)
-                            return "lime";
-                            return "red";
-                          ]]]
-                      - border-radius: 50%
-                      - position: absolute
-                      - left: 70%
-                      - top: 5%
-                      - height: 20px
-                      - width: 20px
-                      - font-size: 15px
-                      - line-height: 20px
-                  name:
-                    - font-size: 13px
-                    - color: var(--text-color)
-                    - position: absolute
-                    - top: 75%
-                    - padding-bottom: '-20px'
-                  card:
-                    - background-color: var(--primary-background-color)
-                    - border-radius: 20px
-                  grid:
-                    - position: absolute
-                state:
-                  - value: 'on'
-                    styles:
-                      card:
-                        - border: >-
-                            solid 1px
-                            var(--button-card-light-color-no-temperature)
-                        - box-shadow: >-
-                            0px 0px 10px 3px
-                            var(--button-card-light-color-no-temperature)
-                      icon:
-                        - color: yellow
-                    id: on-icon
-                  - value: 'off'
-                    styles:
-                      card:
-                        - border: solid 1px var(--primary-color)
-                        - box-shadow: none
-                    id: off-icon
-                tap_action:
-                  action: toggle
-                hold_action:
-                  action: more-info
-                double_tap_action: '!include popup_card/light_salon.yaml'
   - visible:
       - user: b7dc10ea17f14fb8986cb0c130e3a556
     title: Monitoring
@@ -1362,6 +1632,20 @@ views:
     cards:
       - type: vertical-stack
         cards:
+          - entity: sensor.baie_technique_2
+            state_header: Humidité
+            styles:
+              width: 80px
+              text-align: center
+            name: Baie Technique
+            icon: mdi:server
+            type: custom:multiple-entity-row
+            entities:
+              - entity: sensor.baie_technique
+                name: Température
+                styles:
+                  width: 80px
+                  text-align: center
           - type: horizontal-stack
             cards:
               - type: custom:button-card
@@ -1383,7 +1667,7 @@ views:
                   card:
                     - color: var(--text-medium-color)
                     - text-shadow: 0px 0px 0px white
-                    - background-color: var(--primary-background-color)
+                    - background-color: '#FFFFFF'
                     - padding-left: 10px
                     - border-radius: 20px
                     - padding: 10%
@@ -1457,7 +1741,7 @@ views:
                   card:
                     - color: var(--text-medium-color)
                     - text-shadow: 0px 0px 0px white
-                    - background-color: var(--primary-background-color)
+                    - background-color: '#FFFFFF'
                     - padding-left: 10px
                     - border-radius: 20px
                     - padding: 10%
