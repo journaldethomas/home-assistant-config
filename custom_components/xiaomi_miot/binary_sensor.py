@@ -61,11 +61,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 continue
             if srv.name in ['toilet']:
                 entities.append(MiotToiletEntity(config, srv))
-            elif srv.name in ['motion_sensor'] and 'lumi.sensor_motion.' in model:
-                entities.append(LumiBinarySensorEntity(config, srv))
-            elif srv.name in ['magnet_sensor'] and 'lumi.sensor_magnet.' in model:
-                entities.append(LumiBinarySensorEntity(config, srv))
-            elif srv.name in ['submersion_sensor'] and 'lumi.sensor_wleak.' in model:
+            elif 'lumi.' in model:
                 entities.append(LumiBinarySensorEntity(config, srv))
             else:
                 entities.append(MiotBinarySensorEntity(config, srv))
@@ -77,6 +73,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 class MiotBinarySensorEntity(MiotToggleEntity, BinarySensorEntity):
     def __init__(self, config, miot_service: MiotService, **kwargs):
+        kwargs.setdefault('logger', _LOGGER)
         super().__init__(miot_service, config=config, **kwargs)
 
         pls = []
@@ -237,8 +234,6 @@ class LumiBinarySensorEntity(MiotBinarySensorEntity):
             adt['trigger_time'] = int(pes[0] or 0)
             adt['trigger_at'] = f'{datetime.fromtimestamp(adt["trigger_time"])}'
             dif = time.time() - adt['trigger_time']
-        else:
-            _LOGGER.warning('Get miio data for %s failed: %s', self.name, dlg)
         if typ == 'prop.illumination':
             prop = self._miot_service.get_property('illumination')
             if prop:
@@ -250,8 +245,12 @@ class LumiBinarySensorEntity(MiotBinarySensorEntity):
             self._state = typ == 'event.open'
         elif typ in ['event.leak', 'event.no_leak']:
             self._state = typ == 'event.leak'
-        if self._prop_state:
-            adt[self._prop_state.full_name] = self._state
+        elif self._prop_state and self._prop_state.full_name in self._state_attrs:
+            _LOGGER.info('Get miio data for %s failed: %s', self.name, dlg)
+        else:
+            _LOGGER.warning('Get miio data for %s failed: %s', self.name, dlg)
+            if self._prop_state:
+                adt[self._prop_state.full_name] = self._state
         if adt:
             self.update_attrs(adt)
 

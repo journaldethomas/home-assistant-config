@@ -49,6 +49,7 @@
     name: All Motion Sensor Entities
     entities:
       - binary_sensor.presence_30
+      - binary_sensor.multisensor_6_home_security_motion_detection
 
   all_person_entities:
     name: All Persons Entities

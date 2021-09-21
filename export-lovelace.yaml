@@ -211,17 +211,6 @@ views:
                   - label: désactivée
                     id: rouge_on
                     value: disarmed
-              - entity: sensor.number_of_persons_home
-                template: scene
-                type: custom:button-card
-                name: Personnes
-                state:
-                  - label: RAS
-                    id: vert_off
-                    value: '2'
-                  - label: désactivée
-                    id: rouge_on
-                    value: '0'
               - entity: group.all_doors_sensor_entities
                 template: scene
                 type: custom:button-card
@@ -274,8 +263,43 @@ views:
             snowChanceEntity: sensor.sillingy_snow_chance
             alertEntity: sensor.74_weather_alert
             cloudCoverEntity: sensor.sillingy_cloud_cover
+          - type: custom:vacuum-card
+            entity: vacuum.dreame_p2009_86d4_robot_cleaner
+            stats:
+              default:
+                - attribute: filter.filter_left_time
+                  unit: heures
+                  subtitle: avant remplacement du filtre
+                - attribute: brush_cleaner.brush_left_time
+                  unit: heures
+                  subtitle: avant remplacement de la brosse
+              cleaning:
+                - attribute: cleaned_area
+                  unit: m2
+                  subtitle: Cleaning area
+                - attribute: cleaning_time
+                  unit: minutes
+                  subtitle: Cleaning time
+            actions:
+              - name: Clean living room
+                service: script.clean_living_room
+                icon: mdi:sofa
+              - name: Clean bedroom
+                service: script.clean_bedroom
+                icon: mdi:bed-empty
+              - name: Clean kitchen
+                service: script.clean_kitchen
+                icon: mdi:silverware-fork-knife
+            show_name: false
+            show_status: true
+            show_toolbar: true
+            compact_view: true
       - type: vertical-stack
         cards:
+          - type: entities
+            entities:
+              - entity: person.delphine
+              - entity: person.thomas
           - type: horizontal-stack
             cards:
               - type: custom:button-card
@@ -1137,6 +1161,226 @@ views:
                 double_tap_action: '!include popup_card/light_salon.yaml'
           - type: horizontal-stack
             cards:
+              - color_type: blank-card
+                type: custom:button-card
+              - type: custom:button-card
+                entity: light.entree_2
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Entrée
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_parents'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_parents'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - type: custom:button-card
+                entity: group.all_lights_parents
+                icon: mdi:lightbulb
+                show_icon: false
+                aspect_ratio: 1/1
+                name: Descente gararge
+                card_mod:
+                  style: |
+                    ha-card {
+                      box-shadow: 
+                        {% if is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'on') %}
+                          inset -4px -4px 8px 0 rgba(255,255,255,.5), inset 4px 4px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'above_horizon') and is_state('[[entity]]', 'off') %}                      
+                          -5px -5px 8px 0 rgba(255,255,255,.5),5px 5px 8px 0 rgba(0,0,0,.03);
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'on') %}                      
+                          inset -4px -4px 10px 0 rgba(50, 50, 50,.5), inset 4px 4px 12px 0 rgba(0,0,0,.3); 
+                        {% elif is_state('sun.sun', 'below_horizon') and is_state('[[entity]]', 'off') %}   
+                          -5px -5px 8px 0 rgba(50, 50, 50,.5),5px 5px 8px 0 rgba(0,0,0,.15);
+                        {% endif %}     
+                    }
+                custom_fields:
+                  notification: >
+                    [[[ return
+                    Math.floor(states['sensor.all_lights_parents'].state)
+                    ]]]           
+                  icon_hue: >
+                    [[[ const state = entity.state === 'on' ? 'animate' : null;
+                    return `<svg viewBox="0 0 50 50"><style>@keyframes
+                    animate{0%{transform: scale(0.85);}20%{transform:
+                    scale(1.1);}40%{transform: scale(0.95);}60%{transform:
+                    scale(1.03);}80%{transform: scale(0.97);}100%{transform:
+                    scale(1);}}.animate{animation: animate 0.8s;
+                    transform-origin: center;}</style> <path fill="#9da0a2"
+                    d="M27.4 47.3h-4.9s-.7.1-.7.8.4.9.7.9h4.9c.3 0
+                    .7-.1.7-.9s-.7-.8-.7-.8zm3.3-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-3H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9-.1-.8-.9-.8-.9-.8zm0-2.9H19.3s-.8
+                    0-.8.8.6.9.8.9h11.5c.2 0
+                    .8-.1.8-.9s-.9-.8-.9-.8zm5.2-23.2c-3.3-5.3-7-5.6-10.9-5.6-3.8
+                    0-8.4.4-10.9 5.6-.1.1-.1.3.1.7.4.8 3.3 7.2 3.2 18.8 0 1.1-.1
+                    1.6 0 1.7 0 .1 0 .7 1.1.7h13c1 0 1-.5 1.1-.7v-1.7c-.1-11.6
+                    2.8-18 3.2-18.8.1-.4.1-.5.1-.7"/> <path class="${state}"
+                    fill="var(--button-card-light-color-no-temperature)"
+                    d="M14.1 15.3c3.4-.3 7-.4 10.9-.4 3.8 0 7.5.2
+                    10.9.4.4-.4.7-.8.9-1.1C39 8.5 38.9 6.5 38.9
+                    6c-.2-4.4-8.4-5-12.1-5h0-3.4c-3.7 0-12 .5-12.1 5 0 .5-.1 2.5
+                    2.1 8.2 0 .3.3.8.7 1.1z"/></svg>`; ]]]
+                styles:
+                  custom_fields:
+                    icon_hue:
+                      - top: 20%
+                      - left: 27%
+                      - width: 45%
+                      - height: 45%
+                      - position: absolute
+                    notification:
+                      - background-color: |
+                          [[[
+                            if (states['sensor.all_lights_parents'].state == 0)
+                            return "lime";
+                            return "red";
+                          ]]]
+                      - border-radius: 50%
+                      - position: absolute
+                      - left: 70%
+                      - top: 5%
+                      - height: 20px
+                      - width: 20px
+                      - font-size: 15px
+                      - line-height: 20px
+                  name:
+                    - font-size: 13px
+                    - color: var(--text-color)
+                    - position: absolute
+                    - top: 75%
+                    - padding-bottom: '-20px'
+                  card:
+                    - background-color: '#ffffff'
+                    - border-radius: 20px
+                  grid:
+                    - position: absolute
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: >-
+                            solid 1px
+                            var(--button-card-light-color-no-temperature)
+                        - box-shadow: >-
+                            0px 0px 10px 3px
+                            var(--button-card-light-color-no-temperature)
+                      icon:
+                        - color: yellow
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                    id: off-icon
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                double_tap_action: '!include popup_card/light_salon.yaml'
+              - color_type: blank-card
+                type: custom:button-card
+          - type: horizontal-stack
+            cards:
               - type: custom:button-card
                 show_entity_picture: true
                 state:
@@ -1472,37 +1716,6 @@ views:
                           icon: mdi:window-shutter
               - color_type: blank-card
                 type: custom:button-card
-      - type: custom:vacuum-card
-        entity: vacuum.dreame_p2009_86d4_robot_cleaner
-        stats:
-          default:
-            - attribute: filter.filter_left_time
-              unit: heures
-              subtitle: avant remplacement du filtre
-            - attribute: brush_cleaner.brush_left_time
-              unit: heures
-              subtitle: avant remplacement de la brosse
-          cleaning:
-            - attribute: cleaned_area
-              unit: m2
-              subtitle: Cleaning area
-            - attribute: cleaning_time
-              unit: minutes
-              subtitle: Cleaning time
-        actions:
-          - name: Clean living room
-            service: script.clean_living_room
-            icon: mdi:sofa
-          - name: Clean bedroom
-            service: script.clean_bedroom
-            icon: mdi:bed-empty
-          - name: Clean kitchen
-            service: script.clean_kitchen
-            icon: mdi:silverware-fork-knife
-        show_name: false
-        show_status: true
-        show_toolbar: true
-        compact_view: true
       - type: thermostat
         entity: climate.netatmo_piece_de_vie
       - type: horizontal-stack
@@ -1726,9 +1939,6 @@ views:
                 entity: sensor.ups_status
                 icon: mdi:flash
                 name: ONDULEUR
-                double_tap_action:
-                  action: call-service
-                  service: homeassistant.restart
                 card_mod:
                   style: |
                     ha-card {
@@ -1769,10 +1979,6 @@ views:
                         infinite'; ]]]
                   custom_fields:
                     cpu:
-                      - '--text-color-sensor': >-
-                          [[[if (states["sensor.version_disponible"].state !=
-                          states["sensor.version_installee"].state) return
-                          "red";else return "deepskyblue"]]]
                       - padding-bottom: 2px
                       - justify-self: start
                     ram:
@@ -2149,3 +2355,316 @@ views:
             name: DOWNLOAD
           - entity: sensor.speedtest_ping
             name: PING
+      - type: horizontal-stack
+        cards:
+          - color: auto
+            color_type: icon
+            entity: null
+            icon: mdi:update
+            name: Mettre à jour
+            show_icon: true
+            show_label: false
+            tap_action:
+              action: call-service
+              service: mqtt.publish
+              service_data:
+                payload: d
+                topic: volet/salon
+              target: {}
+            type: custom:button-card
+          - color: auto
+            color_type: icon
+            entity: null
+            icon: mdi:restart
+            name: Redémarrer
+            show_icon: true
+            show_label: false
+            show_last_changed: false
+            show_name: true
+            show_state: false
+            tap_action:
+              action: call-service
+              service: mqtt.publish
+              service_data:
+                payload: u
+                topic: volet/salon
+              target: {}
+            type: custom:button-card
+          - color: auto
+            color_type: icon
+            entity: null
+            icon: mdi:content-save-all
+            name: Sauvegarder
+            show_icon: true
+            show_label: false
+            show_last_changed: false
+            show_name: true
+            show_state: false
+            tap_action:
+              action: call-service
+              service: mqtt.publish
+              service_data:
+                payload: d
+                topic: volet/cuisine
+              target: {}
+            type: custom:button-card
+  - title: Surveillance
+    path: surveillance
+    icon: mdi:security
+    badges: []
+    cards:
+      - type: alarm-panel
+        states:
+          - arm_home
+          - arm_away
+          - arm_night
+        entity: alarm_control_panel.alarmo
+        name: Alarme
+      - type: vertical-stack
+        cards:
+          - type: custom:button-card
+            entity: switch.eufy_surveillance
+            template:
+              - icon_info_bg
+              - ouverture
+            name: Caméras de surveillance extérieures
+            state:
+              - label: Caméras activées
+                id: vert_off
+                value: 'on'
+              - label: Caméras désactivées
+                id: rouge_on
+                value: 'off'
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: switch.eufy_surveillance
+                name: A la maison
+                icon: mdi:home
+                styles:
+                  card:
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: '#FFFFFF'
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: solid 1px '#f83e43'
+                      icon:
+                        - color: green
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                      icon:
+                        - color: red
+                    id: off-icon
+                tap_action:
+                  action: call-service
+                  service: rest_command.eufy_guard_mode_disarmed
+              - type: custom:button-card
+                entity: switch.eufy_surveillance
+                name: En vadrouille
+                icon: mdi:tree
+                styles:
+                  card:
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: '#FFFFFF'
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: solid 3px '#434343'
+                      icon:
+                        - color: green
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#f83e43'
+                        - box-shadow: none
+                      icon:
+                        - color: red
+                    id: off-icon
+                tap_action:
+                  action: call-service
+                  service: rest_command.eufy_guard_mode_home
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: sensor.camera_jardin_motion_detection
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Caméra jardin
+                state:
+                  - icon: mdi:run
+                    label: Présence détectée
+                    id: rouge_on
+                    value: 'true'
+                  - icon: mdi:run
+                    label: RAS
+                    id: vert_off
+                    value: 'false'
+              - type: custom:button-card
+                entity: sensor.camera_arriere_maison_motion_detection
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Caméra arrière
+                state:
+                  - icon: mdi:run
+                    label: Présence détectée
+                    id: rouge_on
+                    value: 'true'
+                  - icon: mdi:run
+                    label: RAS
+                    id: vert_off
+                    value: 'false'
+          - type: horizontal-stack
+            cards:
+              - type: picture-entity
+                entity: camera.jardin
+              - type: picture-entity
+                entity: camera.arriere_maison
+          - type: horizontal-stack
+            cards:
+              - type: picture-entity
+                entity: camera.netatmo_ma_camera_netatmo_salon
+              - type: picture-entity
+                entity: camera.c1c
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: >-
+                  binary_sensor.door_window_sensor_7_access_control_window_door_is_open
+                template:
+                  - icon_info_bg
+                  - ouverture_fenetre
+                name: Porte fenêtre
+              - type: custom:button-card
+                entity: >-
+                  binary_sensor.door_window_sensor_7_access_control_window_door_is_open_2
+                template:
+                  - icon_info_bg
+                  - ouverture_fenetre
+                name: Salle à manger
+              - type: custom:button-card
+                entity: binary_sensor.porte_descente_garage
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Porte garage
+                state:
+                  - icon: mdi:door-open
+                    label: ouverte
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:door-closed
+                    label: fermée
+                    id: vert_off
+                    value: 'off'
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: binary_sensor.strips_mazw_access_control_window_door_is_open
+                template:
+                  - icon_info_bg
+                  - ouverture_fenetre
+                name: Velux Maxence
+              - type: custom:button-card
+                entity: binary_sensor.strips_mazw_access_control_window_door_is_open
+                template:
+                  - icon_info_bg
+                  - ouverture_fenetre
+                name: Velux Chloé
+              - type: custom:button-card
+                entity: binary_sensor.strips_mazw_access_control_window_door_is_open
+                template:
+                  - icon_info_bg
+                  - ouverture_fenetre
+                name: Velux Parents
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: binary_sensor.multisensor_6_home_security_motion_detection
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Garage
+                state:
+                  - label: Mouvement
+                    id: rouge_on
+                    value: 'on'
+                  - label: RAS
+                    id: vert_off
+                    value: 'off'
+              - type: custom:button-card
+                entity: binary_sensor.presence_31
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Buanderie
+                state:
+                  - label: Mouvement
+                    id: rouge_on
+                    value: 'on'
+                  - label: RAS
+                    id: vert_off
+                    value: 'off'
+              - type: custom:button-card
+                entity: binary_sensor.presence_30
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Bureau
+                state:
+                  - label: Mouvement
+                    id: rouge_on
+                    value: 'on'
+                  - label: RAS
+                    id: vert_off
+                    value: 'off'
+          - type: horizontal-stack
+            cards:
+              - entity: binary_sensor.smoke_detector_smoke_alarm_smoke_detected
+                type: custom:button-card
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Couloir RdC
+                state:
+                  - icon: mdi:fire
+                    label: Incendie
+                    id: rouge_on
+                    value: 'on'
+                  - label: RAS
+                    id: vert_off
+                    value: 'off'
+              - entity: binary_sensor.smoke_detector_smoke_alarm_smoke_detected
+                type: custom:button-card
+                template:
+                  - icon_info_bg
+                  - ouverture
+                name: Palier 1ier étage
+                state:
+                  - icon: mdi:fire
+                    label: Incendie
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:shield-check
+                    label: RAS
+                    id: vert_off
+                    value: 'off'

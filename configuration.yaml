@@ -133,8 +133,8 @@ input_number:
   cout_m3_eau:
     name: Cout €/m3
     icon: mdi:currency-eur
-    initial: 5.4176
-    min: 5.00
+    initial: 4
+    min: 3.00
     max: 10.00
     unit_of_measurement: "€"
     mode: box
@@ -338,7 +338,7 @@ sensor:
              {{ (states("sensor.eau_annee")|float * states.input_number.cout_m3_eau.state|float)|round(2)}}
         unit_of_measurement: "€"
 
-# calcul du nombre de personnes présentes
+# calcul du nombre de portes / fenetres ouvertes
   - platform: template
     sensors:
       number_of_doors_home:
@@ -392,6 +392,26 @@ sensor:
             {% endif %}
           {% endfor %}
           {{ count.value }}
+
+  - platform: template
+    sensors:
+      pluie_semaine_derniere:
+        friendly_name: "pluie semaine derniere"
+        unit_of_measurement: "mm"
+        value_template: >-
+            {{ states.sensor.pluie_semaine.attributes.last_period }}
+
+      pluie_mois_dernier:
+        friendly_name: "pluie mois dernier"
+        unit_of_measurement: "mm"
+        value_template: >-
+            {{ states.sensor.pluie_mois.attributes.last_period }}
+
+      pluie_annee_derniere:
+        friendly_name: "pluie annee derniere"
+        unit_of_measurement: "mm"
+        value_template: >-
+            {{ states.sensor.pluie_annee.attributes.last_period }}
 
 # Informations remontant de HASS
 
@@ -598,10 +618,11 @@ binary_sensor:
     name: "RaspberryPi VPN"
 
 ###################################################################
-########              CALCUL CONSOMMATION EAU             #########
+########                   UTILITY METER                  #########
 ###################################################################
 
 utility_meter:
+######  CALCUL CONSOMMATION EAU  ######
   eau_mois:
     source: sensor.consommation_total
     cycle: monthly
@@ -620,6 +641,22 @@ utility_meter:
     cycle: hourly
   eau_annee:
     source: sensor.consommation_total
+    net_consumption: true
+    cycle: yearly
+
+######   CALCUL PLUIE   ######
+  pluie_semaine:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    net_consumption: true
+    cycle: weekly
+
+  pluie_mois:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    net_consumption: true
+    cycle: monthly
+
+  pluie_annee:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
     net_consumption: true
     cycle: yearly
 
