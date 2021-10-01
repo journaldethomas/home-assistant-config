@@ -58,7 +58,7 @@ vacuum:
     name: dreamed9
 
 ###################################################################
-##########            Les compte-à-rebous            ##############
+##########            Les compte-à-rebours            ##############
 ###################################################################
 
 timer:
@@ -122,7 +122,13 @@ switch:
         turn_on:
           service: rest_command.eufy_guard_mode_home
         turn_off:
-          service: rest_command.eufy_guard_mode_disarmed  
+          service: rest_command.eufy_guard_mode_disarmed
+
+# SwitchBot Bot
+
+  - platform: switchbot
+    mac: "E3:07:07:E3:A8:89"
+    name: cafetiere
 
 ###################################################################
 ##########               Input Number                ##############
@@ -186,6 +192,17 @@ cover:
 ###################################################################
 
 sensor:
+
+# Date au format français
+
+  - platform: template
+    sensors:
+      date_longue: 
+        friendly_name: 'Date'
+        value_template: >
+          {% set months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"] %}
+          {% set month = months[now().strftime('%m') | int -1] %}
+          {{ now().strftime('%d') + ' ' + month }}
 
 # Consommation d'eau via MQTT
 
@@ -511,6 +528,18 @@ sensor:
       all_lights_parents:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_lights_parents','entity_id')) | selectattr('state','eq','on') | list | count }}
+
+  #Waze
+  - platform: waze_travel_time
+    origin: !secret gps_maison
+    destination: !secret gps_travail
+    region: 'EU'
+    name: trajet travail
+  - platform: waze_travel_time
+    origin: device_tracker.thomas
+    destination: !secret gps_maison
+    region: 'EU'
+    name: trajet maison Thomas
 
   # NUC
   - platform: systemmonitor
