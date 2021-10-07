@@ -2,6 +2,25 @@
    ##                    ALL LIGHTS GROUPS                   ##
    ############################################################
 
+  all_lights_maison:
+    name: lumieres maison
+    entities:
+      - light.salle_a_manger_01
+      - light.salle_a_manger_02
+      - light.salle_a_manger_03
+      - light.salle_a_manger_04
+      - light.salle_a_manger_05
+      - light.salle_a_manger_06
+      - light.hue_ambiance_spot_1
+      - light.hue_ambiance_spot_1_2
+      - light.entree
+      - light.salon
+      - light.cuisine
+      - light.lampe_salon      
+      - light.maxence_1
+      - light.maxence_2
+      - light.chloe_1
+      
   all_lights_sam:
     name: Sam
     entities:

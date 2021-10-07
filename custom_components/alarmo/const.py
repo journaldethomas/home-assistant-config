@@ -26,7 +26,7 @@ from homeassistant.components.alarm_control_panel import (
 
 from homeassistant.helpers import config_validation as cv
 
-VERSION = "1.7.2"
+VERSION = "1.7.3"
 NAME = "Alarmo"
 MANUFACTURER = "@nielsfaber"
 
@@ -108,6 +108,8 @@ ATTR_DISARM_AFTER_TRIGGER = "disarm_after_trigger"
 ATTR_REMOVE = "remove"
 ATTR_IS_ADMIN = "is_admin"
 ATTR_IS_OVERRIDE_CODE = "is_override_code"
+ATTR_CODE_FORMAT = "code_format"
+ATTR_CODE_LENGTH = "code_length"
 
 ATTR_AUTOMATION_ID = "automation_id"
 

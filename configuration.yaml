@@ -67,7 +67,7 @@ timer:
   coton40:
     duration: "03:00:00"
   synthetique30:
-    duration: "02:30:00"
+    duration: "02:40:00"
   rapide:
     duration: "00:30:00"
 
@@ -510,6 +510,9 @@ sensor:
 
   - platform: template
     sensors:
+      all_lights_maison:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_maison','entity_id')) | selectattr('state','eq','on') | list | count }}
       all_lights_salon:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_lights_salon','entity_id')) | selectattr('state','eq','on') | list | count }}
@@ -529,7 +532,16 @@ sensor:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_lights_parents','entity_id')) | selectattr('state','eq','on') | list | count }}
 
+  # pour les personnes
+
+  - platform: template
+    sensors:
+      all_person_entities:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_person_entities','entity_id')) | selectattr('state','eq','home') | list | count }}
+
   #Waze
+
   - platform: waze_travel_time
     origin: !secret gps_maison
     destination: !secret gps_travail
@@ -712,7 +724,7 @@ camera:
 #pas encore opérationnel pour le D9
 
 ###################################################################
-########                   CONTROLE                        #########
+########                   CONTROLE                       #########
 ###################################################################
 
 rest_command:
@@ -724,6 +736,13 @@ rest_command:
 #pour activer la surveillance des caméras EUFY
   eufy_guard_mode_disarmed:
     url: !secret eufy_surveillance_desactivation
+
+###################################################################
+########                   SCRIPT                         #########
+###################################################################
+
+shell_command:
+  maj: bash /config/shell/docker-updater.sh
 
 ###################################################################
 ########   Management de Docker et des divers Conteneurs  #########

@@ -33,6 +33,7 @@ from miio.device import DeviceInfo as MiioInfoBase
 from miio.miot_device import MiotDevice as MiotDeviceBase
 
 from .core.const import *
+from .core.utils import async_analytics_track_event
 from .core.miot_spec import (
     MiotSpec,
     MiotService,
@@ -184,6 +185,11 @@ async def async_setup(hass, hass_config: dict):
     await component.async_setup(config)
     await async_setup_component_services(hass)
     bind_services_to_entries(hass, SERVICE_TO_METHOD_BASE)
+
+    if lang := config.get('language'):
+        dic = TRANSLATION_LANGUAGES.get(lang)
+        if isinstance(dic, dict):
+            TRANSLATION_LANGUAGES.update(dic)
 
     if config.get(CONF_USERNAME) and config.get(CONF_PASSWORD):
         try:
@@ -835,10 +841,10 @@ class MiotEntity(MiioEntity):
         self._miot_service = miot_service if isinstance(miot_service, MiotService) else None
         if self._miot_service:
             kwargs['miot_service'] = self._miot_service
-            name = f"{name} {self._miot_service.description}"
+            name = f"{name} {self._miot_service.friendly_desc}"
             if not self._miot_mapping:
                 dic = miot_service.mapping() or {}
-                self._miot_mapping = miot_service.spec.services_mapping() or {}
+                self._miot_mapping = miot_service.spec.services_mapping(excludes=[self._miot_service.name]) or {}
                 self._miot_mapping = {**dic, **self._miot_mapping, **dic}
         super().__init__(name, device, **kwargs)
         self.logger.info('%s: Initializing miot device with mapping: %s', name, self._miot_mapping)
@@ -846,17 +852,14 @@ class MiotEntity(MiioEntity):
             self._unique_id = f'{self._unique_id}-{self._miot_service.iid}'
             self._state_attrs['miot_type'] = self._miot_service.spec.type
             self.entity_id = self._miot_service.generate_entity_id(self)
+        if self._model in MIOT_LOCAL_MODELS:
+            self._vars['track_miot_error'] = True
         self._success_code = 0
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
         if not self._miot_service:
             return
-        dic = self.global_config('translations') or {}
-        lan = self.global_config('language')
-        if lan and isinstance(TRANSLATION_LANGUAGES.get(lan), dict):
-            dic = {**TRANSLATION_LANGUAGES[lan], **dic}
-        self._miot_service.set_translations(dic)
         self._vars['exclude_services'] = self.custom_config_list('exclude_miot_services') or []
 
     @property
@@ -992,7 +995,6 @@ class MiotEntity(MiioEntity):
             self._vars.pop('delay_update', 0)
         updater = 'none'
         results = []
-        rmp = {}
         mmp = self.miot_mapping
         max_properties = 10
         try:
@@ -1011,10 +1013,6 @@ class MiotEntity(MiioEntity):
                         return
             elif self.miot_device:
                 updater = 'lan'
-                for k, v in mmp.items():
-                    s = v.get('siid')
-                    p = v.get('piid')
-                    rmp[f'{s}-{p}'] = k
                 max_properties = self.custom_config_integer('chunk_properties') or max_properties
                 results = await self.hass.async_add_executor_job(
                     partial(
@@ -1032,39 +1030,32 @@ class MiotEntity(MiioEntity):
                 '%s: Got MiioException while fetching the state: %s, mapping: %s, max_properties: %s',
                 self.name, exc, mmp, max_properties,
             )
-            return
         except MiCloudException as exc:
             self._available = False
             self.logger.error(
                 '%s: Got MiCloudException while fetching the state: %s, mapping: %s',
                 self.name, exc, mmp,
             )
-            return
-        if not isinstance(results, list):
-            self.logger.warning(
-                '%s: Got invalid miot result while fetching the state: %s, mapping: %s',
-                self.name, results, mmp,
-            )
-        attrs = {}
-        for prop in results or []:
-            if not isinstance(prop, dict):
-                continue
-            s = prop.get('siid')
-            p = prop.get('piid')
-            k = rmp.get(f'{s}-{p}', prop.get('did'))
-            if k is None:
-                continue
-            e = prop.get('code')
-            ek = f'{k}.error'
-            if e == 0:
-                attrs[k] = prop.get('value')
-                if ek in self._state_attrs:
-                    self._state_attrs.pop(ek, None)
-            else:
-                attrs[ek] = MiotSpec.spec_error(e)
-        self._available = True
-        self._state = True if attrs.get('power') else False
+        results = MiotResults(results or [], mmp)
+        if not results.is_valid:
+            self._available = False
+            if self._vars.get('track_miot_error') and updater == 'lan':
+                await async_analytics_track_event(
+                    self.hass, 'miot', 'error', self._model,
+                    firmware=self.device_info.get('sw_version'),
+                    results=results,
+                )
+                self._vars.pop('track_miot_error', None)
+            if results.is_empty:
+                self.logger.warning(
+                    '%s: Got invalid miot result while fetching the state: %s, mapping: %s',
+                    self.name, results, mmp,
+                )
+            return False
+        attrs = results.to_attributes(self._state_attrs)
         attrs['state_updater'] = updater
+        self._available = True
+        self._state = True if self._state_attrs.get('power') else False
 
         if self._miot_service:
             for d in ['sensor', 'binary_sensor', 'switch', 'number', 'select', 'fan', 'cover']:
@@ -1568,7 +1559,7 @@ class MiotEntity(MiioEntity):
         result = await self.hass.async_add_executor_job(fun)
         persistent_notification.async_create(
             self.hass,
-            json.dumps(result),
+            f'{result}',
             f'Xiaomi Api: {api}',
             f'{DOMAIN}-debug',
         )
@@ -1653,7 +1644,7 @@ class BaseSubEntity(BaseEntity):
 
     def format_name_by_property(self, prop: MiotProperty):
         dnm = self._parent.device_name
-        return f'{dnm} {prop.short_desc}'.strip()
+        return f'{dnm} {prop.friendly_desc}'.strip()
 
     @property
     def state(self):
@@ -1794,13 +1785,45 @@ class BaseSubEntity(BaseEntity):
         return ret
 
 
+class MiotPropertySubEntity(BaseSubEntity):
+    def __init__(self, parent, miot_property: MiotProperty, option=None):
+        self._miot_service = miot_property.service
+        self._miot_property = miot_property
+        super().__init__(parent, miot_property.full_name, option)
+        self._name = self.format_name_by_property(miot_property)
+        if not self._option.get('unique_id'):
+            self._unique_id = f'{parent.unique_did}-{miot_property.unique_name}'
+        self.entity_id = miot_property.generate_entity_id(self)
+
+        if 'icon' not in self._option:
+            self._option['icon'] = miot_property.entity_icon
+        if 'unit' not in self._option:
+            self._option['unit'] = miot_property.unit_of_measurement
+        if 'device_class' not in self._option:
+            self._option['device_class'] = miot_property.device_class
+        self._extra_attrs.update({
+            'service_description': miot_property.service.description,
+            'property_description': miot_property.description,
+        })
+
+    def set_parent_property(self, val, prop=None):
+        if prop is None:
+            prop = self._miot_property
+        ret = self.call_parent('set_miot_property', prop.service.iid, prop.iid, val)
+        if ret and prop.readable:
+            self.update_attrs({
+                prop.full_name: val,
+            })
+        return ret
+
+
 class ToggleSubEntity(BaseSubEntity, ToggleEntity):
     def __init__(self, parent, attr='power', option=None):
         self._prop_power = None
         super().__init__(parent, attr, option)
 
     def update(self, data=None):
-        super().update()
+        super().update(data)
         if self._available:
             attrs = self._state_attrs
             self._state = cv.boolean(attrs.get(self._attr) or False)
