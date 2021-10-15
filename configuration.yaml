@@ -171,14 +171,6 @@ input_number:
   longueur_filament:
    min: 0
    max: 330
-
-  filament_blanc:
-   min: 0
-   max: 330
-
-  filament_blanc_restant:
-   min: 0
-   max: 330
   
   filament_noir:
    min: 0
@@ -187,30 +179,22 @@ input_number:
   filament_noir_restant:
    min: 0
    max: 330
-
-  filament_rouge:
-   min: 0
-   max: 250
-
-  filament_rouge_restant:
-   min: 0
-   max: 250
    
   filament_bleu:
    min: 0
-   max: 166
+   max: 330
 
   filament_bleu_restant:
    min: 0
-   max: 166
+   max: 330
 
   filament_orange:
    min: 0
-   max: 166
+   max: 330
    
   filament_orange_restant:
    min: 0
-   max: 166
+   max: 330
    
   filament_gris:
    min: 0
@@ -219,6 +203,15 @@ input_number:
   filament_gris_restant:
    min: 0
    max: 330
+
+  filament_violet:
+   min: 0
+   max: 330
+
+  filament_violet_restant:
+   min: 0
+   max: 330
+
 
 ###################################################################
 ##########               Les volets                  ##############
