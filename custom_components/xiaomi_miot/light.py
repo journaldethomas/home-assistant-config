@@ -111,12 +111,10 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
         if self._prop_mode:
             self._supported_features |= SUPPORT_EFFECT
 
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
-
     def turn_on(self, **kwargs):
         ret = False
         if not self.is_on:
-            ret = self.set_property(self._prop_power.full_name, True)
+            ret = self.set_property(self._prop_power, True)
 
         if self._prop_brightness and ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
@@ -125,24 +123,24 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
             if self._prop_brightness.value_range:
                 val = per * self._prop_brightness.range_max()
             _LOGGER.debug('Setting light: %s brightness: %s %s%%', self.name, brightness, per * 100)
-            ret = self.set_property(self._prop_brightness.full_name, round(val))
+            ret = self.set_property(self._prop_brightness, round(val))
 
         if self._prop_color_temp and ATTR_COLOR_TEMP in kwargs:
             mired = kwargs[ATTR_COLOR_TEMP]
             color_temp = self.translate_mired(mired)
             _LOGGER.debug('Setting light: %s color temperature: %s mireds, %s ct', self.name, mired, color_temp)
-            ret = self.set_property(self._prop_color_temp.full_name, color_temp)
+            ret = self.set_property(self._prop_color_temp, color_temp)
 
         if self._prop_color and ATTR_HS_COLOR in kwargs:
             rgb = color.color_hs_to_RGB(*kwargs[ATTR_HS_COLOR])
             num = rgb_to_int(rgb)
             _LOGGER.debug('Setting light: %s color: %s', self.name, rgb)
-            ret = self.set_property(self._prop_color.full_name, num)
+            ret = self.set_property(self._prop_color, num)
 
         if self._prop_mode and ATTR_EFFECT in kwargs:
             val = self._prop_mode.list_value(kwargs[ATTR_EFFECT])
             _LOGGER.debug('Setting light: %s effect: %s(%s)', self.name, kwargs[ATTR_EFFECT], val)
-            ret = self.set_property(self._prop_mode.full_name, val)
+            ret = self.set_property(self._prop_mode, val)
 
         return ret
 
@@ -227,7 +225,6 @@ class MiotLightSubEntity(MiotLightEntity, ToggleSubEntity):
         }, miot_service, device=parent.miot_device)
         self.entity_id = miot_service.generate_entity_id(self)
         self._prop_power = prop_power
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
 
     def update(self, data=None):
         super().update(data)

@@ -176,7 +176,6 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
         if miot_service:
             self._prop_motion_tracking = miot_service.get_property('motion_tracking')
             self._is_doorbell = miot_service.name in ['video_doorbell']
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -526,12 +525,12 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
 
     def enable_motion_detection(self):
         if self._prop_motion_tracking:
-            return self.set_property(self._prop_motion_tracking.full_name, True)
+            return self.set_property(self._prop_motion_tracking, True)
         return False
 
     def disable_motion_detection(self):
         if self._prop_motion_tracking:
-            return self.set_property(self._prop_motion_tracking.full_name, False)
+            return self.set_property(self._prop_motion_tracking, False)
         return False
 
 

@@ -71,7 +71,6 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class MiotSwitchEntity(MiotToggleEntity, SwitchEntity):
     def __init__(self, config: dict, miot_service: MiotService):
         super().__init__(miot_service, config=config, logger=_LOGGER)
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
 
     @property
     def device_class(self):
@@ -170,10 +169,10 @@ class MiotSwitchSubEntity(MiotPropertySubEntity, SwitchSubEntity):
         return self.set_parent_property(False)
 
 
-class MiotSwitchActionSubEntity(SwitchSubEntity, MiotPropertySubEntity):
+class MiotSwitchActionSubEntity(MiotPropertySubEntity, SwitchSubEntity):
     def __init__(self, parent, miot_property: MiotProperty, miot_action: MiotAction, option=None):
-        super().__init__(parent, miot_action.full_name, option)
-        MiotPropertySubEntity.__init__(self, parent, miot_property, option)
+        SwitchSubEntity.__init__(self, parent, miot_action.full_name, option)
+        super().__init__(parent, miot_property, option)
         self._miot_action = miot_action
         self._state = False
         if miot_action.name in ['pet_food_out']:
@@ -271,7 +270,6 @@ class MiotPwznRelaySwitchEntity(MiotToggleEntity, SwitchEntity):
         super().__init__(miot_service, config=config, logger=_LOGGER)
         self._prop_status = miot_service.get_property('all_status')
         self._prop_power = self._prop_status
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
 
     @property
     def device_class(self):
@@ -357,7 +355,6 @@ class PwznRelaySwitchEntity(MiioEntity, SwitchEntity):
         self._config = config
         self._device = MiioDevice(host, token)
         super().__init__(name, self._device, logger=_LOGGER)
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
         self._success_result = [0]
 
         self._props = [

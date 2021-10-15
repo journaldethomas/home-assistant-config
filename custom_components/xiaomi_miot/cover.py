@@ -88,7 +88,6 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
         self._motor_reverse = False
         self._open_texts = []
         self._close_texts = []
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -227,7 +226,7 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
         if val is None:
             _LOGGER.error('Motor control value is invalid for %s', self.name)
             return False
-        ret = self.set_property(self._prop_motor_control.full_name, val)
+        ret = self.set_property(self._prop_motor_control, val)
         if ret and self._prop_status:
             self.update_attrs({
                 self._prop_status.full_name: self._prop_status.list_first(*tls)
@@ -243,7 +242,7 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
     def stop_cover(self, **kwargs):
         val = self._prop_motor_control.list_first('Pause', 'Stop')
         val = self.custom_config_integer('stop_cover_value', val)
-        return self.set_property(self._prop_motor_control.full_name, val)
+        return self.set_property(self._prop_motor_control, val)
 
 
 class MiotCoverSubEntity(MiotPropertySubEntity, CoverEntity):
@@ -413,7 +412,6 @@ class MrBondAirerProEntity(MiioCoverEntity):
         super().__init__(name, device=self._device, config=config)
         self._motor_reverse = False
         self._supported_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
         self._props = ['dry', 'led', 'motor', 'drytime', 'airer_location']
         self._vars.update({
             'motor_open': 1,

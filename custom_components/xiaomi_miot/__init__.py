@@ -190,6 +190,9 @@ async def async_setup(hass, hass_config: dict):
         dic = TRANSLATION_LANGUAGES.get(lang)
         if isinstance(dic, dict):
             TRANSLATION_LANGUAGES.update(dic)
+    if dic := config.get('translations') or {}:
+        if isinstance(dic, dict):
+            TRANSLATION_LANGUAGES.update(dic)
 
     if config.get(CONF_USERNAME) and config.get(CONF_PASSWORD):
         try:
@@ -837,29 +840,34 @@ class MiotEntity(MiioEntity):
     def __init__(self, miot_service=None, device=None, **kwargs):
         self._config = dict(kwargs.get('config') or {})
         name = kwargs.get(CONF_NAME) or self._config.get(CONF_NAME) or ''
-        self._miot_mapping = dict(kwargs.get('mapping') or {})
         self._miot_service = miot_service if isinstance(miot_service, MiotService) else None
         if self._miot_service:
+            name = f'{name} {self._miot_service.friendly_desc}'
             kwargs['miot_service'] = self._miot_service
-            name = f"{name} {self._miot_service.friendly_desc}"
+        super().__init__(name, device, **kwargs)
+
+        self._miot_mapping = dict(kwargs.get('mapping') or {})
+        if self._miot_service:
+            if custom := DEVICE_CUSTOMIZES.get(self._model, {}).get('miot_mapping'):
+                miot_service.spec.set_custom_mapping(custom)
             if not self._miot_mapping:
                 dic = miot_service.mapping() or {}
                 self._miot_mapping = miot_service.spec.services_mapping(excludes=[self._miot_service.name]) or {}
                 self._miot_mapping = {**dic, **self._miot_mapping, **dic}
-        super().__init__(name, device, **kwargs)
-        self.logger.info('%s: Initializing miot device with mapping: %s', name, self._miot_mapping)
-        if self._miot_service:
             self._unique_id = f'{self._unique_id}-{self._miot_service.iid}'
             self._state_attrs['miot_type'] = self._miot_service.spec.type
             self.entity_id = self._miot_service.generate_entity_id(self)
         if self._model in MIOT_LOCAL_MODELS:
             self._vars['track_miot_error'] = True
         self._success_code = 0
+        self.logger.info('%s: Initializing miot device with mapping: %s', name, self._miot_mapping)
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
         if not self._miot_service:
             return
+        if dic := self.custom_config_json('miot_mapping'):
+            self._miot_service.spec.set_custom_mapping(dic)
         self._vars['exclude_services'] = self.custom_config_list('exclude_miot_services') or []
 
     @property
@@ -868,7 +876,12 @@ class MiotEntity(MiioEntity):
             host = self._config.get(CONF_HOST) or ''
             token = self._config.get(CONF_TOKEN) or None
             device = None
-            mapping = self.custom_config_json('miot_local_mapping') or self.miot_mapping
+            mapping = self.custom_config_json('miot_local_mapping')
+            if not mapping:
+                mapping = self.miot_mapping
+            elif self._miot_service:
+                self._miot_service.spec.set_custom_mapping(mapping)
+                self._vars['has_local_mapping'] = True
             try:
                 device = MiotDevice(ip=host, token=token, mapping=mapping)
             except TypeError as exc:
@@ -941,11 +954,8 @@ class MiotEntity(MiioEntity):
 
     @property
     def miot_mapping(self):
-        dic = self.custom_config_json('miot_mapping')
         mmp = None
-        if dic:
-            mmp = dic
-        elif self._miot_mapping:
+        if self._miot_mapping:
             mmp = self._miot_mapping
         elif self._device and hasattr(self._device, 'mapping'):
             mmp = self._device.mapping
@@ -1013,6 +1023,8 @@ class MiotEntity(MiioEntity):
                         return
             elif self.miot_device:
                 updater = 'lan'
+                if self._vars.get('has_local_mapping'):
+                    mmp = self._device.mapping
                 max_properties = self.custom_config_integer('chunk_properties') or max_properties
                 results = await self.hass.async_add_executor_job(
                     partial(
@@ -1266,26 +1278,32 @@ class MiotEntity(MiioEntity):
             partial(self.get_properties, mapping, **kwargs)
         )
 
-    def set_property(self, field, value):
-        try:
-            ext = self.miot_mapping.get(field) or {}
-            if ext:
-                result = self.set_miot_property(ext['siid'], ext['piid'], value)
-            else:
-                self.logger.warning('%s: Set miot property %s(%s) failed: property not found', self.name, field, value)
+    def set_property(self, prop, value):
+        if isinstance(prop, MiotProperty):
+            siid = prop.siid
+            piid = prop.iid
+            prop = prop.full_name
+        else:
+            ext = self.miot_mapping.get(prop) or {}
+            if not ext:
+                self.logger.warning('%s: Set miot property %s(%s) failed: property not found', self.name, prop, value)
                 return False
+            siid = ext['siid']
+            piid = ext['piid']
+        try:
+            result = self.set_miot_property(siid, piid, value)
         except (DeviceException, MiCloudException) as exc:
-            self.logger.error('%s: Set miot property %s(%s) failed: %s', self.name, field, value, exc)
+            self.logger.error('%s: Set miot property %s(%s) failed: %s', self.name, prop, value, exc)
             return False
         ret = result.is_success if result else False
         if ret:
-            if field in self._state_attrs:
+            if prop in self._state_attrs:
                 self.update_attrs({
-                    field: value,
+                    prop: value,
                 }, update_parent=False)
-            self.logger.debug('%s: Set miot property %s(%s), result: %s', self.name, field, value, result)
+            self.logger.debug('%s: Set miot property %s(%s), result: %s', self.name, prop, value, result)
         else:
-            self.logger.info('%s: Set miot property %s(%s) failed, result: %s', self.name, field, value, result)
+            self.logger.info('%s: Set miot property %s(%s) failed, result: %s', self.name, prop, value, result)
         return ret
 
     async def async_set_property(self, *args, **kwargs):
@@ -1585,12 +1603,12 @@ class MiotToggleEntity(MiotEntity, ToggleEntity):
 
     def turn_on(self, **kwargs):
         if self._prop_power:
-            return self.set_property(self._prop_power.full_name, True)
+            return self.set_property(self._prop_power, True)
         return False
 
     def turn_off(self, **kwargs):
         if self._prop_power:
-            return self.set_property(self._prop_power.full_name, False)
+            return self.set_property(self._prop_power, False)
         act = self._miot_service.get_action('stop_working', 'power_off')
         if act:
             return self.miot_action(self._miot_service.iid, act.iid)
@@ -1625,6 +1643,7 @@ class BaseSubEntity(BaseEntity):
         self._attr_state_class = self._option.get('state_class')
         self._supported_features = int(self._option.get('supported_features', 0))
         self._extra_attrs = {
+            'entity_class': self.__class__.__name__,
             'parent_entity_id': parent.entity_id,
         }
         self._state_attrs = {}
@@ -1790,7 +1809,9 @@ class MiotPropertySubEntity(BaseSubEntity):
         self._miot_service = miot_property.service
         self._miot_property = miot_property
         super().__init__(parent, miot_property.full_name, option)
-        self._name = self.format_name_by_property(miot_property)
+
+        if not self._option.get('name'):
+            self._name = self.format_name_by_property(miot_property)
         if not self._option.get('unique_id'):
             self._unique_id = f'{parent.unique_did}-{miot_property.unique_name}'
         self.entity_id = miot_property.generate_entity_id(self)

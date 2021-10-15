@@ -84,9 +84,12 @@ class BaseMediaPlayerEntity(MediaPlayerEntity, MiotEntityInterface):
         if self._speaker:
             self._prop_volume = self._speaker.get_property('volume') or self._prop_volume
             self._prop_mute = self._speaker.get_property('mute') or self._prop_mute
+        self._prop_input = None
         self._act_turn_on = None
         self._act_turn_off = None
         for srv in miot_service.spec.services.values():
+            if p := srv.get_property('input_control'):
+                self._prop_input = p
             act = srv.get_action('turn_on')
             if act and not self._act_turn_on:
                 self._act_turn_on = act
@@ -104,6 +107,9 @@ class BaseMediaPlayerEntity(MediaPlayerEntity, MiotEntityInterface):
             self._supported_features |= SUPPORT_NEXT_TRACK
         if miot_service.get_action('stop'):
             self._supported_features |= SUPPORT_STOP
+        if self._prop_input:
+            self._supported_features |= SUPPORT_SELECT_SOURCE
+            self._attr_source_list = self._prop_input.list_descriptions()
         if self._prop_volume:
             self._supported_features |= SUPPORT_VOLUME_SET
         if self._prop_mute:
@@ -143,7 +149,7 @@ class BaseMediaPlayerEntity(MediaPlayerEntity, MiotEntityInterface):
                 if des is not None:
                     return des
         if self.available:
-            return STATE_UNKNOWN
+            return STATE_IDLE
         return STATE_UNAVAILABLE
 
     @property
@@ -223,7 +229,19 @@ class BaseMediaPlayerEntity(MediaPlayerEntity, MiotEntityInterface):
     def play_media(self, media_type, media_id, **kwargs):
         return False
 
+    @property
+    def source(self):
+        """Name of the current input source."""
+        if self._prop_input:
+            val = self._prop_input.from_dict(self._state_attrs)
+            if val is not None:
+                return self._prop_input.list_description(val)
+        return None
+
     def select_source(self, source):
+        val = self._prop_input.list_value(source)
+        if val is not None:
+            return self.set_property(self._prop_input, val)
         return False
 
     def select_sound_mode(self, sound_mode):
@@ -247,7 +265,6 @@ class MiotMediaPlayerEntity(MiotEntity, BaseMediaPlayerEntity):
     def __init__(self, config: dict, miot_service: MiotService):
         super().__init__(miot_service, config=config, logger=_LOGGER)
         BaseMediaPlayerEntity.__init__(self, miot_service)
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
 
         self._intelligent_speaker = miot_service.spec.get_service('intelligent_speaker')
         self._message_router = miot_service.spec.get_service('message_router')
@@ -310,4 +327,3 @@ class MiotMediaPlayerEntity(MiotEntity, BaseMediaPlayerEntity):
 class MiotDoorbellEntity(MiotMediaPlayerEntity):
     def __init__(self, config: dict, miot_service: MiotService):
         super().__init__(config, miot_service)
-        self._state_attrs.update({'entity_class': self.__class__.__name__})

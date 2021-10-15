@@ -50,12 +50,18 @@ influxdb:
   max_retries: 3
   default_measurement: state
 
+# Octoprint - Imprimante 3D - Wanhao D12
+octoprint:
+  host: !secret ip_octoprint
+  api_key: !secret key_octoprint
+  name: wanhaod12
+
 # Aspirateur Dreame D9
-vacuum:
-  - platform: xiaomi_vacuum
-    host: !secret dreamed9_ip
-    token: !secret dreamed9_token
-    name: dreamed9
+#vacuum:
+#  - platform: xiaomi_vacuum
+#    host: !secret dreamed9_ip
+#    token: !secret dreamed9_token
+#    name: dreamed9
 
 ###################################################################
 ##########            Les compte-à-rebours            ##############
@@ -130,6 +136,22 @@ switch:
     mac: "E3:07:07:E3:A8:89"
     name: cafetiere
 
+
+###################################################################
+##########               Input Boolean                ##############
+###################################################################
+
+input_boolean:
+# Input boolean impression 3D
+  nouvelle_impression:
+    name: Nouvelle impression 3D
+    icon: mdi:printer-3D
+    
+# Input boolean reset filament
+  reset_filament:
+    name: Reset Filament
+    icon: mdi:ubisoft
+
 ###################################################################
 ##########               Input Number                ##############
 ###################################################################
@@ -144,6 +166,59 @@ input_number:
     max: 10.00
     unit_of_measurement: "€"
     mode: box
+  
+  ##############  Gestion des filaments dans lovelace    #################
+  longueur_filament:
+   min: 0
+   max: 330
+
+  filament_blanc:
+   min: 0
+   max: 330
+
+  filament_blanc_restant:
+   min: 0
+   max: 330
+  
+  filament_noir:
+   min: 0
+   max: 330
+
+  filament_noir_restant:
+   min: 0
+   max: 330
+
+  filament_rouge:
+   min: 0
+   max: 250
+
+  filament_rouge_restant:
+   min: 0
+   max: 250
+   
+  filament_bleu:
+   min: 0
+   max: 166
+
+  filament_bleu_restant:
+   min: 0
+   max: 166
+
+  filament_orange:
+   min: 0
+   max: 166
+   
+  filament_orange_restant:
+   min: 0
+   max: 166
+   
+  filament_gris:
+   min: 0
+   max: 330
+
+  filament_gris_restant:
+   min: 0
+   max: 330
 
 ###################################################################
 ##########               Les volets                  ##############
@@ -204,6 +279,16 @@ sensor:
           {% set month = months[now().strftime('%m') | int -1] %}
           {{ now().strftime('%d') + ' ' + month }}
 
+# Imprimante 3D
+
+  - platform: mqtt
+    name: "Longueur Filament"
+    state_topic: "octoPrint/hass/printing"
+    value_template: "{{ ((value_json.job.filament.tool0.length)|float * 0.001)|round(2) }}"
+    json_attributes_topic: "octoPrint/hass/printing"
+    json_attributes_template: "{{ value_json.job.filament.tool0 | tojson }}"
+    unit_of_measurement: "m"
+    
 # Consommation d'eau via MQTT
 
   - platform: mqtt

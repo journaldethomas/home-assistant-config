@@ -74,8 +74,6 @@ class MiotHumidifierEntity(MiotToggleEntity, HumidifierEntity):
             self._humidifier_mode = self._mode_props[0]
             self._supported_features = SUPPORT_MODES
 
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
-
     async def async_update(self):
         await super().async_update()
         if not self._available:
@@ -120,7 +118,7 @@ class MiotHumidifierEntity(MiotToggleEntity, HumidifierEntity):
                     num = n
         if num is None:
             return False
-        return self._device.set_property(self._prop_target_humi.full_name, num)
+        return self.set_property(self._prop_target_humi, num)
 
     @property
     def min_humidity(self):
@@ -168,4 +166,4 @@ class MiotHumidifierEntity(MiotToggleEntity, HumidifierEntity):
         val = self._humidifier_mode.list_value(mode)
         if val is None:
             return False
-        return self.set_property(self._humidifier_mode.full_name, val)
+        return self.set_property(self._humidifier_mode, val)
