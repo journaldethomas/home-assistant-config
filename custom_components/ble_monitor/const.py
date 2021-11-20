@@ -5,11 +5,11 @@ from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_LIGHT,
+    DEVICE_CLASS_LOCK,
     DEVICE_CLASS_MOISTURE,
     DEVICE_CLASS_MOTION,
     DEVICE_CLASS_OPENING,
     DEVICE_CLASS_SMOKE,
-    DEVICE_CLASS_LOCK,
     BinarySensorEntityDescription,
 )
 from homeassistant.components.sensor import (
@@ -17,6 +17,8 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.const import (
+    CONDUCTIVITY,
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
@@ -26,10 +28,9 @@ from homeassistant.const import (
     DEVICE_CLASS_SIGNAL_STRENGTH,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
-    CONDUCTIVITY,
-    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     ELECTRIC_POTENTIAL_VOLT,
     ENERGY_KILO_WATT_HOUR,
+    ENTITY_CATEGORY_DIAGNOSTIC,
     LIGHT_LUX,
     MASS_KILOGRAMS,
     PERCENTAGE,
@@ -54,7 +55,7 @@ CONF_BT_INTERFACE = "bt_interface"
 CONF_BATT_ENTITIES = "batt_entities"
 CONF_REPORT_UNKNOWN = "report_unknown"
 CONF_RESTORE_STATE = "restore_state"
-CONF_ENCRYPTION_KEY = "encryption_key"
+CONF_DEVICE_ENCRYPTION_KEY = "encryption_key"
 CONF_DEVICE_DECIMALS = "decimals"
 CONF_DEVICE_USE_MEDIAN = "use_median"
 CONF_DEVICE_RESTORE_STATE = "restore_state"
@@ -74,9 +75,11 @@ DEFAULT_LOG_SPIKES = False
 DEFAULT_USE_MEDIAN = False
 DEFAULT_ACTIVE_SCAN = False
 DEFAULT_BATT_ENTITIES = True
-DEFAULT_REPORT_UNKNOWN = False
+DEFAULT_REPORT_UNKNOWN = "Off"
 DEFAULT_DISCOVERY = True
 DEFAULT_RESTORE_STATE = False
+DEFAULT_DEVICE_MAC = ""
+DEFAULT_DEVICE_ENCRYPTION_KEY = ""
 DEFAULT_DEVICE_DECIMALS = "default"
 DEFAULT_DEVICE_USE_MEDIAN = "default"
 DEFAULT_DEVICE_RESTORE_STATE = "default"
@@ -313,6 +316,16 @@ SENSOR_TYPES: tuple[BLEMonitorSensorEntityDescription, ...] = (
         state_class=STATE_CLASS_MEASUREMENT,
     ),
     BLEMonitorSensorEntityDescription(
+        key="dewpoint",
+        sensor_class="MeasuringSensor",
+        name="ble dewpoint",
+        unique_id="d_",
+        icon="mdi:water",
+        native_unit_of_measurement=TEMP_CELSIUS,
+        device_class=DEVICE_CLASS_TEMPERATURE,
+        state_class=STATE_CLASS_MEASUREMENT,
+    ),
+    BLEMonitorSensorEntityDescription(
         key="rssi",
         sensor_class="MeasuringSensor",
         name="ble rssi",
@@ -320,7 +333,7 @@ SENSOR_TYPES: tuple[BLEMonitorSensorEntityDescription, ...] = (
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         device_class=DEVICE_CLASS_SIGNAL_STRENGTH,
         state_class=STATE_CLASS_MEASUREMENT,
-        entity_registry_enabled_default=False,
+        entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
     ),
     BLEMonitorSensorEntityDescription(
         key="battery",
@@ -330,6 +343,7 @@ SENSOR_TYPES: tuple[BLEMonitorSensorEntityDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         device_class=DEVICE_CLASS_BATTERY,
         state_class=STATE_CLASS_MEASUREMENT,
+        entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
     ),
     BLEMonitorSensorEntityDescription(
         key="voltage",
@@ -339,6 +353,7 @@ SENSOR_TYPES: tuple[BLEMonitorSensorEntityDescription, ...] = (
         native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
         device_class=DEVICE_CLASS_VOLTAGE,
         state_class=STATE_CLASS_MEASUREMENT,
+        entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
     ),
     BLEMonitorSensorEntityDescription(
         key="consumable",
@@ -560,6 +575,7 @@ MEASUREMENT_DICT = {
     'LYWSDCGQ'                : [["temperature", "humidity", "battery", "rssi"], [], []],
     'LYWSD02'                 : [["temperature", "humidity", "battery", "rssi"], [], []],
     'LYWSD03MMC'              : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
+    'XMWSDJ04MMC'             : [["temperature", "humidity", "battery", "rssi"], [], []],
     'HHCCJCY01'               : [["temperature", "moisture", "conductivity", "illuminance", "rssi"], [], []],
     'GCLS002'                 : [["temperature", "moisture", "conductivity", "illuminance", "rssi"], [], []],
     'HHCCPOT002'              : [["moisture", "conductivity", "rssi"], [], []],
@@ -600,6 +616,7 @@ MEASUREMENT_DICT = {
     'ATC'                     : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
     'Mi Scale V1'             : [["rssi"], ["weight", "non-stabilized weight"], ["weight removed"]],
     'Mi Scale V2'             : [["rssi"], ["weight", "non-stabilized weight", "impedance"], ["weight removed"]],
+    'TZC4'                    : [["rssi"], ["weight", "non-stabilized weight", "impedance"], []],
     'Kegtron KT-100'          : [["rssi"], ["volume dispensed port 1"], []],
     'Kegtron KT-200'          : [["rssi"], ["volume dispensed port 1", "volume dispensed port 2"], []],
     'Smart hygrometer'        : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
@@ -619,6 +636,8 @@ MEASUREMENT_DICT = {
     'HTP.xw'                  : [["temperature", "humidity", "pressure", "rssi"], [], []],
     'HT.w'                    : [["temperature", "humidity", "pressure", "rssi"], [], []],
     'Moat S2'                 : [["temperature", "humidity", "battery", "rssi"], [], []],
+    'Tempo Disc THD'          : [["temperature", "humidity", "dewpoint", "battery", "rssi"], [], []],
+    'Tempo Disc THPD'         : [["temperature", "humidity", "pressure", "battery", "rssi"], [], []],
 }
 
 KETTLES = ('YM-K1501', 'YM-K1501EU', 'V-SK152')
@@ -628,6 +647,7 @@ MANUFACTURER_DICT = {
     'LYWSDCGQ'                : 'Xiaomi',
     'LYWSD02'                 : 'Xiaomi',
     'LYWSD03MMC'              : 'Xiaomi',
+    'XMWSDJ04MMC'             : 'Xiaomi',
     'HHCCJCY01'               : 'Xiaomi',
     'GCLS002'                 : 'Xiaomi',
     'HHCCPOT002'              : 'Xiaomi',
@@ -668,6 +688,7 @@ MANUFACTURER_DICT = {
     'ATC'                     : 'ATC',
     'Mi Scale V1'             : 'Xiaomi',
     'Mi Scale V2'             : 'Xiaomi',
+    'TZC4'                    : 'Xiaogui',
     'Kegtron KT-100'          : 'Kegtron',
     'Kegtron KT-200'          : 'Kegtron',
     'Smart hygrometer'        : 'Thermoplus',
@@ -687,9 +708,33 @@ MANUFACTURER_DICT = {
     'HTP.xw'                  : 'SensorPush',
     'HT.w'                    : 'SensorPush',
     'Moat S2'                 : 'Moat',
+    'Tempo Disc THD'          : 'BlueMaestro',
+    'Tempo Disc THPD'         : 'BlueMaestro',
 }
 
 # Renamed model dictionary
 RENAMED_MODEL_DICT = {
     'H5051/H5074': 'H5074'
 }
+
+# Selection list for report_uknown
+REPORT_UNKNOWN_LIST = [
+    "ATC",
+    "BlueMaestro",
+    "Brifit",
+    "Govee",
+    "iNode",
+    "Kegtron",
+    "Mi Scale",
+    "Moat",
+    "Qingping",
+    "Ruuvitag",
+    "SensorPush",
+    "Teltonika",
+    "Thermoplus",
+    "Xiaogui",
+    "Xiaomi",
+    "Other",
+    "Off",
+    False,
+]

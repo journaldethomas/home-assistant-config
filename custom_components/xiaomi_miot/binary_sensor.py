@@ -52,7 +52,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     miot = config.get('miot_type')
     if miot:
         spec = await MiotSpec.async_from_type(hass, miot)
-        for srv in spec.get_services('toilet', 'motion_sensor', 'magnet_sensor', 'submersion_sensor'):
+        for srv in spec.get_services('toilet', 'seat', 'motion_sensor', 'magnet_sensor', 'submersion_sensor'):
             if spec.get_service('nobody_time'):
                 # lumi.motion.agl02
                 # lumi.motion.agl04
@@ -62,6 +62,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             elif not srv.mapping():
                 continue
             if srv.name in ['toilet']:
+                entities.append(MiotToiletEntity(config, srv))
+            elif srv.name in ['seat'] and spec.name in ['toilet']:
+                # tinymu.toiletlid.v1
                 entities.append(MiotToiletEntity(config, srv))
             elif 'blt.' in did:
                 entities.append(BleBinarySensorEntity(config, srv))
@@ -232,6 +235,7 @@ class BleBinarySensorEntity(MiotBinarySensorEntity):
 
             # https://iot.mi.com/new/doc/embedded-development/ble/object-definition#%E5%85%89%E7%85%A7%E5%BC%BA%E5%BC%B1%E5%B1%9E%E6%80%A7
             elif k == 'prop.4120':
+                adt['light_strong'] = not not val
                 vlk = 'illumination_level'
                 val = 'strong' if val else 'weak'
                 if self._prop_illumination and self._prop_illumination.value_list:
@@ -280,6 +284,12 @@ class MiotToiletEntity(MiotBinarySensorEntity):
             prop = seat.get_property('heat_level')
             if prop:
                 pls.append(prop)
+            else:
+                self._update_sub_entities(
+                    ['heating', 'deodorization'],
+                    [seat.name],
+                    domain='switch',
+                )
         for p in pls:
             if not p.value_list and not p.value_range:
                 continue

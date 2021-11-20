@@ -94,10 +94,6 @@ class BaseCameraEntity(Camera):
     def brand(self):
         return self.device_info.get('manufacturer')
 
-    @property
-    def miot_cloud(self):
-        return MiotCloud(self.hass, '', '')
-
     async def image_source(self, **kwargs):
         raise NotImplementedError()
 
@@ -244,14 +240,42 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
             add_cameras([self._motion_entity])
 
         adt = None
+        lag = locale.getdefaultlocale()[0]
+        stm = int(time.time() - 86400 * 7) * 1000
+        etm = int(time.time() * 1000 + 999)
         if not self._motion_enable and not self._motion_entity:
             pass
         elif 'motion_video_latest' in self._state_attrs:
             adt = {
                 'motion_video_updated': 1,
             }
+        elif not (mic := self.xiaomi_cloud):
+            pass
+        elif self.custom_config_bool('use_alarm_playlist'):
+            api = mic.get_api_by_host('business.smartcamera.api.io.mi.com', 'miot/camera/app/v1/alarm/playlist/limit')
+            rqd = {
+                'did': self.miot_did,
+                'region': str(mic.default_server).upper(),
+                'language': lag,
+                'beginTime': stm,
+                'endTime': etm,
+                'limit': 2,
+            }
+            rdt = await self.hass.async_add_executor_job(
+                partial(mic.request_miot_api, api, rqd, method='GET', crypt=True)
+            ) or {}
+            rls = rdt.get('data', {}).get('playUnits') or []
+            if rls:
+                fst = rls[0] or {}
+                tim = fst.pop('createTime', 0) / 1000
+                adt = {
+                    'motion_video_time': f'{datetime.fromtimestamp(tim)}',
+                    'motion_video_type': ','.join(fst.get('tags') or []),
+                    'motion_video_latest': fst,
+                }
+            else:
+                _LOGGER.warning('%s: camera alarm playlist is empty. %s', self.name, rdt)
         else:
-            mic = self.miot_cloud
             api = mic.get_api_by_host('business.smartcamera.api.io.mi.com', 'common/app/get/eventlist')
             rqd = {
                 'did': self.miot_did,
@@ -261,9 +285,9 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 'needMerge': True,
                 'sortType': 'DESC',
                 'region': str(mic.default_server).upper(),
-                'language': locale.getdefaultlocale()[0],
-                'beginTime': int(time.time() - 86400 * 7) * 1000,
-                'endTime': int(time.time() * 1000 + 999),
+                'language': lag,
+                'beginTime': stm,
+                'endTime': etm,
                 'limit': 2,
             }
             rdt = await self.hass.async_add_executor_job(
@@ -330,7 +354,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 vap = self._srv_stream.get_property('video_attribute')
                 if vav is None and vap and vap.value_list:
                     vav = (vap.value_list.pop(0) or {}).get('value')
-                if self.miot_cloud:
+                if self.xiaomi_cloud:
                     if self._act_stop_stream:
                         self.miot_action(
                             self._srv_stream.iid,
@@ -414,7 +438,10 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
         }
 
     def get_motion_stream_address(self, **kwargs):
-        mic = self.miot_cloud
+        mic = self.xiaomi_cloud
+        if not mic:
+            _LOGGER.info('%s: camera does not have cloud.', self.name)
+            return None
         mvd = self._state_attrs.get('motion_video_latest') or {}
         fid = mvd.get('fileId')
         if not fid:
@@ -435,7 +462,10 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
         return url
 
     def get_motion_video_address(self, **kwargs):
-        mic = self.miot_cloud
+        mic = self.xiaomi_cloud
+        if not mic:
+            _LOGGER.info('%s: camera does not have cloud.', self.name)
+            return None
         mvd = self._state_attrs.get('motion_video_latest') or {}
         fid = mvd.get('fileId')
         vid = mvd.get('videoStoreId')
@@ -464,7 +494,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 except (TypeError, ValueError):
                     pass
         if kwargs.get('crypto'):
-            key = base64.b64decode(self.miot_cloud.ssecurity).hex()
+            key = base64.b64decode(mic.ssecurity).hex()
             url = f'-decryption_key {key} -decryption_iv {self._segment_iv_hex} -i "crypto+{url}"'
         return url
 
@@ -493,7 +523,10 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
         return mp4
 
     def get_motion_image_address(self, **kwargs):
-        mic = self.miot_cloud
+        mic = self.xiaomi_cloud
+        if not mic:
+            _LOGGER.info('%s: camera does not have cloud.', self.name)
+            return None
         mvd = self._state_attrs.get('motion_video_latest') or {}
         fid = mvd.get('fileId')
         iid = mvd.get('imgStoreId')
@@ -513,7 +546,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
         _LOGGER.debug('%s: Got image url: %s', self.name, url)
 
         if kwargs.get('crypto'):
-            key = base64.b64decode(self.miot_cloud.ssecurity).hex()
+            key = base64.b64decode(mic.ssecurity).hex()
             url = f'-decryption_key {key} -decryption_iv {self._segment_iv_hex} -i "crypto+{url}"'
         return url
 

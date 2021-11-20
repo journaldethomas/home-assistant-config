@@ -60,6 +60,11 @@
     entities:
       - light.chloe_1
 
+  all_lights_entree:
+    name: Entree
+    entities:  
+      - light.entree_2
+
 ############################################################
 ##                     SECURITY GROUPS                    ##
 ############################################################
@@ -83,8 +88,10 @@
       - binary_sensor.door_window_sensor_7_access_control_window_door_is_open
       - binary_sensor.strips_mazw_access_control_window_door_is_open
       - binary_sensor.door_window_sensor_7_access_control_window_door_is_open_2
+      - binary_sensor.velux_chloe_access_control_window_door_is_open_2
 
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
     entities:
       - binary_sensor.smoke_detector_smoke_alarm_smoke_detected
+      - binary_sensor.smoke_detector_smoke_alarm_smoke_detected_2

@@ -8,7 +8,8 @@ homeassistant:
   internal_url: !secret homeassistant_interne
   allowlist_external_dirs:
     - /config
-
+  customize: !include customize.yaml
+  
 http:
   use_x_forwarded_for: true
   trusted_proxies:
@@ -37,9 +38,6 @@ netatmo:
   client_id: !secret netatmo_id
   client_secret: !secret netatmo_secret
 
-# Mise en place du serveur MQTT
-# Supprimé du fichier de configuration pour une utilisation directement via Intégrations
-
 # InfluxDB
 influxdb:
   host: !secret ip_influxdb
@@ -55,13 +53,6 @@ octoprint:
   host: !secret ip_octoprint
   api_key: !secret key_octoprint
   name: wanhaod12
-
-# Aspirateur Dreame D9
-#vacuum:
-#  - platform: xiaomi_vacuum
-#    host: !secret dreamed9_ip
-#    token: !secret dreamed9_token
-#    name: dreamed9
 
 ###################################################################
 ##########            Les compte-à-rebours            ##############
@@ -129,14 +120,7 @@ switch:
           service: rest_command.eufy_guard_mode_home
         turn_off:
           service: rest_command.eufy_guard_mode_disarmed
-
-# SwitchBot Bot
-
-  - platform: switchbot
-    mac: "E3:07:07:E3:A8:89"
-    name: cafetiere
-
-
+    
 ###################################################################
 ##########               Input Boolean                ##############
 ###################################################################
@@ -145,6 +129,11 @@ input_boolean:
 # Input boolean impression 3D
   nouvelle_impression:
     name: Nouvelle impression 3D
+    icon: mdi:printer-3D
+
+# Input boolean impression 3D
+  arret_imprimante:
+    name: Arret de l'imprimante
     icon: mdi:printer-3D
     
 # Input boolean reset filament
@@ -168,6 +157,10 @@ input_number:
     mode: box
   
   ##############  Gestion des filaments dans lovelace    #################
+  longueur_filament_totale:
+   min: 0
+   max: 330
+
   longueur_filament:
    min: 0
    max: 330
@@ -212,6 +205,21 @@ input_number:
    min: 0
    max: 330
 
+  filament_blanc:
+   min: 0
+   max: 330
+
+  filament_blanc_restant:
+   min: 0
+   max: 330
+
+  filament_vert:
+   min: 0
+   max: 330
+
+  filament_vert_restant:
+   min: 0
+   max: 330
 
 ###################################################################
 ##########               Les volets                  ##############
@@ -281,7 +289,15 @@ sensor:
     json_attributes_topic: "octoPrint/hass/printing"
     json_attributes_template: "{{ value_json.job.filament.tool0 | tojson }}"
     unit_of_measurement: "m"
-    
+
+  - platform: template
+    sensors:
+      quantite_filament_imprime:
+        friendly_name: "quantité de filament total imprimé"
+        unit_of_measurement: "m"
+        value_template: >-
+            {{ states.sensor.quantite_filament_imprime | float + states('input_number.longueur_filament')|float  }}
+
 # Consommation d'eau via MQTT
 
   - platform: mqtt
@@ -609,6 +625,9 @@ sensor:
       all_lights_parents:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_lights_parents','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_entree:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_entree','entity_id')) | selectattr('state','eq','on') | list | count }}
 
   # pour les personnes
 
@@ -721,6 +740,79 @@ sensor:
     resource: !secret eufy_jardin_mouvement
     scan_interval: 10
 
+  # ZIGBEE2MQTT DEPUIS MAISON DE FAMILLE
+
+  - platform: mqtt
+    name: "disponibilité"
+    state_topic: "paradis/bridge/state"
+
+  - platform: mqtt
+    name: "temperature exterieur"
+    state_topic: "paradis/capteur_exterieur/temperature"
+
+  - platform: mqtt
+    name: "humidite exterieur"
+    state_topic: "paradis/capteur_exterieur/humidite"
+
+  - platform: mqtt
+    state_topic: "paradis/raspberrypi/cpuload"
+    name: rpi cpu load
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/raspberrypi/cputemp"
+    name: rpi cpu temp
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "paradis/raspberrypi/diskusage"
+    name: rpi diskusage
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/raspberrypi/swap"
+    name: rpi swap
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/raspberrypi/memory"
+    name: rpi memory
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/raspberrypi/uptime_days"
+    name: rpi uptime
+    unit_of_measurement: "days"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_chambre_parents"
+    name: "temperature parents"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_chambre_parents"
+    name: "humidite parents"
+    value_template: "{{ value_json['humidity']|round(0)}}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_chambre_enfants"
+    name: "temperature enfants"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_chambre_enfants"
+    name: "humidite enfants"
+    value_template: "{{ value_json['humidity']|round(0)}}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/detecteur_porte_garage"
+    name: "detecteur porte garage"
+    value_template: "{{ value_json['contact']}}"
+
 ###################################################################
 ########                   BINARY SENSOR                  #########
 ###################################################################
@@ -732,9 +824,10 @@ binary_sensor:
     host: !secret rasp_eau
     name: "RaspberryPi Eau"
 
+  #TEST BONNE REPONSE RASPBERRYPI OCTOPRINT
   - platform: ping
     host: !secret rasp_vpn
-    name: "RaspberryPi VPN"
+    name: "OCTOPRINT"
 
 ###################################################################
 ########                   UTILITY METER                  #########
@@ -837,7 +930,7 @@ monitor_docker:
       - zwavejs2mqtt
       - deconz
       - adguardhome
-      - homeassistant_prod
+      - homeassistant
       - influxdb
       - mqtt
       - 'node-red'
@@ -845,7 +938,6 @@ monitor_docker:
       - iobroker
       - bitwarden
       - heimdall
-      - homeassistant_qualif
     rename:
       appdaemon: AppDaemon
       deconz: DeCONZ

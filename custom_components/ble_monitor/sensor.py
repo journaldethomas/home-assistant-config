@@ -110,9 +110,12 @@ class BLEupdater:
         batt = {}  # batteries
         rssi = {}  # rssi
         ble_adv_cnt = 0
-        ts_last = dt_util.now()
-        ts_now = ts_last
-        ts_start = ts_last
+
+        ts_now = dt_util.now()
+        ts_restart = ts_now
+        ts_last_update = ts_now
+        period_cnt = 0
+
         data = None
         await asyncio.sleep(0)
 
@@ -189,12 +192,12 @@ class BLEupdater:
                 for measurement in device_sensors:
                     if measurement in data:
                         entity = sensors[device_sensors.index(measurement)]
-                        entity.collect(data, batt_attr)
+                        entity.collect(data, period_cnt, batt_attr)
                         if (
                             measurement in instant_sensors
-                            or ts_now - ts_start < timedelta(seconds=self.period)
+                            or ts_now - ts_restart < timedelta(seconds=self.period)
                         ):
-                            # instant measurements are updated instantly
+                            # instant measurements and measurements in the first period are updated instantly
                             if entity.pending_update is True:
                                 if entity.ready_for_update is True:
                                     entity.rssi_values = rssi[mac].copy()
@@ -202,12 +205,13 @@ class BLEupdater:
                                     entity.pending_update = False
                 data = None
             ts_now = dt_util.now()
-            if ts_now - ts_last < timedelta(seconds=self.period):
+            if ts_now - ts_last_update < timedelta(seconds=self.period):
                 continue
-            ts_last = ts_now
+            ts_last_update = ts_now
+            period_cnt += 1
             # restarting scanner
             self.monitor.restart()
-            # for every updated device
+            # updating the state for every updated measureing device
             for mac, elist in sensors_by_mac.items():
                 for entity in elist:
                     if entity.pending_update is True:
@@ -241,6 +245,7 @@ class BaseSensor(RestoreEntity, SensorEntity):
     # |  |**conductivity
     # |  |**illuminance
     # |  |**formaldehyde
+    # |  |**dewpoint
     # |  |**rssi
     # |  |--BatterySensor (Class)
     # |  |  |**battery
@@ -473,12 +478,14 @@ class MeasuringSensor(BaseSensor):
         self._rdecimals = self._device_settings["decimals"]
         self._jagged = False
         self._use_median = self._device_settings["use median"]
+        self._period_cnt = 0
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
             return
+        self._period_cnt = period_cnt
         self._measurements.append(data[self.entity_description.key])
         self._extra_state_attributes["sensor type"] = data["type"]
         self._extra_state_attributes["last packet id"] = data["packet"]
@@ -506,12 +513,13 @@ class MeasuringSensor(BaseSensor):
                 textattr = "last mean of"
                 self._state = state_mean
             self._extra_state_attributes[textattr] = len(measurements)
-            self._measurements.clear()
             self._extra_state_attributes["median"] = state_median
             self._extra_state_attributes["mean"] = state_mean
             if self.entity_description.key != "rssi":
                 self._extra_state_attributes["rssi"] = round(sts.mean(self.rssi_values))
-            self.rssi_values.clear()
+            if self._period_cnt >= 1:
+                self._measurements.clear()
+                self.rssi_values.clear()
         except (AttributeError, AssertionError):
             _LOGGER.debug(
                 "Sensor %s not yet ready for update", self.entity_description.name
@@ -559,11 +567,12 @@ class TemperatureSensor(MeasuringSensor):
                     break
         return temp
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
             return
+        self._period_cnt = period_cnt
         if (
             not self._lower_temp_limit
             <= data[self.entity_description.key]
@@ -599,11 +608,12 @@ class HumiditySensor(MeasuringSensor):
                 if self._device_firmware[0:6] == "Xiaomi":
                     self._jagged = True
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
             return
+        self._period_cnt = period_cnt
         if not CONF_HMIN <= data[self.entity_description.key] <= CONF_HMAX:
             if self._log_spikes:
                 _LOGGER.error(
@@ -632,11 +642,12 @@ class BatterySensor(MeasuringSensor):
         """Initialize the sensor."""
         super().__init__(config, mac, devtype, firmware, description)
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Battery measurements collector."""
         if self.enabled is False:
             self.pending_update = False
             return
+        self._period_cnt = period_cnt
         self._state = data[self.entity_description.key]
         self._extra_state_attributes["sensor type"] = data["type"]
         self._extra_state_attributes["last packet id"] = data["packet"]
@@ -658,7 +669,7 @@ class InstantUpdateSensor(BaseSensor):
         super().__init__(config, mac, devtype, firmware, description)
         self._reset_timer = self._device_settings["reset timer"]
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -685,7 +696,7 @@ class AccelerationSensor(InstantUpdateSensor):
         """Initialize the sensor."""
         super().__init__(config, mac, devtype, firmware, description)
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -709,7 +720,7 @@ class WeightSensor(InstantUpdateSensor):
         """Initialize the sensor."""
         super().__init__(config, mac, devtype, firmware, description)
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -719,9 +730,10 @@ class WeightSensor(InstantUpdateSensor):
         self._extra_state_attributes["firmware"] = data["firmware"]
         if self.entity_description.key == "non-stabilized weight":
             self._extra_state_attributes["stabilized"] = bool(data["stabilized"])
-            self._extra_state_attributes["weight removed"] = bool(
-                data["weight removed"]
-            )
+            if "weight removed" in data:
+                self._extra_state_attributes["weight removed"] = bool(
+                    data["weight removed"]
+                )
         if "weight unit" in data:
             self._attr_native_unit_of_measurement = data["weight unit"]
         else:
@@ -739,7 +751,7 @@ class EnergySensor(InstantUpdateSensor):
         super().__init__(config, mac, devtype, firmware, description)
         self._rdecimals = self._device_settings["decimals"]
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -771,7 +783,7 @@ class PowerSensor(InstantUpdateSensor):
         super().__init__(config, mac, devtype, firmware, description)
         self._rdecimals = self._device_settings["decimals"]
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -800,7 +812,7 @@ class ButtonSensor(InstantUpdateSensor):
         """Initialize the sensor."""
         super().__init__(config, mac, devtype, firmware, description)
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurement collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -836,7 +848,7 @@ class DimmerSensor(InstantUpdateSensor):
         self._button = "button"
         self._dimmer = self.entity_description.key
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -874,7 +886,7 @@ class SwitchSensor(InstantUpdateSensor):
         self._button_switch = "button switch"
         self._button = self.entity_description.key
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -915,7 +927,7 @@ class BaseRemoteSensor(InstantUpdateSensor):
         self._button = "button"
         self._remote = self.entity_description.key
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False
@@ -951,7 +963,7 @@ class VolumeDispensedSensor(InstantUpdateSensor):
         """Initialize the sensor."""
         super().__init__(config, mac, devtype, firmware, description)
 
-    def collect(self, data, batt_attr=None):
+    def collect(self, data, period_cnt, batt_attr=None):
         """Measurements collector."""
         if self.enabled is False:
             self.pending_update = False

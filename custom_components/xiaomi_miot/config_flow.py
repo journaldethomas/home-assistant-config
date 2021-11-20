@@ -34,7 +34,8 @@ DEFAULT_INTERVAL = 30
 
 # 0.1 support multiple integration to add the same device
 # 0.2 new entity id format (model_mac[-4:]_suffix)
-ENTRY_VERSION = 0.2
+# 0.3 washer modes via select
+ENTRY_VERSION = 0.3
 
 CLOUD_SERVERS = {
     'cn': 'China',
@@ -164,9 +165,14 @@ async def get_cloud_filter_schema(hass, user_input, errors, schema=None, via_did
             fl = f'{f}_list'
             lst = vls.get(f, {})
             lst = dict(sorted(lst.items()))
+            ols = [
+                v
+                for v in user_input.get(fl, [])
+                if v in lst
+            ]
             schema = schema.extend({
-                vol.Optional(fk, default=user_input.get(fk, 'exclude')): vol.In(ies),
-                vol.Optional(fl, default=user_input.get(fl, [])): cv.multi_select(lst),
+                vol.Required(fk, default=user_input.get(fk, 'exclude')): vol.In(ies),
+                vol.Optional(fl, default=ols): cv.multi_select(lst),
             })
         hass.data[DOMAIN]['prev_input'] = user_input
     return schema
@@ -182,15 +188,18 @@ class XiaomiMiotFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             user_input = {}
         else:
             action = user_input.get('action')
-            if action == 'cloud':
+            if action in ['account', 'cloud']:
                 return await self.async_step_cloud()
             else:
                 return await self.async_step_token()
+        prev_action = user_input.get('action', 'account')
+        if prev_action == 'cloud':
+            prev_action = 'account'
         return self.async_show_form(
             step_id='user',
             data_schema=vol.Schema({
-                vol.Required('action', default=user_input.get('action', 'cloud')): vol.In({
-                    'cloud': 'Add devices using Mi Account (账号集成)',
+                vol.Required('action', default=prev_action): vol.In({
+                    'account': 'Add devices using Mi Account (账号集成)',
                     'token': 'Add device using host/token (局域网集成)',
                 }),
             }),
@@ -232,7 +241,7 @@ class XiaomiMiotFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             user_input = {}
         else:
-            await check_xiaomi_account(self.hass, user_input, errors)
+            await check_xiaomi_account(self.hass, user_input, errors, renew_devices=True)
             if not errors:
                 return await self.async_step_cloud_filter(user_input)
         return self.async_show_form(

@@ -1,0 +1,12 @@
+  sensor.rpi_cpu_load:
+    friendly_name: rpi cpu load
+    icon: mdi:chip
+  sensor.rpi_diskusage:
+    friendly_name: rpi diskusage
+    icon: mdi:harddisk
+  sensor.rpi_cpu_temp:
+    friendly_name: rpi cpu temperature
+  sensor.rpi_swap:
+    icon: mdi:folder-swap
+  sensor.rpi_memory:
+    icon: mdi:memory
