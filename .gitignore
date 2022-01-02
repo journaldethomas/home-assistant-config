@@ -13,6 +13,7 @@ scripts
 ._*
 *.backup
 __pycache__
+export-lovelace.yaml_*
 
 # Specific file ignores
 secrets.yaml
