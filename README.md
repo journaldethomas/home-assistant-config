@@ -2,7 +2,7 @@
 Il s'agit de ma configuration [Home Assistant](https://home-assistant.io) tournant sur un petit serveur NUC sous Ubuntu 20.04 LTS.
 Si cela vous intéresse et si vous voulez suivre l'évolution de mon installation n'oubliez pas de cliquer sur ⭐️ .
 
-Dans un premier temps l'idée est de proposer un tableau de bord utilisé principalement sur un ordinateur car c'est à patir de mon ordinateur que je mets tout en place. Après ce tableau de bord sera adapté pour être plus agréable à utiliser sur un smartphone ou encore sur une tablette qui pourra être au coeur de la maison et à partir de laquelle il sera possible de tout controller.
+Dans un premier temps l'idée est de proposer un tableau de bord utilisé principalement sur un ordinateur car c'est à partir de mon ordinateur que je mets tout en place. Après ce tableau de bord sera adapté pour être plus agréable à utiliser sur un smartphone ou encore sur une tablette qui pourra être au coeur de la maison et à partir de laquelle il sera possible de tout controller.
 
 Mon tableau de bord s'articule donc autour de plusieurs vues : un tableau principal où j'ai placé les informations qui sont primordiales pour la famille et les quelques actions que l'on fait quotidiennement ou presque.
 
@@ -26,25 +26,25 @@ Ca arrive au fur et à mesure. Je suis entrain de mettre en ligne les différent
 ### Et à propos de mon installation ?
 
 Voici une partie de mon matériel :
-Clé USB Conbee II Zigbee
-Clé USB Aeotec Z-Wave Plus Z-Stick Gen5
-Phillips Hue avec pont et Ligthstrip, spots GU10 x4, ampoules E27 x6
-Ikea Tradfri spots GU10 x4
+Clé USB Conbee II pour me passer de la plupart des passerelles Zigbee;
+Clé USB Aeotec Z-Wave Plus Z-Stick Gen5 pour centraliser tous les équipements Z-Wave;
+Phillips Hue avec pont et Ligthstrip, spots GU10 x4, ampoules E27 x6;
+Ikea Tradfri spots GU10 x4;
 Station météo NetAtmo avec pluviomètre
 Capteurs température Aqara x4
-Détecteurs mouvement Aqara
-Détecteurs de mouvement Aeotec x2
-Détecteurs ouverture porte Aqara
-Détecteurs ouverture porte Aeotec x2
-Prise connectées Osram x3
-Robot aspirateur Dreame D9
-Détecteur de fumée Fibaro x2
+Détecteurs mouvement Aqara;
+Détecteurs de mouvement Aeotec x2;
+Détecteurs ouverture porte Aqara;
+Détecteurs ouverture porte Aeotec x2;
+Prise connectées Osram x3;
+Robot aspirateur Dreame D9;
+Détecteur de fumée Fibaro x2.
 
 Et pour la partie plus « IT » :
-Un rack 15U dans le garage
-UniFi UDM Pro
-Switch D-Link 24
-Access Point UniFi AC-Lite
-NUC Intel NUC8i3BEH 16GB
-NAS Synology DS418j
-Onduleur Eaton Ellipse Pro 650
+Un rack 15U dans le garage;
+UniFi UDM Pro;
+Switch D-Link 24 que je pense remplacer par un switch Unifi prochainement;
+Access Point UniFi AC-Lite;
+NUC Intel NUC8i3BEH 16GB;
+NAS Synology DS418j;
+Onduleur Eaton Ellipse Pro 650.
