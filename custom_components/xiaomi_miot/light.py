@@ -105,11 +105,21 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
         if self._prop_color_temp:
             self._supported_features |= SUPPORT_COLOR_TEMP
             self._attr_supported_color_modes.add(COLOR_MODE_COLOR_TEMP)
+            self._vars['color_temp_min'] = self._prop_color_temp.range_min() or 3000
+            self._vars['color_temp_max'] = self._prop_color_temp.range_max() or 5700
+            self._attr_min_mireds = self.translate_mired(self._vars['color_temp_max'])
+            self._attr_max_mireds = self.translate_mired(self._vars['color_temp_min'])
+            self._vars['color_temp_sum'] = self._vars['color_temp_min'] + self._vars['color_temp_max']
+            self._vars['mireds_sum'] = self._attr_min_mireds + self._attr_max_mireds
         if self._prop_color:
             self._supported_features |= SUPPORT_COLOR
             self._attr_supported_color_modes.add(COLOR_MODE_HS)
         if self._prop_mode:
             self._supported_features |= SUPPORT_EFFECT
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        self._vars['color_temp_reverse'] = self.custom_config_bool('color_temp_reverse')
 
     def turn_on(self, **kwargs):
         ret = False
@@ -123,11 +133,13 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
             if self._prop_brightness.value_range:
                 val = per * self._prop_brightness.range_max()
             _LOGGER.debug('Setting light: %s brightness: %s %s%%', self.name, brightness, per * 100)
-            ret = self.set_property(self._prop_brightness, round(val))
+            ret = self.set_property(self._prop_brightness, int(val))
 
         if self._prop_color_temp and ATTR_COLOR_TEMP in kwargs:
             mired = kwargs[ATTR_COLOR_TEMP]
             color_temp = self.translate_mired(mired)
+            if self._vars.get('color_temp_reverse'):
+                color_temp = self._vars.get('color_temp_sum') - color_temp
             _LOGGER.debug('Setting light: %s color temperature: %s mireds, %s ct', self.name, mired, color_temp)
             ret = self.set_property(self._prop_color_temp, color_temp)
 
@@ -169,7 +181,7 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
     def rgb_color(self):
         """Return the rgb color value [int, int, int]."""
         if self._prop_color:
-            num = round(self._prop_color.from_dict(self._state_attrs) or 0)
+            num = int(self._prop_color.from_dict(self._state_attrs) or 0)
             return int_to_rgb(num)
         return None
 
@@ -177,19 +189,10 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
     def color_temp(self):
         if not self._prop_color_temp:
             return None
-        return self.translate_mired(self._prop_color_temp.from_dict(self._state_attrs) or 2700)
-
-    @property
-    def min_mireds(self):
-        if not self._prop_color_temp:
-            return None
-        return self.translate_mired(self._prop_color_temp.value_range[1] or 5700)
-
-    @property
-    def max_mireds(self):
-        if not self._prop_color_temp:
-            return None
-        return self.translate_mired(self._prop_color_temp.value_range[0] or 2700)
+        num = self._prop_color_temp.from_dict(self._state_attrs) or 3000
+        if self._vars.get('color_temp_reverse'):
+            num = self._vars.get('color_temp_sum') - num
+        return self.translate_mired(num)
 
     @staticmethod
     def translate_mired(num):
@@ -214,10 +217,23 @@ class MiotLightEntity(MiotToggleEntity, LightEntity):
 
 
 class MiotLightSubEntity(MiotLightEntity, ToggleSubEntity):
-    def __init__(self, parent, miot_service: MiotService):
+    def __init__(self, parent, miot_service: MiotService, option=None):
+        parent_power = None
         prop_power = miot_service.get_property('on')
-        ToggleSubEntity.__init__(self, parent, prop_power.full_name, {
-            'keys': list((miot_service.mapping() or {}).keys()),
+        if prop_power:
+            attr = prop_power.full_name
+        else:
+            attr = miot_service.desc_name
+            for s in miot_service.spec.services.values():
+                if p := s.get_property('on'):
+                    parent_power = p
+                    break
+        keys = list((miot_service.mapping() or {}).keys())
+        if parent_power:
+            keys.append(parent_power.full_name)
+        ToggleSubEntity.__init__(self, parent, attr, {
+            **(option or {}),
+            'keys': keys,
         })
         MiotLightEntity.__init__(self, {
             **parent.miot_config,
@@ -225,6 +241,9 @@ class MiotLightSubEntity(MiotLightEntity, ToggleSubEntity):
         }, miot_service, device=parent.miot_device)
         self.entity_id = miot_service.generate_entity_id(self)
         self._prop_power = prop_power
+        if parent_power:
+            self._prop_power = parent_power
+            self._available = True
 
     def update(self, data=None):
         super().update(data)
@@ -233,6 +252,9 @@ class MiotLightSubEntity(MiotLightEntity, ToggleSubEntity):
 
     async def async_update(self):
         await self.hass.async_add_executor_job(partial(self.update))
+
+    def set_property(self, field, value):
+        return self.set_parent_property(value, field)
 
 
 class LightSubEntity(ToggleSubEntity, LightEntity):

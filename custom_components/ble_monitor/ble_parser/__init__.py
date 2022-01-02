@@ -5,10 +5,12 @@ from .atc import parse_atc
 from .bluemaestro import parse_bluemaestro
 from .brifit import parse_brifit
 from .govee import parse_govee
+from .inkbird import parse_inkbird
+from .inode import parse_inode
 from .kegtron import parse_kegtron
 from .miscale import parse_miscale
-from .inode import parse_inode
 from .moat import parse_moat
+from .oral_b import parse_oral_b
 from .qingping import parse_qingping
 from .ruuvitag import parse_ruuvitag
 from .sensorpush import parse_sensorpush
@@ -16,6 +18,7 @@ from .teltonika import parse_teltonika
 from .thermoplus import parse_thermoplus
 from .xiaomi import parse_xiaomi
 from .xiaogui import parse_xiaogui
+from .bparasite import parse_bparasite
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,8 +87,11 @@ class BleParser:
                     if uuid16 == 0xFFF9 or uuid16 == 0xFDCD:  # UUID16 = Cleargrass or Qingping
                         sensor_data = parse_qingping(self, adstruct, mac, rssi)
                         break
-                    elif uuid16 == 0x181A:  # UUID16 = ATC
-                        sensor_data = parse_atc(self, adstruct, mac, rssi)
+                    elif uuid16 == 0x181A:  # UUID16 = ATC or b-parasite
+                        if len(adstruct) == 22 or len(adstruct) == 20:
+                            sensor_data = parse_bparasite(self, adstruct, mac, rssi)
+                        else:
+                            sensor_data = parse_atc(self, adstruct, mac, rssi)
                         break
                     elif uuid16 == 0xFE95:  # UUID16 = Xiaomi
                         sensor_data = parse_xiaomi(self, adstruct, mac, rssi)
@@ -138,7 +144,13 @@ class BleParser:
                     elif adstruct[0] == 0x14 and (comp_id == 0xaa55):  # Brifit
                         sensor_data = parse_brifit(self, adstruct, mac, rssi)
                         break
+                    if adstruct[0] == 0x0F and comp_id == 0x0000:  # Inkbird
+                        sensor_data = parse_inkbird(self, adstruct, mac, rssi)
+                        break
                     elif adstruct[0] == 0x0E and adstruct[3] == 0x82:  # iNode
+                        sensor_data = parse_inode(self, adstruct, mac, rssi)
+                        break
+                    elif adstruct[0] == 0x19 and adstruct[3] in [0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x9A, 0x9B, 0x9C, 0x9D]:  # iNode Care Sensors
                         sensor_data = parse_inode(self, adstruct, mac, rssi)
                         break
                     elif adstruct[0] == 0x15 and comp_id == 0x1000:  # Moat S2
@@ -149,6 +161,9 @@ class BleParser:
                         break
                     elif adstruct[0] == 0x10 and adstruct[2] == 0xC0:  # Xiaogui Scale
                         sensor_data = parse_xiaogui(self, adstruct, mac, rssi)
+                        break
+                    elif adstruct[0] == 0x0E and comp_id == 0x00DC:  # Oral-b
+                        sensor_data = parse_oral_b(self, adstruct, mac, rssi)
                         break
                     else:
                         if self.report_unknown == "Other":

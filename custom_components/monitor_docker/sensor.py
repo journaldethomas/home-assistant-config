@@ -19,6 +19,7 @@ from .const import (
     ATTR_VERSION_OS_TYPE,
     CONFIG,
     CONF_CONTAINERS,
+    CONF_CONTAINERS_EXCLUDE,
     CONF_PREFIX,
     CONF_RENAME,
     CONF_SENSORNAME,
@@ -83,7 +84,15 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             config[CONF_MONITORED_CONDITIONS].remove(CONTAINER_INFO_STATE)
 
     for cname in clist:
+
+        includeContainer = False
         if cname in config[CONF_CONTAINERS] or not config[CONF_CONTAINERS]:
+            includeContainer = True
+
+        if config[CONF_CONTAINERS_EXCLUDE] and cname in config[CONF_CONTAINERS_EXCLUDE]:
+            includeContainer = False
+
+        if includeContainer:
             # Try to figure out if we should include any network sensors
             capi = api.get_container(cname)
             info = capi.get_info()
@@ -176,6 +185,7 @@ class DockerSensor(Entity):
 
         self._state = None
         self._attributes = {}
+        self._removed = False
 
         _LOGGER.info(
             "[%s]: Initializing Docker sensor '%s'", self._instance, self._var_id
@@ -227,7 +237,7 @@ class DockerSensor(Entity):
             self._state = info.get(self._var_id)
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes."""
         return self._attributes
 
@@ -238,11 +248,16 @@ class DockerSensor(Entity):
     def event_callback(self, remove=False):
         """Callback to remove Docker entity."""
 
+        # If already called before, do not remove it again
+        if self._removed:
+            return
+
         if remove:
             _LOGGER.info(
                 "[%s]: Removing sensor entity: %s", self._instance, self._var_id
             )
             self._loop.create_task(self.async_remove())
+            self._removed = True
             return
 
 
@@ -302,6 +317,7 @@ class DockerContainerSensor(Entity):
         self._state_extra = None
 
         self._attributes = {}
+        self._removed = False
 
         _LOGGER.info(
             "[%s] %s: Initializing sensor with parameter: %s",
@@ -356,7 +372,7 @@ class DockerContainerSensor(Entity):
         return self._var_unit
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes."""
         return self._attributes
 
@@ -371,6 +387,10 @@ class DockerContainerSensor(Entity):
         """Callback for update of container information."""
 
         if remove:
+            # If already called before, do not remove it again
+            if self._removed:
+                return
+
             _LOGGER.info(
                 "[%s] %s: Removing sensor entity: %s",
                 self._instance,
@@ -378,6 +398,7 @@ class DockerContainerSensor(Entity):
                 self._var_id,
             )
             self._loop.create_task(self.async_remove())
+            self._removed = True
             return
 
         state = None

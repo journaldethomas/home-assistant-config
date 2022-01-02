@@ -10,3 +10,11 @@
     icon: mdi:folder-swap
   sensor.rpi_memory:
     icon: mdi:memory
+  climate.netatmo_piece_de_vie:
+    hvac_modes:
+      - 'off'
+      - 'auto'
+    preset_modes:
+      - away
+      - boost
+      - Schedule

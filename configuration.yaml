@@ -49,10 +49,10 @@ influxdb:
   default_measurement: state
 
 # Octoprint - Imprimante 3D - Wanhao D12
-octoprint:
-  host: !secret ip_octoprint
-  api_key: !secret key_octoprint
-  name: wanhaod12
+#octoprint:
+#  host: !secret ip_octoprint
+#  api_key: !secret key_octoprint
+#  name: wanhaod12
 
 ###################################################################
 ##########            Les compte-à-rebours            ##############
@@ -86,10 +86,10 @@ light:
   - platform: group
     name: Parents
     entities:
-      - light.hue_ambiance_spot_1
-      - light.hue_ambiance_spot_1_2
-      - light.entree
-      - light.salon
+      - light.chambre_parentale_1
+      - light.chambre_parentale_2
+      - light.chambre_parentale_3
+      - light.chambre_parentale_4
 
   - platform: group
     name: Maxence
@@ -140,6 +140,15 @@ input_boolean:
   reset_filament:
     name: Reset Filament
     icon: mdi:ubisoft
+
+# pour activer ou non les alertes au paradis
+  alarme_activation:
+    name: Activer alarme paradis
+    icon: mdi:alarm-light
+
+  notification_connexion_distante:
+    name: notification mqtt distant
+    icon: mdi:alarm-light
 
 ###################################################################
 ##########               Input Number                ##############
@@ -280,6 +289,192 @@ sensor:
           {% set month = months[now().strftime('%m') | int -1] %}
           {{ now().strftime('%d') + ' ' + month }}
 
+# Pour la carte chauffage
+
+      netatmo_temperature_courante:
+        friendly_name: Température Entrée
+        device_class: temperature
+        unit_of_measurement: "°C"
+        value_template: "{{ state_attr('climate.piece_de_vie', 'current_temperature') }}"
+
+      netatmo_temperature_consigne:
+        friendly_name: température consigne Entrée
+        device_class: temperature
+        #unit_of_measurement: '°C'
+        value_template: "{{ state_attr('climate.piece_de_vie', 'temperature') }}"
+
+      netatmo_hvac_action:
+        friendly_name: Hvac action Entrée
+        #device_class: battery
+        #unit_of_measurement: '%'
+        value_template: "{{ state_attr('climate.piece_de_vie', 'hvac_action') }}"
+
+      netatmo_hvac_modes:
+        friendly_name: Hvac modes Entrée
+        #device_class: battery
+        #unit_of_measurement: '%'
+        value_template: "{{ state_attr('climate.piece_de_vie', 'hvac_modes') }}"
+
+      netatmo_preset_mode:
+        friendly_name: Preset mode Entrée
+        #device_class: battery
+        #unit_of_measurement: '%'
+        value_template: "{{ state_attr('climate.piece_de_vie', 'preset_mode') }}"
+
+# Unifi controller
+
+  - platform: unifigateway
+    version: UDMP-unifiOS
+    host: !secret unifi_host
+    username: !secret unifi_username
+    password: !secret unifi_password
+    monitored_conditions:
+      - www
+      - wlan
+      - lan
+      - wan
+      - alerts
+      - firmware
+
+  - platform: command_line
+    command: 'python3 scripts/unifi_switch.py'
+    command_timeout: 60
+    name: unifi_switch
+    value_template: '{{ value_json.Ports_used }}'
+    unit_of_measurement: Clients
+    scan_interval: 120
+    json_attributes:
+        - Model
+        - Temp
+        - Activity
+        - CPU
+        - RAM  
+        - Uptime
+        - Ports_used      
+        - Ports_user
+        - Ports_guest
+        - Update
+  - platform: template
+    sensors:  
+      unifi_switch_temp:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.Temp }}
+          friendly_name_template: Switch Temp
+          unit_of_measurement: '℃'
+      unifi_switch_activity:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.Activity }}
+          unit_of_measurement: 'Mbps'
+          friendly_name_template: Switch       
+      unifi_switch_ram:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.RAM }}
+          unit_of_measurement: '%'
+          friendly_name_template: Switch RAM
+      unifi_switch_cpu:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.CPU }}
+          unit_of_measurement: '%'
+          friendly_name_template: Switch CPU   
+      unifi_switch_model:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.Model  }}
+          friendly_name_template: Model
+      unifi_switch_users:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.Ports_user }}
+          friendly_name_template: Users
+      unifi_switch_guests:
+          value_template: >
+              {{ states.sensor.unifi_switch.attributes.Ports_guest }}
+          friendly_name_template: Guest
+      unifi_switch_update:
+          value_template: >
+              {% if is_state_attr('sensor.unifi_switch', 'Update' , false) %}
+                No
+              {% else %}
+                Available
+              {% endif %}
+          friendly_name_template: Switch Updates
+
+  - platform: command_line
+    command: 'python3 scripts/unifi_ap.py'
+    command_timeout: 60
+    name: unifi_ap
+    value_template: '{{ value_json.Clients }}'
+    unit_of_measurement: Clients
+    scan_interval: 120
+    json_attributes:
+        - Guests
+        - Clients_wifi0
+        - Clients_wifi1
+        - Score  
+        - CPU
+        - RAM
+        - Uptime
+        - Score_wifi0
+        - Score_wifi1
+        - Activity
+        - Update
+
+  - platform: template
+    sensors:  
+      unifi_ap_guests:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.Guests }}
+          friendly_name_template: Unifi AP Guests    
+      unifi_ap_activity:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.Activity }}
+          unit_of_measurement: 'Mbps'
+          friendly_name_template: Unifi AP Activity      
+      unifi_ap_ram:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.RAM }}
+          unit_of_measurement: '%'
+          friendly_name_template: Unifi AP RAM    
+      unifi_ap_cpu:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.CPU }}
+          unit_of_measurement: '%'
+          friendly_name_template: Unifi AP CPU
+      unifi_ap_score:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.Score }}
+          friendly_name_template: Unifi AP SCORE
+      unifi_ap2_score:
+          value_template: >
+              {% if is_state_attr('sensor.unifi_ap', 'Score_wifi0' , -1) %}
+                N/A
+              {% else %}
+                {{ states.sensor.unifi_ap.attributes.Score_wifi0 }}.
+              {% endif %}
+          friendly_name_template: Unifi AP 2.4gHz SCORE
+      unifi_ap5_score:
+          value_template: >
+              {% if is_state_attr('sensor.unifi_ap_', 'Score_wifi1' , -1) %}
+                N/A
+              {% else %}
+                {{ states.sensor.unifi_ap.attributes.Score_wifi1 }}.
+              {% endif %}
+          friendly_name_template: Unifi AP 5gHz SCORE
+      unifi_ap_wifi_devices:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.Clients_wifi0 }}
+          friendly_name_template: Unifi AP 2.4gHz Clients
+      unifi_ap5ghz_wifi_devices:
+          value_template: >
+              {{ states.sensor.unifi_ap.attributes.Clients_wifi1 }}
+          friendly_name_template: Unifi AP 5gHz Clients
+      unifi_ap_update:
+          value_template: >
+              {% if is_state_attr('sensor.unifi_ap', 'Update' , false) %}
+                No
+              {% else %}
+                Available
+              {% endif %}
+          friendly_name_template: Unifi AP Updates
+      
 # Imprimante 3D
 
   - platform: mqtt
@@ -628,6 +823,50 @@ sensor:
       all_lights_entree:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_lights_entree','entity_id')) | selectattr('state','eq','on') | list | count }}
+  
+  # compter toutes les lumières connectées de la maison
+
+      all_lights_unavailable:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_maison','entity_id')) | selectattr('state','eq','unavailable') | list | count }}
+      all_lights:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_maison','entity_id')) | list | count }}
+      all_lights_available:
+        value_template: >
+          {% set t = states | selectattr('entity_id','in',state_attr('group.all_lights_maison','entity_id')) | selectattr('state','eq','unavailable') | list | count %}
+          {% set y = states | selectattr('entity_id','in',state_attr('group.all_lights_maison','entity_id')) | list | count %}
+          {{ (y - t) }}
+
+  # compter tous les capteurs de température
+      all_temp:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_temp_maison','entity_id')) | list | count }}
+      all_temp_available:
+        value_template: >
+          {% set t = states | selectattr('entity_id','in',state_attr('group.all_temp_maison','entity_id')) | selectattr('state','eq','unavailable') | list | count %}
+          {% set y = states | selectattr('entity_id','in',state_attr('group.all_temp_maison','entity_id')) | list | count %}
+          {{ (y - t) }}
+
+  # compter tous les capteurs de mouvement
+      all_move:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_motion_sensor_entities','entity_id')) | list | count }}
+      all_move_available:
+        value_template: >
+          {% set t = states | selectattr('entity_id','in',state_attr('group.all_motion_sensor_entities','entity_id')) | selectattr('state','eq','unavailable') | list | count %}
+          {% set y = states | selectattr('entity_id','in',state_attr('group.all_motion_sensor_entities','entity_id')) | list | count %}
+          {{ (y - t) }}
+
+  # compter tous les capteurs d'ouverture / fermeture de porte
+      all_door:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_doors_sensor_entities','entity_id')) | list | count }}
+      all_door_available:
+        value_template: >
+          {% set t = states | selectattr('entity_id','in',state_attr('group.all_doors_sensor_entities','entity_id')) | selectattr('state','eq','unavailable') | list | count %}
+          {% set y = states | selectattr('entity_id','in',state_attr('group.all_doors_sensor_entities','entity_id')) | list | count %}
+          {{ (y - t) }}
 
   # pour les personnes
 
@@ -636,19 +875,6 @@ sensor:
       all_person_entities:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_person_entities','entity_id')) | selectattr('state','eq','home') | list | count }}
-
-  #Waze
-
-  - platform: waze_travel_time
-    origin: !secret gps_maison
-    destination: !secret gps_travail
-    region: 'EU'
-    name: trajet travail
-  - platform: waze_travel_time
-    origin: device_tracker.thomas
-    destination: !secret gps_maison
-    region: 'EU'
-    name: trajet maison Thomas
 
   # NUC
   - platform: systemmonitor
@@ -740,6 +966,36 @@ sensor:
     resource: !secret eufy_jardin_mouvement
     scan_interval: 10
 
+  # CAPTEURS SWITCHBOT
+
+  # Thermometre
+  - platform: rest
+    name: temperature baie technique
+    resource: !secret switchbot_temp_baie_url
+    method: GET
+    scan_interval: 300
+    headers:
+      Authorization: !secret switchbot_api
+      Content-Type: 'application/json'
+    value_template: '{{ value_json.body.temperature }}'
+    json_attributes_path: "$.body"
+    json_attributes:
+      - humidity
+
+  # Capteur de porte
+  - platform: rest
+    name: porte descente garage
+    resource: !secret switchbot_porte_garage_url
+    method: GET
+    scan_interval: 300
+    headers:
+      Authorization: !secret switchbot_api
+      Content-Type: 'application/json'
+    value_template: '{{ value_json.body.openState }}'
+    json_attributes_path: "$.body"
+    json_attributes:
+      - moveDetected
+
   # ZIGBEE2MQTT DEPUIS MAISON DE FAMILLE
 
   - platform: mqtt
@@ -812,6 +1068,35 @@ sensor:
     state_topic: "paradis/detecteur_porte_garage"
     name: "detecteur porte garage"
     value_template: "{{ value_json['contact']}}"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_piece_de_vie"
+    name: "temperature salon"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_piece_de_vie"
+    name: "humidite salon"
+    value_template: "{{ value_json['humidity']|round(0)}}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/capteur_piece_de_vie"
+    name: "batterie salon"
+    value_template: "{{ value_json['battery']|round(0)}}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "paradis/presence_piece_de_vie"
+    name: "presence salon"
+    value_template: "{{ value_json['occupancy']}}"
+
+  - platform: mqtt
+    state_topic: "paradis/presence_piece_de_vie"
+    name: "batterie presence salon"
+    value_template: "{{ value_json['battery']}}"
+
 
 ###################################################################
 ########                   BINARY SENSOR                  #########

@@ -22,6 +22,7 @@ from . import (
     MiotEntity,
     async_setup_config_entry,
     bind_services_to_entries,
+    TRANSLATION_LANGUAGES,
 )
 from .core.miot_spec import (
     MiotSpec,
@@ -56,6 +57,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             'xiaomi.wifispeaker.l05c',
             'xiaomi.wifispeaker.lx5a',
             'xiaomi.wifispeaker.lx06',
+            'lumi.acpartner.mcn04',
         ]:
             entities.append(MiotRemoteEntity(config, spec))
     for entity in entities:
@@ -72,6 +74,11 @@ class MiotRemoteEntity(MiotEntity, RemoteEntity):
         token = config.get(CONF_TOKEN)
         self._device = ChuangmiIr(host, token)
         self._attr_should_poll = False
+        self._translations = {
+            **TRANSLATION_LANGUAGES,
+            **(TRANSLATION_LANGUAGES.get('_globals', {})),
+            **(TRANSLATION_LANGUAGES.get('ir_devices', {})),
+        }
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -84,9 +91,7 @@ class MiotRemoteEntity(MiotEntity, RemoteEntity):
                 if did != d.get('parent_id'):
                     continue
                 ird = d.get('did')
-                rdt = await self.hass.async_add_executor_job(
-                    partial(mic.request_miot_api, 'v2/irdevice/controller/keys', {'did': ird})
-                ) or {}
+                rdt = await mic.async_request_api('v2/irdevice/controller/keys', {'did': ird}) or {}
                 kys = (rdt.get('result') or {}).get('keys', {})
                 irs.append({
                     'did': ird,
@@ -98,17 +103,20 @@ class MiotRemoteEntity(MiotEntity, RemoteEntity):
                     self.logger.info('%s: IR device %s(%s) have no keys: %s', self.name, ird, d.get('name'), rdt)
                 elif add_selects and ird not in self._subs:
                     from .select import SelectSubEntity
-                    ols = [
-                        k.get('display_name') or k.get('name')
-                        for k in kys
-                    ]
+                    ols = []
+                    for k in kys:
+                        nam = k.get('display_name') or k.get('name')
+                        if not nam:
+                            continue
+                        nam = self._translations.get(nam, nam)
+                        ols.append(nam)
                     self._subs[ird] = SelectSubEntity(self, ird, option={
                         'name': d.get('name'),
                         'entity_id': f'remote_{ird}'.replace('.', '_'),
                         'options': ols,
                         'select_option': self.press_ir_key,
                     })
-                    add_selects([self._subs[ird]])
+                    add_selects([self._subs[ird]], update_before_add=False)
         if irs:
             self._state_attrs['ir_devices'] = irs
 
@@ -162,7 +170,13 @@ class MiotRemoteEntity(MiotEntity, RemoteEntity):
 
     def learn_command(self, **kwargs):
         """Learn a command from a device."""
-        raise NotImplementedError()
+        try:
+            key = int(kwargs.get(remote.ATTR_DEVICE))
+            return self._device.learn(key)
+        except (TypeError, ValueError, DeviceException) as exc:
+            self.logger.warning('%s: Learn command failed: %s, the device ID is used to store command '
+                                'and must between 1 and 1000000.', self.name, exc)
+        return False
 
     def delete_command(self, **kwargs):
         """Delete commands from the database."""
@@ -175,7 +189,11 @@ class MiotRemoteEntity(MiotEntity, RemoteEntity):
             if did and did != d.get('did'):
                 continue
             for k in d.get('keys', []):
-                if select not in [k.get('display_name'), k.get('name')]:
+                if select not in [
+                    k.get('display_name'),
+                    k.get('name'),
+                    self._translations.get(k.get('display_name') or k.get('name')),
+                ]:
                     continue
                 key = k.get('id')
         if key:

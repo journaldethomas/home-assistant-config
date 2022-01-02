@@ -14,6 +14,7 @@ from .const import (
     ATTR_NAME,
     ATTR_SERVER,
     CONF_CONTAINERS,
+    CONF_CONTAINERS_EXCLUDE,
     CONF_PREFIX,
     CONF_RENAME,
     CONF_SWITCHENABLED,
@@ -98,7 +99,15 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         clist = api.list_containers()
 
     for cname in clist:
+
+        includeContainer = False
         if cname in config[CONF_CONTAINERS] or not config[CONF_CONTAINERS]:
+            includeContainer = True
+
+        if config[CONF_CONTAINERS_EXCLUDE] and cname in config[CONF_CONTAINERS_EXCLUDE]:
+            includeContainer = False
+
+        if includeContainer:
             _LOGGER.debug("[%s] %s: Adding component Switch", instance, cname)
 
             switches.append(
@@ -140,6 +149,7 @@ class DockerContainerSwitch(SwitchEntity):
             slugify(self._prefix + "_" + self._cname)
         )
         self._name = name_format.format(name=alias)
+        self._removed = False
 
     @property
     def entity_id(self):
@@ -160,7 +170,7 @@ class DockerContainerSwitch(SwitchEntity):
         return "mdi:docker"
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         return {}
 
     @property
@@ -188,8 +198,13 @@ class DockerContainerSwitch(SwitchEntity):
         """Callback for update of container information."""
 
         if remove:
+            # If already called before, do not remove it again
+            if self._removed:
+                return
+
             _LOGGER.info("[%s] %s: Removing switch entity", self._instance, self._cname)
             self._loop.create_task(self.async_remove())
+            self._removed = True
             return
 
         state = None

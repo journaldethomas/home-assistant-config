@@ -4,6 +4,7 @@
 home-assistant*
 deps
 core
+scripts
 
 # Generic ignores
 *.log

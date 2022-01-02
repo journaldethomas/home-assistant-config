@@ -11,15 +11,17 @@
       - light.salle_a_manger_04
       - light.salle_a_manger_05
       - light.salle_a_manger_06
-      - light.hue_ambiance_spot_1
-      - light.hue_ambiance_spot_1_2
-      - light.entree
-      - light.salon
-      - light.cuisine
-      - light.lampe_salon      
+      - light.chambre_parentale_1
+      - light.chambre_parentale_2
+      - light.chambre_parentale_3
+      - light.chambre_parentale_4
+      - light.bandeau_dressing
+      - light.lampe_salon 
       - light.maxence_1
       - light.maxence_2
       - light.chloe_1
+      - light.spot_entree
+      - light.spot_salon
       
   all_lights_sam:
     name: Sam
@@ -34,10 +36,15 @@
   all_lights_parents:
     name: Parents
     entities:
-      - light.hue_ambiance_spot_1
-      - light.hue_ambiance_spot_1_2
-      - light.entree
-      - light.salon
+      - light.chambre_parentale_1
+      - light.chambre_parentale_2
+      - light.chambre_parentale_3
+      - light.chambre_parentale_4
+  
+  all_lights_dressing:
+    name: dressing parental
+    entities:
+      - light.bandeau_dressing
 
   all_lights_cuisine:
     name: Cuisine
@@ -48,6 +55,7 @@
     name: salon
     entities:  
       - light.lampe_salon
+      - light.spot_salon
 
   all_lights_maxence:
     name: Maxence
@@ -63,7 +71,23 @@
   all_lights_entree:
     name: Entree
     entities:  
-      - light.entree_2
+      - light.spot_entree
+
+############################################################
+##                    ALL TEMP GROUPS                   ##
+############################################################
+
+  all_temp_maison:
+    name: capteurs temp maison
+    entities:
+      - sensor.baie_technique
+      - sensor.chambre_maxence
+      - sensor.salle_de_jeux
+      - sensor.cuisine
+      - sensor.bureau
+      - sensor.netatmo_maison_piece_de_vie_temperature
+      - sensor.netatmo_maison_piece_de_vie_chambre_parentale_temperature
+      - sensor.netatmo_maison_piece_de_vie_jardin_temperature
 
 ############################################################
 ##                     SECURITY GROUPS                    ##
@@ -72,9 +96,9 @@
   all_motion_sensor_entities:
     name: All Motion Sensor Entities
     entities:
-      - binary_sensor.presence_30
-      - binary_sensor.multisensor_6_home_security_motion_detection
-      - binary_sensor.trisensor_home_security_motion_detection
+      - binary_sensor.motion_sensor
+      - binary_sensor.presence_garage_home_security_motion_detection
+      - binary_sensor.presence_descente_garage_home_security_motion_detection
 
   all_person_entities:
     name: All Persons Entities
@@ -85,13 +109,13 @@
   all_doors_sensor_entities:
     name: All Doors Sensor Entities
     entities:
-      - binary_sensor.door_window_sensor_7_access_control_window_door_is_open
+      - binary_sensor.porte_fenetre_salle_a_manger_access_control_window_door_is_open
+      - binary_sensor.porte_fenetre_salon_access_control_window_door_is_open
       - binary_sensor.strips_mazw_access_control_window_door_is_open
-      - binary_sensor.door_window_sensor_7_access_control_window_door_is_open_2
-      - binary_sensor.velux_chloe_access_control_window_door_is_open_2
+      - binary_sensor.velux_maxence_access_control_window_door_is_open
 
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
     entities:
-      - binary_sensor.smoke_detector_smoke_alarm_smoke_detected
-      - binary_sensor.smoke_detector_smoke_alarm_smoke_detected_2
+      - binary_sensor.detecteur_fumee_smoke_alarm_smoke_detected
+      - binary_sensor.detecteur_fumee_pallier_smoke_alarm_smoke_detected

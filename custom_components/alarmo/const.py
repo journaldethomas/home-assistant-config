@@ -14,6 +14,7 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     CONF_MODE,
     CONF_CODE,
+    ATTR_NAME,
 )
 
 from homeassistant.components.alarm_control_panel import (
@@ -26,7 +27,7 @@ from homeassistant.components.alarm_control_panel import (
 
 from homeassistant.helpers import config_validation as cv
 
-VERSION = "1.7.6"
+VERSION = "1.8.1"
 NAME = "Alarmo"
 MANUFACTURER = "@nielsfaber"
 
@@ -64,6 +65,13 @@ ARM_MODES = [
     STATE_ALARM_ARMED_NIGHT,
     STATE_ALARM_ARMED_CUSTOM_BYPASS,
 ]
+
+SHORT_MODE_TO_STATE = {
+    "away": STATE_ALARM_ARMED_AWAY,
+    "home": STATE_ALARM_ARMED_HOME,
+    "night": STATE_ALARM_ARMED_NIGHT,
+    "custom": STATE_ALARM_ARMED_CUSTOM_BYPASS,
+}
 
 COMMAND_ARM_NIGHT = "arm_night"
 COMMAND_ARM_AWAY = "arm_away"
@@ -106,7 +114,6 @@ ATTR_CAN_DISARM = "can_disarm"
 ATTR_DISARM_AFTER_TRIGGER = "disarm_after_trigger"
 
 ATTR_REMOVE = "remove"
-ATTR_IS_ADMIN = "is_admin"
 ATTR_IS_OVERRIDE_CODE = "is_override_code"
 ATTR_AREA_LIMIT = "area_limit"
 ATTR_CODE_FORMAT = "code_format"
@@ -130,10 +137,6 @@ ATTR_COMMAND_PAYLOAD = "command_payload"
 
 ATTR_FORCE = "force"
 ATTR_SKIP_DELAY = "skip_delay"
-ARM_MODE_AWAY = "away"
-ARM_MODE_HOME = "home"
-ARM_MODE_NIGHT = "night"
-ARM_MODE_CUSTOM = "custom"
 
 PUSH_EVENTS = [
     "ios.notification_action_fired",
@@ -160,11 +163,15 @@ SERVICE_ARM_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Optional(CONF_CODE, default=""): cv.string,
-        vol.Optional(CONF_MODE, default=ARM_MODE_AWAY): vol.In([
-            ARM_MODE_AWAY,
-            ARM_MODE_HOME,
-            ARM_MODE_NIGHT,
-            ARM_MODE_CUSTOM
+        vol.Optional(CONF_MODE, default=STATE_ALARM_ARMED_AWAY): vol.In([
+            "away",
+            "home",
+            "night",
+            "custom",
+            STATE_ALARM_ARMED_AWAY,
+            STATE_ALARM_ARMED_HOME,
+            STATE_ALARM_ARMED_NIGHT,
+            STATE_ALARM_ARMED_CUSTOM_BYPASS
         ]),
         vol.Optional(ATTR_SKIP_DELAY, default=False): cv.boolean,
         vol.Optional(ATTR_FORCE, default=False): cv.boolean,
@@ -178,9 +185,10 @@ SERVICE_DISARM_SCHEMA = vol.Schema(
     }
 )
 
-ARM_MODE_TO_STATE = {
-    ARM_MODE_AWAY: STATE_ALARM_ARMED_AWAY,
-    ARM_MODE_HOME: STATE_ALARM_ARMED_HOME,
-    ARM_MODE_NIGHT: STATE_ALARM_ARMED_NIGHT,
-    ARM_MODE_CUSTOM: STATE_ALARM_ARMED_CUSTOM_BYPASS,
-}
+SERVICE_ENABLE_USER = "enable_user"
+SERVICE_DISABLE_USER = "disable_user"
+SERVICE_TOGGLE_USER_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_NAME, default=""): cv.string,
+    }
+)

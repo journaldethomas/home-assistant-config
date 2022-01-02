@@ -103,6 +103,9 @@ class MiotBinarySensorEntity(MiotToggleEntity, BinarySensorEntity):
 
         if miot_service.name in ['magnet_sensor']:
             self._prop_state = miot_service.get_property('contact_state') or self._prop_state
+            if self._prop_state and self._prop_state.name in ['contact_state']:
+                # https://github.com/al-one/hass-xiaomi-miot/issues/270
+                self._vars['reverse_state'] = True
             self._vars['device_class'] = DEVICE_CLASS_DOOR
 
         if miot_service.name in ['submersion_sensor']:
@@ -113,6 +116,12 @@ class MiotBinarySensorEntity(MiotToggleEntity, BinarySensorEntity):
             'state_property': self._prop_state.full_name if self._prop_state else None,
         })
 
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        rev = self.custom_config_bool('reverse_state', None)
+        if rev is not None:
+            self._vars['reverse_state'] = rev
+
     async def async_update(self):
         await super().async_update()
         if not self._available:
@@ -121,21 +130,25 @@ class MiotBinarySensorEntity(MiotToggleEntity, BinarySensorEntity):
 
     @property
     def is_on(self):
-        if not self._prop_state:
-            return self._state
-        val = self._prop_state.from_dict(self._state_attrs)
-        if val is None:
-            return self._state
-        if self._prop_state.name in ['no_motion_duration', 'nobody_time']:
-            dur = self.custom_config_integer('motion_timeout')
-            if dur is None and self._prop_state.value_range:
-                stp = self._prop_state.range_step()
-                if stp >= 10:
-                    dur = self._prop_state.range_min() + stp
-            if dur is None:
-                dur = 60
-            return val <= dur
-        return val and True
+        ret = self._state
+        if self._prop_state:
+            val = self._prop_state.from_dict(self._state_attrs)
+            if val is None:
+                pass
+            elif self._prop_state.name in ['no_motion_duration', 'nobody_time']:
+                dur = self.custom_config_integer('motion_timeout')
+                if dur is None and self._prop_state.value_range:
+                    stp = self._prop_state.range_step()
+                    if stp >= 10:
+                        dur = self._prop_state.range_min() + stp
+                if dur is None:
+                    dur = 60
+                ret = val <= dur
+            else:
+                ret = val
+        if self._vars.get('reverse_state'):
+            ret = not ret
+        return ret
 
     @property
     def state(self):
@@ -159,19 +172,21 @@ class BleBinarySensorEntity(MiotBinarySensorEntity):
 
         # https://iot.mi.com/new/doc/embedded-development/ble/object-definition
         self._props = [
-            'event.15',   # 0x000F
-            'prop.4103',  # 0x1007
-            'prop.4119',  # 0x1017
-            'prop.4123',  # 0x101B
-            'prop.4120',  # 0x1018
-            'prop.4121',  # 0x1019
+            'event.15',   # 0x000F motion&illumination
+            'prop.4103',  # 0x1007 lux
+            'prop.4106',  # 0x100A battery
+            'prop.4117',  # 0x1015 smoke
+            'prop.4119',  # 0x1017 no_motion_duration
+            'prop.4123',  # 0x101B no_motion_timeout
+            'prop.4120',  # 0x1018 illumination_level
+            'prop.4121',  # 0x1019 magnet
         ]
 
     async def async_update(self):
         await super().async_update()
         if not self._available:
             return
-        if self.custom_config_bool('use_ble_object'):
+        if self.custom_config_bool('use_ble_object', True):
             await self.async_update_ble_data()
 
     async def async_update_ble_data(self):
@@ -302,7 +317,7 @@ class MiotToiletEntity(MiotBinarySensorEntity):
                         'power_property': p.service.bool_property('heating'),
                     }
                 self._subs[p.name] = MiotModesSubEntity(self, p, opt)
-                add_fans([self._subs[p.name]])
+                add_fans([self._subs[p.name]], update_before_add=True)
 
         add_switches = self._add_entities.get('switch')
         if self._prop_power:
@@ -311,7 +326,7 @@ class MiotToiletEntity(MiotBinarySensorEntity):
                 self._subs[pnm].update()
             elif add_switches:
                 self._subs[pnm] = SwitchSubEntity(self, pnm)
-                add_switches([self._subs[pnm]])
+                add_switches([self._subs[pnm]], update_before_add=True)
 
     @property
     def icon(self):

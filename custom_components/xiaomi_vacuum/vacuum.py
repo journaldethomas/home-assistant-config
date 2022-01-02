@@ -272,7 +272,7 @@ class MiroboVacuum(StateVacuumEntity):
         return list(self._water_level_reverse)
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the specific state attributes of this vacuum cleaner."""
         if self.vacuum_state is not None:
             return {

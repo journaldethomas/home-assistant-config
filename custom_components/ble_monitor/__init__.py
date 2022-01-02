@@ -24,6 +24,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity_registry import (
     async_entries_for_device,
 )
+import homeassistant.util.dt as dt_util
 
 from .ble_parser import BleParser
 from .const import (
@@ -31,6 +32,7 @@ from .const import (
     AES128KEY32_REGEX,
     CONF_ACTIVE_SCAN,
     CONF_BATT_ENTITIES,
+    CONF_BT_AUTO_RESTART,
     CONF_BT_INTERFACE,
     CONF_DECIMALS,
     CONF_DEVICE_DECIMALS,
@@ -42,6 +44,7 @@ from .const import (
     CONF_DEVICE_TRACKER_SCAN_INTERVAL,
     CONF_DEVICE_TRACKER_CONSIDER_HOME,
     CONF_HCI_INTERFACE,
+    CONF_PACKET,
     CONF_PERIOD,
     CONF_LOG_SPIKES,
     CONF_REPORT_UNKNOWN,
@@ -50,6 +53,7 @@ from .const import (
     CONFIG_IS_FLOW,
     DEFAULT_ACTIVE_SCAN,
     DEFAULT_BATT_ENTITIES,
+    DEFAULT_BT_AUTO_RESTART,
     DEFAULT_DECIMALS,
     DEFAULT_DEVICE_DECIMALS,
     DEFAULT_DEVICE_RESTORE_STATE,
@@ -70,6 +74,7 @@ from .const import (
     MEASUREMENT_DICT,
     REPORT_UNKNOWN_LIST,
     SERVICE_CLEANUP_ENTRIES,
+    SERVICE_PARSE_DATA,
 )
 
 from .bt_helpers import (
@@ -154,6 +159,9 @@ CONFIG_SCHEMA = vol.Schema(
                     vol.Optional(
                         CONF_REPORT_UNKNOWN, default=DEFAULT_REPORT_UNKNOWN
                     ): vol.In(REPORT_UNKNOWN_LIST),
+                    vol.Optional(
+                        CONF_BT_AUTO_RESTART, default=DEFAULT_BT_AUTO_RESTART
+                    ): cv.boolean,
                 }
             ),
         )
@@ -162,6 +170,11 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 SERVICE_CLEANUP_ENTRIES_SCHEMA = vol.Schema({})
+SERVICE_PARSE_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_PACKET): cv.string,
+    }
+)
 
 
 async def async_setup(hass: HomeAssistant, config):
@@ -172,11 +185,22 @@ async def async_setup(hass: HomeAssistant, config):
 
         await async_cleanup_entries_service(hass, service_data)
 
+    async def service_parse_data(service_call):
+        service_data = service_call.data
+
+        await async_parse_data_service(hass, service_data)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CLEANUP_ENTRIES,
         service_cleanup_entries,
         schema=SERVICE_CLEANUP_ENTRIES_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PARSE_DATA,
+        service_parse_data,
+        schema=SERVICE_PARSE_DATA_SCHEMA,
     )
 
     if DOMAIN not in config:
@@ -389,6 +413,14 @@ async def async_cleanup_entries_service(hass: HomeAssistant, service_data):
             _LOGGER.debug("device %s will be deleted", device_id)
 
 
+async def async_parse_data_service(hass: HomeAssistant, service_data):
+    """Call parse_data with RAW HCI packet data."""
+    _LOGGER.debug("async_parse_data_service")
+    blemonitor: BLEmonitor = hass.data[DOMAIN]["blemonitor"]
+    if blemonitor:
+        blemonitor.dumpthread.process_hci_events(bytes.fromhex(service_data["packet"]))
+
+
 class BLEmonitor:
     """BLE scanner."""
 
@@ -465,6 +497,7 @@ class HCIdump(Thread):
         self.sensor_whitelist = []
         self.tracker_whitelist = []
         self.report_unknown = False
+        self.last_bt_reset = dt_util.now()
         if self.config[CONF_REPORT_UNKNOWN]:
             self.report_unknown = self.config[CONF_REPORT_UNKNOWN]
             _LOGGER.info(
@@ -578,13 +611,23 @@ class HCIdump(Thread):
                             btctrl[hci].send_scan_request(self._active)
                         )
                     except RuntimeError as error:
-                        _LOGGER.error(
-                            "HCIdump thread: Runtime error while sending scan request on hci%i: %s. Resetting Bluetooth adapter %s and trying again.",
-                            hci,
-                            error,
-                            BT_INTERFACES[hci],
-                        )
-                        reset_bluetooth(hci)
+                        if CONF_BT_AUTO_RESTART is True:
+                            ts_now = dt_util.now()
+                            if ts_now - self.last_bt_reset > 60:
+                                _LOGGER.error(
+                                    "HCIdump thread: Runtime error while sending scan request on hci%i: %s. Resetting Bluetooth adapter %s and trying again.",
+                                    hci,
+                                    error,
+                                    BT_INTERFACES[hci],
+                                )
+                                reset_bluetooth(hci)
+                                self.last_bt_reset = ts_now
+                        else:
+                            _LOGGER.error(
+                                "HCIdump thread: Runtime error while sending scan request on hci%i: %s.",
+                                hci,
+                                error,
+                            )
             _LOGGER.debug("HCIdump thread: start main event_loop")
             try:
                 self._event_loop.run_forever()
@@ -596,13 +639,23 @@ class HCIdump(Thread):
                             btctrl[hci].stop_scan_request()
                         )
                     except RuntimeError as error:
-                        _LOGGER.error(
-                            "HCIdump thread: Runtime error while stop scan request on hci%i: %s Resetting Bluetooth adapter %s and trying again.",
-                            hci,
-                            error,
-                            BT_INTERFACES[hci],
-                        )
-                        reset_bluetooth(hci)
+                        if CONF_BT_AUTO_RESTART is True:
+                            ts_now = dt_util.now()
+                            if ts_now - self.last_bt_reset > 60:
+                                _LOGGER.error(
+                                    "HCIdump thread: Runtime error while stop scan request on hci%i: %s Resetting Bluetooth adapter %s and trying again.",
+                                    hci,
+                                    error,
+                                    BT_INTERFACES[hci],
+                                )
+                                reset_bluetooth(hci)
+                                self.last_bt_reset = ts_now
+                        else:
+                            _LOGGER.error(
+                                "HCIdump thread: Runtime error while stop scan request on hci%i: %s.",
+                                hci,
+                                error,
+                            )
                     except KeyError:
                         _LOGGER.debug(
                             "HCIdump thread: Key error while stop scan request on hci%i",

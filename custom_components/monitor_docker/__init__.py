@@ -23,6 +23,7 @@ from .const import (
     API,
     CONF_CERTPATH,
     CONF_CONTAINERS,
+    CONF_CONTAINERS_EXCLUDE,
     CONF_MEMORYCHANGE,
     CONF_PRECISION_CPU,
     CONF_PRECISION_MEMORY_MB,
@@ -63,6 +64,7 @@ DOCKER_SCHEMA = vol.Schema(
             [vol.In(MONITORED_CONDITIONS_LIST + list([CONTAINER_INFO_ALLINONE]))],
         ),
         vol.Optional(CONF_CONTAINERS, default=[]): cv.ensure_list,
+        vol.Optional(CONF_CONTAINERS_EXCLUDE, default=[]): cv.ensure_list,
         vol.Optional(CONF_RENAME, default={}): dict,
         vol.Optional(CONF_SENSORNAME, default=DEFAULT_SENSORNAME): cv.string,
         vol.Optional(CONF_SWITCHENABLED, default=True): cv.boolean,
@@ -115,7 +117,7 @@ async def async_setup(hass, config):
                 if entry[CONF_RETRY] == 0:
                     raise
                 else:
-                    _LOGGER.error("%s", err)
+                    _LOGGER.error("Failed Docker connect: %s", str(err))
                     _LOGGER.error("Retry in %d seconds", entry[CONF_RETRY])
                     time.sleep(entry[CONF_RETRY])
 

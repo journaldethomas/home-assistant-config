@@ -1,0 +1,51 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Only a single configuration of Meross is allowed."
+    },
+    "error": {
+      "invalid_credentials": "Invalid credentials.",
+      "connection_error": "Unable to connect to Meross.",
+      "invalid_http_endpoint": "Invalid Meross HTTTP api endpoint",
+      "api_invalid_ssl_code": "Invalid SSL response received by the server. Are you sure the server is exposed in HTTPS? Try plain http and see if this happens again.",
+      "unknown_error": "An unexpected error occurred",
+      "api_connection_refused": "Cannot connect to HTTP(S) API server. Make sure the address is valid",
+      "client_connection_error": "An error occurred while connecting to the HTTP API",
+      "missing_credentials": "Please provide missing credentials"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "password": "Password",
+          "username": "Email Address",
+          "http_api_endpoint": "HTTP API Endpoint",
+          "mqtt_hostname": "MQTT Hostname",
+          "mqtt_port": "MQTT Port",
+          "skip_mqtt_cert_validation": "Skip MQTT certificate validation checks"
+        },
+        "title": "Fill in your Meross login information"
+      },
+      "reauth_confirm": {
+        "title": "Reauthentication required",
+        "description": "The Meross integration needs to re-authenticate your account"
+      }
+    },
+    "title": "Meross"
+  },
+  "options": {
+        "error": {},
+        "step": {
+            "init": {
+                "data": {
+                    "enable_rate_limits": "Enable API rate limits",
+                    "global_rate_limit_max_tokens": "Global MQTT burst limit",
+                    "global_rate_limit_per_second": "Global MQTT rate limit (maximum api calls/second)",
+                    "device_rate_limit_max_tokens": "Single device MQTT burst limit",
+                    "device_rate_limit_per_second": "Single device MQTT rate limit (maximum api calls/second)",
+                    "device_max_command_queue": "Single device Maximum command queue length"
+                },
+                "title": "Configure Manager"
+            }
+        }
+    }
+}

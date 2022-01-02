@@ -228,7 +228,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 self._subs[pnm].update()
             elif add_switches:
                 self._subs[pnm] = MiotSwitchSubEntity(self, self._prop_power)
-                add_switches([self._subs[pnm]])
+                add_switches([self._subs[pnm]], update_before_add=True)
 
         self._motion_enable = self.custom_config_bool('use_motion_stream', self._use_motion_stream)
         add_cameras = self._add_entities.get(ENTITY_DOMAIN)
@@ -237,7 +237,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 and self.custom_config_bool('sub_motion_stream', self._sub_motion_stream):
             self._motion_entity = MotionCameraEntity(self, self.hass)
             self._subs['motion_event'] = self._motion_entity
-            add_cameras([self._motion_entity])
+            add_cameras([self._motion_entity], update_before_add=True)
 
         adt = None
         lag = locale.getdefaultlocale()[0]
@@ -261,9 +261,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 'endTime': etm,
                 'limit': 2,
             }
-            rdt = await self.hass.async_add_executor_job(
-                partial(mic.request_miot_api, api, rqd, method='GET', crypt=True)
-            ) or {}
+            rdt = await mic.async_request_api(api, rqd, method='GET', crypt=True) or {}
             rls = rdt.get('data', {}).get('playUnits') or []
             if rls:
                 fst = rls[0] or {}
@@ -290,9 +288,7 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                 'endTime': etm,
                 'limit': 2,
             }
-            rdt = await self.hass.async_add_executor_job(
-                partial(mic.request_miot_api, api, rqd, method='GET', crypt=True)
-            ) or {}
+            rdt = await mic.async_request_api(api, rqd, method='GET', crypt=True) or {}
             rls = rdt.get('data', {}).get('thirdPartPlayUnits') or []
             if rls:
                 fst = rls[0] or {}
@@ -391,8 +387,8 @@ class MiotCameraEntity(MiotToggleEntity, BaseCameraEntity):
                     self._schedule_stream_refresh()
             odt['expire_at'] = f'{datetime.fromtimestamp(self._url_expiration)}'
             self.update_attrs(odt)
-        self.is_streaming = self._last_url and True
-        if self.is_streaming:
+        self._attr_is_streaming = self._last_url and True
+        if self._attr_is_streaming:
             self.update_attrs({
                 'miot_error': None,
             })
