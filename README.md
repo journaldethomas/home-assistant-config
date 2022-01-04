@@ -26,25 +26,25 @@ Ca arrive au fur et à mesure. Je suis entrain de mettre en ligne les différent
 ### Et à propos de mon installation ?
 
 Voici une partie de mon matériel :
-Clé USB Conbee II pour me passer de la plupart des passerelles Zigbee;
-Clé USB Aeotec Z-Wave Plus Z-Stick Gen5 pour centraliser tous les équipements Z-Wave;
-Phillips Hue avec pont et Ligthstrip, spots GU10 x4, ampoules E27 x6;
-Ikea Tradfri spots GU10 x4;
-Station météo NetAtmo avec pluviomètre
-Capteurs température Aqara x4
-Détecteurs mouvement Aqara;
-Détecteurs de mouvement Aeotec x2;
-Détecteurs ouverture porte Aqara;
-Détecteurs ouverture porte Aeotec x2;
-Prise connectées Osram x3;
-Robot aspirateur Dreame D9;
-Détecteur de fumée Fibaro x2.
+- Clé USB Conbee II pour me passer de la plupart des passerelles Zigbee;
+- Clé USB Aeotec Z-Wave Plus Z-Stick Gen5 pour centraliser tous les équipements Z-Wave;
+- Phillips Hue avec pont et Ligthstrip, spots GU10 x4, ampoules E27 x6;
+- Ikea Tradfri spots GU10 x4;
+- Station météo NetAtmo avec pluviomètre
+- Capteurs température Aqara x4
+- Détecteurs mouvement Aqara;
+- Détecteurs de mouvement Aeotec x2;
+- Détecteurs ouverture porte Aqara;
+- Détecteurs ouverture porte Aeotec x2;
+- Prise connectées Osram x3;
+- Robot aspirateur Dreame D9;
+- Détecteur de fumée Fibaro x2.
 
 Et pour la partie plus « IT » :
-Un rack 15U dans le garage;
-UniFi UDM Pro;
-Switch D-Link 24 que je pense remplacer par un switch Unifi prochainement;
-Access Point UniFi AC-Lite;
-NUC Intel NUC8i3BEH 16GB;
-NAS Synology DS418j;
-Onduleur Eaton Ellipse Pro 650.
+- Un rack 15U dans le garage;
+- UniFi UDM Pro;
+- Switch D-Link 24 que je pense remplacer par un switch Unifi prochainement;
+- Access Point UniFi AC-Lite;
+- NUC Intel NUC8i3BEH 16GB;
+- NAS Synology DS418j;
+- Onduleur Eaton Ellipse Pro 650.

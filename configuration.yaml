@@ -1144,17 +1144,17 @@ utility_meter:
 ######   CALCUL PLUIE   ######
   pluie_semaine:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
+    delta_values: true
     cycle: weekly
 
   pluie_mois:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
+    delta_values: true
     cycle: monthly
 
   pluie_annee:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
+    delta_values: true
     cycle: yearly
 
 ###################################################################
