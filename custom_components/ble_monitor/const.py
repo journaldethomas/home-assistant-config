@@ -106,7 +106,7 @@ CONF_HMAX = 99.9
 
 # Sensors with deviating temperature range
 KETTLES = ('YM-K1501', 'YM-K1501EU', 'V-SK152')
-PROBES = ('iBBQ-2')
+PROBES = ('iBBQ-2',)
 
 # Sensor entity description
 @dataclass
@@ -654,7 +654,7 @@ MEASUREMENT_DICT = {
     'YLYK01YL-VENFAN'         : [["rssi"], ["ventilator fan remote"], []],
     'YLYB01YL-BHFRC'          : [["rssi"], ["bathroom heater remote"], []],
     'YLKG07YL/YLKG08YL'       : [["rssi"], ["dimmer"], []],
-    'ATC'                     : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
+    'ATC'                     : [["temperature", "humidity", "battery", "voltage", "rssi"], [], ["switch", "opening"]],
     'Mi Scale V1'             : [["rssi"], ["weight", "non-stabilized weight"], ["weight removed"]],
     'Mi Scale V2'             : [["rssi"], ["weight", "non-stabilized weight", "impedance"], ["weight removed"]],
     'TZC4'                    : [["rssi"], ["weight", "non-stabilized weight", "impedance"], []],

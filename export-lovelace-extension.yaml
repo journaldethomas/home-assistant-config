@@ -1,0 +1,542 @@
+button_card_templates:
+  scene:
+    template:
+      - rouge_on
+      - vert_off
+    size: 20px
+    show_label: true
+    label: |
+      [[[ return (entity.attributes.value )]]]
+    styles:
+      card:
+        - border-radius: 20px
+        - box-shadow: none
+        - padding: 10px 0px 8px 0px
+      grid:
+        - grid-template-areas: '"i" "n" "l"'
+      name:
+        - margin-top: 10px
+        - justify-self: center
+        - font-weight: bold
+        - font-size: 14px
+      label:
+        - justify-self: center
+        - align-self: start
+        - font-weight: bolder
+        - font-size: 12px
+        - filter: opacity(40%)
+      icon:
+        - color: rgba(51,51,51,0.2)
+      img_cell:
+        - background-color: rgba(51,51,51,0.05)
+        - border-radius: 50%
+        - place-self: center
+        - width: 42px
+        - height: 42px
+  vert_off:
+    state:
+      - id: vert_off
+        styles:
+          icon:
+            - color: rgba(1, 200, 82, 1)
+          img_cell:
+            - background-color: rgba(1, 200, 82, 0.2)
+        value: 'off'
+  vert_on:
+    state:
+      - id: vert_on
+        styles:
+          icon:
+            - color: rgba(1, 200, 82, 1)
+          img_cell:
+            - background-color: rgba(1, 200, 82, 0.2)
+        value: 'on'
+  rouge_on:
+    state:
+      - id: rouge_on
+        styles:
+          icon:
+            - color: rgba(245, 68, 54, 1)
+          img_cell:
+            - background-color: rgba(245, 68, 54, 0.2)
+        value: 'on'
+  rouge_off:
+    state:
+      - id: rouge_off
+        styles:
+          icon:
+            - color: rgba(245, 68, 54, 1)
+          img_cell:
+            - background-color: rgba(245, 68, 54, 0.2)
+        value: 'off'
+  bouton_badge:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: true
+    styles:
+      label:
+        - justify-self: center
+        - padding: 1px
+        - font-weight: null
+        - font-size: 13px
+        - font-weight: bold
+        - color: var(--text_on)
+      grid:
+        - grid-template-areas: '"l"'
+      card:
+        - border-radius: 18px
+        - height: 35px
+        - width: 75px
+        - padding-left: 4px
+        - padding-right: 6px
+        - box-shadow: 1px 1px 5px 0px rgb(12, 12, 14)
+        - border-radius: 25px
+        - background-color: var(--my_color_pastille)
+        - border-color: rgba(152, 167, 185, 0.2)
+        - border-style: outset
+        - border-width: 1px
+title: Maison
+views:
+  - path: default_view
+    title: Home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: weather.sillingy
+                name: |
+                  [[[
+                    if (entity.state == 'unavailable')
+                      return "☀️ HS" ;
+                    return states['sensor.weather_icon'].state ;
+                  ]]]
+                show_icon: false
+                show_name: true
+                show_state: false
+                show_label: true
+                label: |
+                  [[[
+                    if (entity.state == 'unavailable')
+                      return "" ;
+                    return  (states['sensor.netatmo_maison_piece_de_vie_jardin_temperature'].state  );
+                  ]]]
+                styles:
+                  name:
+                    - justify-self: center
+                    - align-self: center
+                    - padding: 0px
+                    - margin-top: 11px
+                    - font-weight: null
+                    - font-size: 19px
+                    - font-weight: bold
+                  label:
+                    - justify-self: center
+                    - align-self: center
+                    - padding: 3px
+                    - margin-top: 12px
+                    - margin-left: 4px
+                    - font-weight: null
+                    - font-size: 13px
+                    - font-weight: bold
+                  grid:
+                    - grid-template-areas: '"n l"'
+                  card:
+                    - border-radius: 18px
+                    - height: 35px
+                    - width: 75px
+                    - padding-left: 6px
+                    - padding-right: 6px
+                    - box-shadow: 1px 1px 5px 0px rgb(12, 12, 14)
+                    - border-radius: 25px
+                    - border-color: rgba(152, 167, 185, 0.2)
+                    - border-style: outset
+                    - border-width: 1px
+                    - opacity: |
+                        [[[
+                          if (entity.state == 'unavailable')
+                            return "50%" ;
+                          return "100%";
+                        ]]]
+              - type: custom:button-card
+                entity: sensor.compteur_home
+                name: maison
+                template:
+                  - bouton_badge
+                label: |
+                  [[[ return "🏠 "+ (entity.state ) ;
+                  ]]]
+              - type: custom:button-card
+                entity: sensor.netatmo_maison_piece_de_vie_temperature
+                name: meteo
+                template:
+                  - bouton_badge
+                label: |
+                  [[[
+                    if (entity.state == 'unavailable')
+                      return "🌡 indispo" ;
+                    if (entity.state == '° / °')
+                      return "🌡 indispo" ;
+                    return "🌡 " + (entity.state );
+                  ]]]
+                styles:
+                  card:
+                    - opacity: |
+                        [[[
+                          if (entity.state == 'unavailable')
+                            return "50%" ;
+                          if (entity.state == '° / °')
+                            return "50%" ;
+                          return "100%";
+                        ]]]
+          - type: horizontal-stack
+            cards:
+              - entity: alarm_control_panel.alarmo
+                template: scene
+                type: custom:button-card
+                name: Alarme
+                state:
+                  - label: ouverte
+                    id: vert_off
+                    value: armed_away
+                  - label: désactivée
+                    id: rouge_on
+                    value: disarmed
+              - entity: group.all_doors_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Ouvertures
+                state:
+                  - icon: mdi:door-open
+                    label: 1
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:door-closed
+                    label: RAS
+                    id: vert_off
+                    value: 'off'
+              - entity: group.all_smoke_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Fumée
+                state:
+                  - icon: mdi:fire
+                    label: Incendie
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:shield-check
+                    label: RAS
+                    id: vert_off
+                    value: 'off'
+              - entity: sensor.number_of_motion_sensors_on
+                template: scene
+                type: custom:button-card
+                name: Mouvements
+                state:
+                  - label: RAS
+                    id: vert_off
+                    value: '0'
+                  - label: détectés
+                    id: rouge_on
+                    operator: '>'
+                    value: '0'
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: vacuum.dreame_p2009_86d4_robot_cleaner
+                name: Conchita
+                show_icon: true
+                icon: mdi:robot-vacuum
+                show_name: true
+                show_state: false
+                show_label: true
+                label: |
+                  [[[
+                    if (states['vacuum.dreame_p2009_86d4_robot_cleaner'].state == "docked")
+                      return 'se repose';
+                    if (states['vacuum.dreame_p2009_86d4_robot_cleaner'].state == "cleaning")
+                      return 'travaille';
+                  ]]]
+                styles:
+                  img_cell:
+                    - background-color: rgba(255,0,0,0.2)
+                    - border-radius: 50%
+                    - place-self: start
+                    - width: 50px
+                    - height: 40px
+                    - margin-top: 1px
+                  icon:
+                    - place-self: start
+                    - width: 90%
+                  name:
+                    - top: 15%
+                    - left: 34%
+                    - font-size: 100%
+                    - font-weight: bold
+                    - position: absolute
+                  state:
+                    - color: lightgrey
+                    - top: 40%
+                    - left: 48%
+                    - font-size: 90%
+                    - position: absolute
+                  label:
+                    - color: |
+                        [[[
+                          if (states['vacuum.dreame_p2009_86d4_robot_cleaner'].state == "cleaning")
+                            return 'var(--text_on)';
+                          if (states['vacuum.dreame_p2009_86d4_robot_cleaner'].state == "Retour")
+                            return 'firebrick';
+                          if (states['vacuum.dreame_p2009_86d4_robot_cleaner'].state == "En pause")
+                            return 'firebrick';
+                          if (states['vacuum.dreame_p2009_86d4_robot_cleaner'].state == "docked")
+                            return 'grey';
+                        ]]]
+                    - top: 25%
+                    - left: 34%
+                    - font-weight: bold
+                    - font-size: 90%
+                    - position: absolute
+                  card:
+                    - height: 150px
+                    - padding: 10px
+                    - font-size: 120%
+                    - background-color: '#ffffff'
+                    - border-radius: 15px
+                  custom_fields:
+                    batterie:
+                      - top: 10%
+                      - left: 80%
+                      - color: |
+                          [[[
+                            if (entity.state == 'cleaning')
+                              return 'lightgrey';
+                           return 'grey';
+                          ]]]
+                      - font-weight: bold
+                      - font-size: 90%
+                      - position: absolute
+                    ic:
+                      - position: absolute
+                      - top: 70%
+                      - left: 50%
+                      - width: calc(100% + 1px)
+                      - transform: translate(-50%, calc(-50% + 5px))
+                      - z-index: 1
+                      - '--paper-card-background-color': rgba(0, 0, 0, 0.0)
+                      - '--ha-card-background': rgba(0, 0, 0, 0.0)"
+                      - '--ha-card-box-shadow': none
+                extra_styles: |
+                  @keyframes ball-scale {
+                    from {
+                      transform: scale(1);
+                    }
+                    to {
+                      transform: scale(0.90);
+                    }
+                  }
+                  @keyframes ball-scale2 {
+                    from {
+                      transform: scale(1);
+                    }
+                    to {
+                      transform: scale(0.90);
+                    }
+                  }
+                state:
+                  - value: cleaning
+                    styles:
+                      icon:
+                        - animation: rotating 4s ease infinite
+                        - color: var(--icon_on)
+                      card:
+                        - animation: ball-scale 0.2s
+                      img_cell:
+                        - background-color: rgba(255,127,80,0.5)
+                      name:
+                        - color: var(--text_on)
+                      label:
+                        - color: var(--text_on)
+                  - value: docked
+                    color: grey
+                    styles:
+                      card:
+                        - animation: ball-scale 0.2s
+                      img_cell:
+                        - background-color: var(--pastille_off)
+                      icon:
+                        - color: grey
+                      name:
+                        - color: grey
+                  - value: error
+                    styles:
+                      icon:
+                        - animation: blink 0.8s ease infinite
+                        - color: null
+                      card:
+                        - animation: ball-scale 0.2s
+                      img_cell:
+                        - background-color: var(--pastille_off)
+                      name:
+                        - color: firebrick
+                      label:
+                        - color: firebrick
+                tap_action:
+                  action: more-info
+                double_tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/1
+                custom_fields:
+                  batterie: >
+                    [[[ return
+                    states['sensor.dreame_p2009_86d4_battery_level'].state +
+                    "%"]]]
+                  ic:
+                    card:
+                      type: grid
+                      cards:
+                        - type: custom:button-card
+                          show_name: false
+                          icon: mdi:play-circle
+                          styles:
+                            icon:
+                              - color: darkslategrey
+                              - width: 50%
+                            card:
+                              - background: transparent
+                              - 'border-color:': transparent
+                          tap_action:
+                            action: call-service
+                            service: vacuum.start
+                            service_data:
+                              entity_id: vacuum.dreame_p2009_86d4_robot_cleaner
+                        - type: custom:button-card
+                          show_name: false
+                          icon: mdi:stop-circle
+                          styles:
+                            icon:
+                              - color: darkslategrey
+                              - width: 50%
+                            card:
+                              - background: transparent
+                              - 'border-color:': transparent
+                          tap_action:
+                            action: call-service
+                            service: vacuum.stop
+                            service_data:
+                              entity_id: vacuum.dreame_p2009_86d4_robot_cleaner
+                        - type: custom:button-card
+                          show_name: false
+                          icon: mdi:home-circle
+                          styles:
+                            icon:
+                              - color: darkslategrey
+                              - width: 50%
+                            card:
+                              - background: transparent
+                              - 'border-color:': transparent
+                          tap_action:
+                            action: call-service
+                            service: vacuum.start
+                            service_data:
+                              entity_id: vacuum.dreame_p2009_86d4_robot_cleaner
+                      columns: 3
+                      square: false
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: switch.eufy_surveillance
+                name: A la maison
+                icon: mdi:home
+                styles:
+                  card:
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: '#FFFFFF'
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: solid 1px '#f83e43'
+                      icon:
+                        - color: green
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                      icon:
+                        - color: red
+                    id: off-icon
+                tap_action:
+                  action: call-service
+                  service: rest_command.eufy_guard_mode_disarmed
+              - type: custom:button-card
+                entity: switch.eufy_surveillance
+                name: En vadrouille
+                icon: mdi:tree
+                styles:
+                  card:
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: '#FFFFFF'
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: solid 3px '#434343'
+                      icon:
+                        - color: green
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#f83e43'
+                        - box-shadow: none
+                      icon:
+                        - color: red
+                    id: off-icon
+                tap_action:
+                  action: call-service
+                  service: rest_command.eufy_guard_mode_home
+              - type: custom:button-card
+                entity: switch.eufy_surveillance
+                name: Nuit
+                icon: mdi:weather-night
+                styles:
+                  card:
+                    - text-shadow: 0px 0px 0px white
+                    - background-color: '#FFFFFF'
+                    - padding-left: 10px
+                    - border-radius: 20px
+                    - padding: 10%
+                    - font-size: 15px
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - border: solid 1px '#f83e43'
+                      icon:
+                        - color: green
+                    id: on-icon
+                  - value: 'off'
+                    styles:
+                      card:
+                        - border: solid 1px '#434343'
+                        - box-shadow: none
+                      icon:
+                        - color: red
+                    id: off-icon
+                tap_action:
+                  action: call-service
+                  service: rest_command.eufy_guard_mode_disarmed
+

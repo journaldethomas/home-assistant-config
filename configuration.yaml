@@ -289,6 +289,50 @@ sensor:
           {% set month = months[now().strftime('%m') | int -1] %}
           {{ now().strftime('%d') + ' ' + month }}
 
+# Pour la météo
+
+      weather_temperature:
+        friendly_name: "Weather Température"
+        value_template: "{{ state_attr('weather.sillingy' , 'temperature') }}°"
+      
+      weather_icon:
+        value_template: >-
+          {% set weather_icon = states('weather.sillingy') 
+            | replace('rainy', '☔️')
+            | replace('partlycloudy', '⛅️')
+            | replace('cloudy', '☁️')
+            | replace('clear-night', '✨')
+            | replace('fog', '🌀')
+            | replace('hail', '🌧')
+            | replace('lightning-rainy', '⛈')
+            | replace('lightning', '⚡️') 
+            | replace('pourring', '️☔️')
+            | replace('snowy-rainy', '❄️️')
+            | replace('snowy', '❄️')
+            | replace('sunny', '☀️')
+            | replace('windy-variant', '💨')
+            | replace('windy', '💨')
+            | replace('exceptional', '⚠️') %}     
+          {% if not state_attr('weather.maison', 'temperature') == 'Indisponible' -%}
+            {% if states('weather.beaucouze') == 'lightning-rainy' -%}
+              ⛈
+            {% else -%}
+            {{ weather_icon }}
+            {% endif -%}
+          {% else -%}
+          {% endif -%}
+
+# Nombre de personne dans la maison
+
+      compteur_home:
+        friendly_name: Compteur Personnes à la maison         
+        value_template: >-
+          {% set pers = [
+           states.person.thomas,
+           states.person.delphine,           
+           ] %}
+          {{ pers | selectattr('state','eq','home') | list | count }}
+
 # Pour la carte chauffage
 
       netatmo_temperature_courante:
@@ -1144,17 +1188,17 @@ utility_meter:
 ######   CALCUL PLUIE   ######
   pluie_semaine:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    delta_values: true
+    net_consumption: true
     cycle: weekly
 
   pluie_mois:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    delta_values: true
+    net_consumption: true
     cycle: monthly
 
   pluie_annee:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    delta_values: true
+    net_consumption: true
     cycle: yearly
 
 ###################################################################
