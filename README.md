@@ -20,6 +20,10 @@ Une vue qui a fait son apparition dernièrement : celle pour contrôler mon impr
 
 ![My Home Assistant Wanhao View](documentations/images/wanhao_view.png)
 
+Afin d'avoir une vision de mon système domotique rapidement et depuis un poste utilisant Chrome j'ai mis en place l'extension Home Assistant. Un nouveau tableau de bord a été créé spécifiquement pour cela car l'affichage est spécifique et l'idée est d'avoir les informations essentielles en un coup d'oeil.
+Cette vue est l'affichage que de certaines briques présentes dans mon tableau de bord principal mais vous pourrez trouver le code [ici](https://github.com/journaldethomas/home-assistant-config/blob/main/export-lovelace-extension.yaml)
+![My Home Assistant Extension View](documentations/images/extension.png)
+
 ### Mais où est le code ?
 Ca arrive au fur et à mesure. Je suis entrain de mettre en ligne les différents fichiers et j'espère que tout sera en place d'ici quelques semaines. Cela fait maintenant plus d'un an que j'utilise Home Assistant et je veux partager avec vous ma configuration. J'essaie de faire ça le mieux possible toujours en documentant mon travail et en versionnant mes mises à jour. Je garderais ainsi un historique de mes modifications.
 
