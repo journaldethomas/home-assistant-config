@@ -1040,6 +1040,33 @@ sensor:
     json_attributes:
       - moveDetected
 
+  # SURVEILLANCE SYSTEME MAISON DE FAMILLE
+  - platform: template
+    sensors:
+      systeme:
+        friendly_name: Surveillance systeme
+        value_template: >-      
+          {%- if states('sensor.rpi_diskusage')| float < 70 and
+           states('sensor.rpi_cpu_temp')| float < 65 and
+           states('sensor.disponibilite') =='online'
+          -%}
+           Tout est OK
+          {% else -%}
+           AVERTISSEMENT
+          {% endif -%}
+
+  # SURVEILLANCE MAISON DE FAMILLE
+      surveillance:
+        friendly_name: Surveillance
+        value_template: >-      
+          {%- if states('sensor.detecteur_porte_garage') =='True' and
+           states('sensor.presence_salon') =='False'
+          -%}
+           Tout est OK
+          {% else -%}
+           AVERTISSEMENT
+          {% endif -%}
+
   # ZIGBEE2MQTT DEPUIS MAISON DE FAMILLE
 
   - platform: mqtt
