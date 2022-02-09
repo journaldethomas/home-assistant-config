@@ -1,18 +1,22 @@
 import logging
-from typing import Dict
+import re
+from typing import Dict, List
 
 from meross_iot.controller.device import BaseDevice
-from custom_components.meross_cloud.version import MEROSS_CLOUD_VERSION
+
+from . import version
+from .version import MEROSS_IOT_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
 # Constants
-PLATFORM = "meross_cloud"
+DOMAIN = "meross_cloud"
 ATTR_CONFIG = "config"
 MANAGER = "manager"
+DEVICE_LIST_COORDINATOR = "device_list_coordinator"
 LIMITER = "limiter"
 CLOUD_HANDLER = "cloud_handler"
-MEROSS_MANAGER = "%s.%s" % (PLATFORM, MANAGER)
+MEROSS_MANAGER = "%s.%s" % (DOMAIN, MANAGER)
 SENSORS = "sensors"
 HA_SWITCH = "switch"
 HA_LIGHT = "light"
@@ -20,57 +24,36 @@ HA_SENSOR = "sensor"
 HA_COVER = "cover"
 HA_CLIMATE = "climate"
 HA_FAN = "fan"
-MEROSS_COMPONENTS = (HA_LIGHT, HA_SWITCH, HA_COVER, HA_SENSOR, HA_CLIMATE, HA_FAN)
+MEROSS_PLATFORMS = (HA_SWITCH, HA_LIGHT, HA_COVER, HA_FAN, HA_SENSOR, HA_CLIMATE)
 CONNECTION_TIMEOUT_THRESHOLD = 5
 
 CONF_STORED_CREDS = "stored_credentials"
 CONF_MQTT_SKIP_CERT_VALIDATION = "skip_mqtt_cert_validation"
 CONF_HTTP_ENDPOINT = "http_api_endpoint"
 
-CONF_OPT_ENABLE_RATE_LIMITS = "enable_rate_limits"
-CONF_OPT_GLOBAL_RATE_LIMIT_MAX_TOKENS = "global_rate_limit_max_tokens"
-CONF_OPT_GLOBAL_RATE_LIMIT_PER_SECOND = "global_rate_limit_per_second"
-CONF_OPT_DEVICE_RATE_LIMIT_MAX_TOKENS = "device_rate_limit_max_tokens"
-CONF_OPT_DEVICE_RATE_LIMIT_PER_SECOND = "device_rate_limit_per_second"
-CONF_OPT_DEVICE_MAX_COMMAND_QUEUE = "device_max_command_queue"
+CONF_OPT_CUSTOM_USER_AGENT = "custom_user_agent"
 
-# Constants
-HA_SENSOR_POLL_INTERVAL_SECONDS = 15             # HA sensor polling interval
-SENSOR_SAMPLE_CACHE_INTERVAL_SECONDS = 30       # Sensors data caching interval in seconds
+HA_SENSOR_POLL_INTERVAL_SECONDS = 30     # HA sensor polling interval
+HTTP_UPDATE_INTERVAL = 120               # Meross Cloud "discovery" interval
 UNIT_PERCENTAGE = "%"
 
 ATTR_API_CALLS_PER_SECOND = "api_calls_per_second"
 ATTR_DELAYED_API_CALLS_PER_SECOND = "delayed_api_calls_per_second"
 ATTR_DROPPED_API_CALLS_PER_SECOND = "dropped_api_calls_per_second"
 
+HTTP_API_RE = re.compile("(http:\/\/|https:\/\/)?([^:]+)(:([0-9]+))?")
 
-def calculate_sensor_id(
-        uuid: str,
-        type: str,
-        measurement_unit: str,
-        channel: int = 0,
-):
-    return "%s:%s:%s:%s:%d" % (HA_SENSOR, uuid, type, measurement_unit, channel)
+DEFAULT_USER_AGENT = f"MerossHA/{version.MEROSS_INTEGRATION_VERSION}"
 
 
-def calculate_cover_id(uuid: str, channel: int):
-    return "%s:%s:%d" % (HA_COVER, uuid, channel)
-
-
-def calculate_switch_id(uuid: str, channel: int):
-    return "%s:%s:%d" % (HA_SWITCH, uuid, channel)
-
-
-def calculate_valve_id(uuid: str):
-    return "%s:%s" % (HA_CLIMATE, uuid)
-
-
-def calculate_light_id(uuid: str, channel: int):
-    return "%s:%s:%d" % (HA_LIGHT, uuid, channel)
-
-
-def calculate_humidifier_id(uuid: str, channel: int):
-    return "%s:%s:%d" % (HA_FAN, uuid, channel)
+def calculate_id(platform: str, uuid: str, channel: int, supplementary_classifiers: List[str] = None) -> str:
+    base = "%s:%s:%d" % (platform, uuid, channel)
+    if supplementary_classifiers is not None:
+        extrastr = ":".join(supplementary_classifiers)
+        if extrastr != "":
+            extrastr = ":" + extrastr
+        return base + extrastr
+    return base
 
 
 def dismiss_notification(hass, notification_id):
@@ -78,7 +61,7 @@ def dismiss_notification(hass, notification_id):
         hass.services.async_call(
             domain="persistent_notification",
             service="dismiss",
-            service_data={"notification_id": "%s.%s" % (PLATFORM, notification_id)},
+            service_data={"notification_id": "%s.%s" % (DOMAIN, notification_id)},
         )
     )
 
@@ -91,7 +74,7 @@ def notify_error(hass, notification_id, title, message):
             service_data={
                 "title": title,
                 "message": message,
-                "notification_id": "%s.%s" % (PLATFORM, notification_id),
+                "notification_id": "%s.%s" % (DOMAIN, notification_id),
             },
         )
     )
@@ -119,7 +102,7 @@ def log_exception(
     formatted_message = (
         f"Error occurred.\n"
         f"-------------------------------------\n"
-        f"Component version: {MEROSS_CLOUD_VERSION}\n"
+        f"Component version: {MEROSS_IOT_VERSION}\n"
         f"Device info: \n"
         f"{device_info}\n"
         f'Error Message: "{message}"'

@@ -1,38 +1,39 @@
 import logging
-from datetime import timedelta
-from typing import Optional, Iterable, List
+from typing import Optional, List, Dict
 
+from meross_iot.controller.subdevice import Mts100v3Valve
+from meross_iot.manager import MerossManager
+from meross_iot.model.enums import ThermostatV3Mode
+from meross_iot.model.http.device import HttpDeviceInfo
+
+# Conditional import for switch device
+from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate import SUPPORT_TARGET_TEMPERATURE, SUPPORT_PRESET_MODE, HVAC_MODE_OFF, \
     HVAC_MODE_HEAT
 from homeassistant.components.climate.const import HVAC_MODE_AUTO, HVAC_MODE_COOL, CURRENT_HVAC_IDLE, CURRENT_HVAC_HEAT, \
     CURRENT_HVAC_OFF, CURRENT_HVAC_COOL
 from homeassistant.const import TEMP_CELSIUS
-from homeassistant.core import HomeAssistant
-from meross_iot.controller.device import BaseDevice
-from meross_iot.controller.known.subdevice import Mts100v3Valve
-from meross_iot.manager import MerossManager
-from meross_iot.model.enums import OnlineStatus, Namespace, ThermostatV3Mode
-from meross_iot.model.exception import CommandTimeoutError
-from meross_iot.model.push.generic import GenericPushNotification
-
-from .common import (PLATFORM, MANAGER, log_exception, calculate_valve_id,
-                     extract_subdevice_notification_data)
-
-# Conditional import for switch device
-from homeassistant.components.climate import ClimateEntity
+from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from . import MerossDevice
+from .common import (DOMAIN, MANAGER, HA_CLIMATE, DEVICE_LIST_COORDINATOR)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class ValveEntityWrapper(ClimateEntity):
-    """Wrapper class to adapt the Meross switches into the Homeassistant platform"""
+class ValveEntityWrapper(MerossDevice, ClimateEntity):
+    """Wrapper class to adapt the Meross devices into the Homeassistant platform"""
+    _device: Mts100v3Valve
 
-    def __init__(self, device: Mts100v3Valve):
-        self._device = device
-
-        # If the current device has more than 1 channel, we need to setup the device name and id accordingly
-        self._id = calculate_valve_id(device.internal_id)
-        self._entity_name = "{} ({})".format(device.name, device.type)
+    def __init__(self,
+                 channel: int,
+                 device: Mts100v3Valve,
+                 device_list_coordinator: DataUpdateCoordinator[Dict[str, HttpDeviceInfo]]):
+        super().__init__(
+            device=device,
+            channel=channel,
+            device_list_coordinator=device_list_coordinator,
+            platform=HA_CLIMATE)
 
         # For now, we assume that every Meross Thermostat supports the following modes.
         # This might be improved in the future by looking at the device abilities via get_abilities()
@@ -40,85 +41,6 @@ class ValveEntityWrapper(ClimateEntity):
         self._flags |= SUPPORT_TARGET_TEMPERATURE
         self._flags |= SUPPORT_PRESET_MODE
 
-    # region Device wrapper common methods
-    async def async_update(self):
-        if self._device.online_status == OnlineStatus.ONLINE:
-            try:
-                await self._device.async_update()
-            except CommandTimeoutError as e:
-                log_exception(logger=_LOGGER, device=self._device)
-                pass
-
-    async def async_added_to_hass(self) -> None:
-        self._device.register_push_notification_handler_coroutine(self._async_push_notification_received)
-        self.hass.data[PLATFORM]["ADDED_ENTITIES_IDS"].add(self.unique_id)
-
-    async def _async_push_notification_received(self, namespace: Namespace, data: dict, device_internal_id: str):
-        update_state = False
-        full_update = False
-
-        if namespace == Namespace.CONTROL_UNBIND:
-            _LOGGER.warning(f"Received unbind event. Removing device {self.name} from HA")
-            await self.platform.async_remove_entity(self.entity_id)
-        elif namespace == Namespace.SYSTEM_ONLINE:
-            _LOGGER.warning(f"Device {self.name} reported online event.")
-            online = OnlineStatus(int(data.get('online').get('status')))
-            update_state = True
-            full_update = online == OnlineStatus.ONLINE
-        elif namespace == Namespace.HUB_ONLINE:
-            _LOGGER.warning(f"Device {self.name} reported (HUB) online event.")
-            online_event_data = extract_subdevice_notification_data(data=data, 
-                                                                    filter_accessor='online', 
-                                                                    subdevice_id=self._device.subdevice_id)
-            online = OnlineStatus(int(online_event_data.get('status')))
-            update_state = True
-            full_update = online == OnlineStatus.ONLINE
-        else:
-            update_state = True
-            full_update = False
-
-        # In all other cases, just tell HA to update the internal state representation
-        if update_state:
-            self.async_schedule_update_ha_state(force_refresh=full_update)
-
-    async def async_will_remove_from_hass(self) -> None:
-        self._device.unregister_push_notification_handler_coroutine(self._async_push_notification_received)
-        self.hass.data[PLATFORM]["ADDED_ENTITIES_IDS"].remove(self.unique_id)
-
-    # endregion
-
-    # region Device wrapper common properties
-    @property
-    def unique_id(self) -> str:
-        return self._id
-
-    @property
-    def name(self) -> str:
-        return self._entity_name
-
-    @property
-    def device_info(self):
-        return {
-            'identifiers': {(PLATFORM, self._device.internal_id)},
-            'name': self._device.name,
-            'manufacturer': 'Meross',
-            'model': self._device.type + " " + self._device.hardware_version,
-            'sw_version': self._device.firmware_version
-        }
-
-    @property
-    def available(self) -> bool:
-        # A device is available if the client library is connected to the MQTT broker and if the
-        # device we are contacting is online
-        return self._device.online_status == OnlineStatus.ONLINE
-
-    @property
-    def should_poll(self) -> bool:
-        return False
-
-    # endregion
-
-    # region Platform-specific command methods
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         # Turn on the device if not already on
         if hvac_mode == HVAC_MODE_OFF:
@@ -143,9 +65,6 @@ class ValveEntityWrapper(ClimateEntity):
         target = kwargs.get('temperature')
         await self._device.async_set_target_temperature(target, skip_rate_limits=True)
 
-    # endregion
-
-    # region Platform specific properties
     @property
     def temperature_unit(self) -> str:
         # TODO: Check if there is a way for retrieving the Merasurement Unit from the library
@@ -207,7 +126,7 @@ class ValveEntityWrapper(ClimateEntity):
         return [HVAC_MODE_OFF, HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_COOL]
 
     @property
-    def preset_mode(self) -> str:
+    def preset_mode(self) -> Optional[str]:
         if self._device.mode is not None:
             return self._device.mode.name
         return None
@@ -220,47 +139,35 @@ class ValveEntityWrapper(ClimateEntity):
     def supported_features(self):
         return self._flags
 
-    # endregion
 
+async def async_setup_entry(hass: HomeAssistantType, config_entry, async_add_entities):
+    def entity_adder_callback():
+        """Discover and adds new Meross entities"""
+        manager: MerossManager = hass.data[DOMAIN][MANAGER]  # type
+        coordinator = hass.data[DOMAIN][DEVICE_LIST_COORDINATOR]
+        devices = manager.find_devices()
+        new_entities = []
+        devs = filter(lambda d: isinstance(d, Mts100v3Valve), devices)
 
-async def _add_entities(hass: HomeAssistant, devices: Iterable[BaseDevice], async_add_entities):
-    new_entities = []
+        for d in devs:
+            channels = [c.index for c in d.channels] if len(d.channels) > 0 else [0]
+            for channel_index in channels:
+                w = ValveEntityWrapper(device=d, channel=channel_index, device_list_coordinator=coordinator)
+                if w.unique_id not in hass.data[DOMAIN]["ADDED_ENTITIES_IDS"]:
+                    new_entities.append(w)
 
-    # Identify all the Mts100V3Valves
-    devs = filter(lambda d: isinstance(d, Mts100v3Valve), devices)
-    for d in devs:
-        w = ValveEntityWrapper(device=d)
-        if w.unique_id not in hass.data[PLATFORM]["ADDED_ENTITIES_IDS"]:
-            new_entities.append(w)
-        else:
-            _LOGGER.info(f"Skipping device {w} as it was already added to registry once.")
-    async_add_entities(new_entities, True)
+        async_add_entities(new_entities, True)
 
+    coordinator = hass.data[DOMAIN][DEVICE_LIST_COORDINATOR]
+    coordinator.async_add_listener(entity_adder_callback)
+    # Run the entity adder a first time during setup
+    entity_adder_callback()
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    manager = hass.data[PLATFORM][MANAGER]  # type:MerossManager
-    devices = manager.find_devices()
-    await _add_entities(hass=hass, devices=devices, async_add_entities=async_add_entities)
-
-    # Register a listener for the Bind push notification so that we can add new entities at runtime
-    async def platform_async_add_entities(push_notification: GenericPushNotification, target_devices: List[BaseDevice]):
-        if push_notification.namespace == Namespace.CONTROL_BIND \
-                or push_notification.namespace == Namespace.SYSTEM_ONLINE \
-                or push_notification.namespace == Namespace.HUB_ONLINE:
-
-            # TODO: Discovery needed only when device becomes online?
-            await manager.async_device_discovery(push_notification.namespace == Namespace.HUB_ONLINE,
-                                                 meross_device_uuid=push_notification.originating_device_uuid)
-            devs = manager.find_devices(device_uuids=(push_notification.originating_device_uuid,))
-            await _add_entities(hass=hass, devices=devs, async_add_entities=async_add_entities)
-
-    # Register a listener for new bound devices
-    manager.register_push_notification_handler_coroutine(platform_async_add_entities)
-
-
+# TODO: Implement entry unload
 # TODO: Unload entry
 # TODO: Remove entry
 
 
 def setup_platform(hass, config, async_add_entities, discovery_info=None):
     pass
+

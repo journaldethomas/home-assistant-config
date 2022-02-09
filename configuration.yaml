@@ -17,6 +17,11 @@ http:
 
 default_config:
 
+logger:
+  default: error
+  logs:
+    homeassistant.components.netatmo: debug
+
 ###################################################################
 ########    Configuration de la partie systeme     ###############
 ###################################################################
@@ -24,9 +29,9 @@ default_config:
 ########    Configuration de la partie materiel    ###############
 
 # Ajout du bluetooth
-ble_monitor:
-  hci_interface: 0
-  discovery: True
+#ble_monitor:
+#  hci_interface: 0
+#  discovery: True
 
 # Configuration de la cle ConBee2
 deconz:
@@ -48,14 +53,15 @@ influxdb:
   max_retries: 3
   default_measurement: state
 
-# Octoprint - Imprimante 3D - Wanhao D12
-#octoprint:
-#  host: !secret ip_octoprint
-#  api_key: !secret key_octoprint
-#  name: wanhaod12
+###################################################################
+##########          Utilisation Browser Mod           #############
+###################################################################
+
+browser_mod: 
+  prefix: "browser_"
 
 ###################################################################
-##########            Les compte-à-rebours            ##############
+##########            Les compte-à-rebours            #############
 ###################################################################
 
 timer:
@@ -73,6 +79,7 @@ timer:
 ###################################################################
 
 light:
+
   - platform: group
     name: Sam
     entities:
@@ -94,13 +101,14 @@ light:
   - platform: group
     name: Maxence
     entities:
-      - light.color_temperature_light_5
-      - light.color_temperature_light_6
+      - light.lumiere_03_maxence_01
+      - light.lumiere_04_maxence_02
 
   - platform: group
     name: Chloe
     entities:
-      - light.color_temperature_light_7
+      - light.lumiere_05_chloe_01
+      - light.lumiere_06_chloe_02
 
 ###################################################################
 ##########                   Switch                  ##############
@@ -120,7 +128,41 @@ switch:
           service: rest_command.eufy_guard_mode_home
         turn_off:
           service: rest_command.eufy_guard_mode_disarmed
-    
+
+  - platform: template
+    switches:
+      connexion_octoprint:
+        friendly_name: "Connexion Octoprint"
+        value_template: "{{ not is_state('sensor.octoprint_current_state', 'unknown') }}"
+        turn_on:
+          service: shell_command.octoprint_connect
+        turn_off:
+          service: shell_command.octoprint_disconnect
+
+  - platform: command_line
+    switches:
+      preheat_bed_pla:
+        command_on: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":70}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+        command_off: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":0}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+
+  - platform: command_line
+    switches:
+      preheat_tool_pla:
+        command_on: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":210}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+        command_off: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":0}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+
+  - platform: command_line
+    switches:
+      preheat_bed_petg:
+        command_on: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":80}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+        command_off: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":0}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+
+  - platform: command_line
+    switches:
+      preheat_tool_petg:
+        command_on: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":240}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+        command_off: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":0}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+
 ###################################################################
 ##########               Input Boolean                ##############
 ###################################################################
@@ -344,26 +386,54 @@ sensor:
       netatmo_temperature_consigne:
         friendly_name: température consigne Entrée
         device_class: temperature
-        #unit_of_measurement: '°C'
+        unit_of_measurement: "°C"
         value_template: "{{ state_attr('climate.piece_de_vie', 'temperature') }}"
-
-      netatmo_hvac_action:
-        friendly_name: Hvac action Entrée
-        #device_class: battery
-        #unit_of_measurement: '%'
-        value_template: "{{ state_attr('climate.piece_de_vie', 'hvac_action') }}"
 
       netatmo_hvac_modes:
         friendly_name: Hvac modes Entrée
-        #device_class: battery
-        #unit_of_measurement: '%'
         value_template: "{{ state_attr('climate.piece_de_vie', 'hvac_modes') }}"
 
       netatmo_preset_mode:
         friendly_name: Preset mode Entrée
-        #device_class: battery
-        #unit_of_measurement: '%'
         value_template: "{{ state_attr('climate.piece_de_vie', 'preset_mode') }}"
+
+# passage du temps onduleur en minute
+      ups_battery_runtime_friendly:
+        friendly_name: 'temps restant'
+        value_template: >- 
+          {% set time = (states.sensor.ups_battery_runtime.state | int) | int %}
+          {% set minutes = ((time % 3600) / 60) | int %}
+          {% set hours = ((time % 86400) / 3600) | int %}
+          {% set days = (time / 86400) | int %}
+    
+          {%- if time < 60 -%}
+            Less than a minute
+            {%- else -%}
+            {%- if days > 0 -%}
+              {{ days }}d
+            {%- endif -%}
+            {%- if hours > 0 -%}
+              {%- if days > 0 -%}
+                {{ ' ' }}
+              {%- endif -%}
+              {{ hours }}h
+            {%- endif -%}
+            {%- if minutes > 0 -%}
+              {%- if days > 0 or hours > 0 -%}
+                {{ ' ' }}
+              {%- endif -%}
+              {{ minutes }}m
+            {%- endif -%}
+          {%- endif -%}
+
+# Connaitre la saison
+  - platform: season
+
+# Fete du jour
+  - platform: rest
+    resource: https://fetedujour.fr/api/v2/nRVZvUKXwD6GKaBr/json
+    name: Fete du jour
+    value_template: "{{ value_json.name }}"
 
 # Unifi controller
 
@@ -398,6 +468,7 @@ sensor:
         - Ports_user
         - Ports_guest
         - Update
+
   - platform: template
     sensors:  
       unifi_switch_temp:
@@ -518,8 +589,106 @@ sensor:
                 Available
               {% endif %}
           friendly_name_template: Unifi AP Updates
-      
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_01_salle_de_jeux"
+    name: "temperature salle de jeux"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_01_salle_de_jeux"
+    name: "humidite salle de jeux"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_03_garage"
+    name: "temperature garage"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_03_garage"
+    name: "humidite garage"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_04_baie_technique"
+    name: "temperature baie technique"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_04_baie_technique"
+    name: "humidite baie technique"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_02_cave_a_vin"
+    name: "temperature cave"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_02_cave_a_vin"
+    name: "humidite cave"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_05_cuisine"
+    name: "temperature cuisine"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_05_cuisine"
+    name: "humidite cuisine"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_06_bureau"
+    name: "temperature bureau"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_06_bureau"
+    name: "humidite bureau"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_07_chambre_maxence"
+    name: "temperature chambre maxence"
+    value_template: "{{ value_json['temperature']|round(1)}}"
+    unit_of_measurement: "°C"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/temp_humidite_07_chambre_maxence"
+    name: "humidite chambre maxence"
+    value_template: "{{ value_json['humidity'] }}"
+    unit_of_measurement: "%"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/mouvement_01_salle_de_jeux"
+    name: "presence salle de jeux"
+    value_template: "{{ value_json['occupancy']}}"
+
+  - platform: mqtt
+    state_topic: "zigbee2mqtt/mouvement_02_bureau"
+    name: "presence bureau"
+    value_template: "{{ value_json['occupancy']}}"
+
 # Imprimante 3D
+
+  - platform: mqtt
+    name: "dispo imprimante"
+    state_topic: "octoPrint/hass/Connected"
 
   - platform: mqtt
     name: "Longueur Filament"
@@ -777,6 +946,13 @@ sensor:
     file_paths:
       - /config/home-assistant_v2.db
 
+# Informations à propos de HACS
+  - platform: command_line
+    name: hacs_version
+    scan_interval: 86400
+    command: >
+      grep -oP '"version": "\K[^"]+' custom_components/hacs/manifest.json
+
 # CHECK DE LA MISE A JOUR DE VALETUDO
 #  - platform: mqtt
 #    name: version_valetudo
@@ -949,7 +1125,7 @@ sensor:
     sensors:
       temperature_thermostat:
         friendly_name: 'Temperature thermostat'
-        value_template: "{{ state_attr('climate.netatmo_piece_de_vie', 'current_temperature') }}"
+        value_template: "{{ state_attr('climate.piece_de_vie', 'current_temperature') }}"
         attribute_templates:
           unit_of_measurement: "°C"
 
@@ -957,7 +1133,7 @@ sensor:
     sensors:
       temperature_cible:
         friendly_name: 'Temperature cible'
-        value_template: "{{ state_attr('climate.netatmo_piece_de_vie', 'temperature') }}"
+        value_template: "{{ state_attr('climate.piece_de_vie', 'temperature') }}"
         attribute_templates:
           unit_of_measurement: "°C"
 
@@ -965,7 +1141,7 @@ sensor:
     sensors:
       netatmo_hvac_action:
         friendly_name: 'chauffage'
-        value_template: "{{ 0 if state_attr('climate.netatmo_piece_de_vie', 'hvac_action') == 'idle' else 1}}"
+        value_template: "{{ 0 if state_attr('climate.piece_de_vie', 'hvac_action') == 'idle' else 1}}"
 
   # POUR LES CAMERAS EUFY
 
@@ -1182,7 +1358,7 @@ binary_sensor:
 
   #TEST BONNE REPONSE RASPBERRYPI OCTOPRINT
   - platform: ping
-    host: !secret rasp_vpn
+    host: !secret rasp_octoprint
     name: "OCTOPRINT"
 
 ###################################################################
@@ -1247,6 +1423,12 @@ camera:
     name: C1C
     input: !secret ezviz_c1c
 
+#caméra Octoprint - imprimante 3D
+  - platform: mjpeg
+    name: OctoPrint
+    still_image_url: http://192.168.10.20/webcam/?action=snapshot
+    mjpeg_url: http://192.168.10.20/webcam/?action=stream
+
 #pour la carte du robot aspirateur
 #pas encore opérationnel pour le D9
 
@@ -1269,7 +1451,10 @@ rest_command:
 ###################################################################
 
 shell_command:
-  maj: bash /config/shell/docker-updater.sh
+
+# pour connecter / déconnecter l'imprimante à Octoprint
+  octoprint_connect: "curl -s http://192.168.10.20/api/connection -d '{\"command\":\"connect\"}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
+  octoprint_disconnect: "curl -s http://192.168.10.20/api/connection -d '{\"command\":\"disconnect\"}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
 
 ###################################################################
 ########   Management de Docker et des divers Conteneurs  #########

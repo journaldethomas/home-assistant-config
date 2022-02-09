@@ -17,11 +17,12 @@
       - light.chambre_parentale_4
       - light.bandeau_dressing
       - light.lampe_salon 
-      - light.maxence_1
-      - light.maxence_2
-      - light.chloe_1
-      - light.spot_entree
-      - light.spot_salon
+      - light.lumiere_01_spot_entree
+      - light.lumiere_02_spot_salon
+      - light.lumiere_03_maxence_01
+      - light.lumiere_04_maxence_02
+      - light.lumiere_05_chloe_01
+      - light.lumiere_06_chloe_02
       
   all_lights_sam:
     name: Sam
@@ -55,23 +56,24 @@
     name: salon
     entities:  
       - light.lampe_salon
-      - light.spot_salon
+      - light.lumiere_02_spot_salon
 
   all_lights_maxence:
     name: Maxence
     entities:
-      - light.maxence_1
-      - light.maxence_2
+      - light.lumiere_03_maxence_01
+      - light.lumiere_04_maxence_02
 
   all_lights_chloe:
     name: Chloe
     entities:
-      - light.chloe_1
+      - light.lumiere_05_chloe_01
+      - light.lumiere_06_chloe_02
 
   all_lights_entree:
     name: Entree
     entities:  
-      - light.spot_entree
+      - light.lumiere_01_spot_entree
 
 ############################################################
 ##                    ALL TEMP GROUPS                   ##
@@ -96,7 +98,8 @@
   all_motion_sensor_entities:
     name: All Motion Sensor Entities
     entities:
-      - binary_sensor.motion_sensor
+      - binary_sensor.mouvement_01_salle_de_jeux_occupancy
+      - binary_sensor.mouvement_02_bureau_occupancy
       - binary_sensor.presence_garage_home_security_motion_detection
       - binary_sensor.presence_descente_garage_home_security_motion_detection
 

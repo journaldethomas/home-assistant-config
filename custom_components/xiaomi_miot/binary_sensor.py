@@ -46,11 +46,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     hass.data.setdefault(DATA_KEY, {})
     hass.data[DOMAIN]['add_entities'][ENTITY_DOMAIN] = async_add_entities
+    config['hass'] = hass
     did = str(config.get('miot_did') or '')
     model = str(config.get(CONF_MODEL) or '')
     entities = []
-    miot = config.get('miot_type')
-    if miot:
+    if miot := config.get('miot_type'):
         spec = await MiotSpec.async_from_type(hass, miot)
         for srv in spec.get_services('toilet', 'seat', 'motion_sensor', 'magnet_sensor', 'submersion_sensor'):
             if spec.get_service('nobody_time'):
@@ -63,7 +63,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 continue
             if srv.name in ['toilet']:
                 entities.append(MiotToiletEntity(config, srv))
-            elif srv.name in ['seat'] and spec.name in ['toilet']:
+            elif srv.name in ['seat'] and spec.name in ['toilet'] and not spec.get_service('toilet'):
                 # tinymu.toiletlid.v1
                 entities.append(MiotToiletEntity(config, srv))
             elif 'blt.' in did:
@@ -267,17 +267,17 @@ class BleBinarySensorEntity(MiotBinarySensorEntity):
         if sta is not None:
             self._state = sta
         if adt:
-            self.update_attrs(adt)
+            await self.async_update_attrs(adt)
 
 
 class MiotToiletEntity(MiotBinarySensorEntity):
     def __init__(self, config, miot_service: MiotService):
-        mapping = None
-        model = f'{config.get(CONF_MODEL)}'
-        if model.find('xjx.toilet.') >= 0:
-            mapping = miot_service.spec.services_mapping('toilet', 'seat')
-        super().__init__(config, miot_service, mapping=mapping)
-        self._prop_state = miot_service.get_property('seating_state')
+        super().__init__(config, miot_service)
+        self._prop_state = None
+        for s in miot_service.spec.get_services('toilet', 'seat'):
+            if p := s.get_property('seating_state'):
+                self._prop_state = p
+                break
         if not self._prop_state:
             self._prop_state = miot_service.get_property(
                 'mode', self._prop_state.name if self._prop_state else 'status',
@@ -380,7 +380,7 @@ class LumiBinarySensorEntity(MiotBinarySensorEntity):
         if self._prop_state and self._state is not None:
             adt[self._prop_state.full_name] = self._state
         if adt:
-            self.update_attrs(adt)
+            await self.async_update_attrs(adt)
 
 
 class MiotBinarySensorSubEntity(MiotPropertySubEntity, ToggleSubEntity, BinarySensorEntity):

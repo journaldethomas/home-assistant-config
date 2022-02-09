@@ -14,18 +14,15 @@ from meross_iot.http_api import MerossHttpClient
 from meross_iot.model.credentials import MerossCloudCreds
 from meross_iot.model.http.exception import UnauthorizedException, BadLoginException
 from requests.exceptions import ConnectTimeout
-import re
 
-from .common import PLATFORM, CONF_STORED_CREDS, CONF_HTTP_ENDPOINT, CONF_MQTT_SKIP_CERT_VALIDATION, \
-    CONF_OPT_ENABLE_RATE_LIMITS, CONF_OPT_GLOBAL_RATE_LIMIT_MAX_TOKENS, CONF_OPT_GLOBAL_RATE_LIMIT_PER_SECOND, \
-    CONF_OPT_DEVICE_RATE_LIMIT_MAX_TOKENS, CONF_OPT_DEVICE_RATE_LIMIT_PER_SECOND, CONF_OPT_DEVICE_MAX_COMMAND_QUEUE
+from .common import DOMAIN, CONF_STORED_CREDS, CONF_HTTP_ENDPOINT, CONF_MQTT_SKIP_CERT_VALIDATION, \
+    CONF_OPT_CUSTOM_USER_AGENT, HTTP_API_RE
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 1
-HTTP_API_RE = re.compile("(http:\/\/|https:\/\/)?([^:]+)(:([0-9]+))?")
 
 
-class MerossFlowHandler(config_entries.ConfigFlow, domain=PLATFORM):
+class MerossFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle Meross config flow."""
 
     VERSION = 1
@@ -195,26 +192,32 @@ class MerossFlowHandler(config_entries.ConfigFlow, domain=PLATFORM):
             )
 
         # TODO: Test MQTT connection?
-
-        await self.async_set_unique_id(http_api_endpoint)
-        self._abort_if_unique_id_configured()
-
-        return self.async_create_entry(
-            title=user_input[CONF_HTTP_ENDPOINT],
-            data={
-                CONF_USERNAME: username,
-                CONF_PASSWORD: password,
-                CONF_HTTP_ENDPOINT: http_api_endpoint,
-                CONF_STORED_CREDS: {
-                    "token": creds.token,
-                    "key": creds.key,
-                    "user_id": creds.user_id,
-                    "user_email": creds.user_email,
-                    "issued_on": creds.issued_on.isoformat(),
-                },
-                CONF_MQTT_SKIP_CERT_VALIDATION: skip_cert_validation
+        data = {
+            CONF_USERNAME: username,
+            CONF_PASSWORD: password,
+            CONF_HTTP_ENDPOINT: http_api_endpoint,
+            CONF_STORED_CREDS: {
+                "token": creds.token,
+                "key": creds.key,
+                "user_id": creds.user_id,
+                "user_email": creds.user_email,
+                "issued_on": creds.issued_on.isoformat(),
             },
-        )
+            CONF_MQTT_SKIP_CERT_VALIDATION: skip_cert_validation
+        }
+        entry = await self.async_set_unique_id(http_api_endpoint)
+
+        # If this is a re-auth for an existing entry, just update the entry configuration.
+        if entry is not None:
+            self._abort_if_unique_id_configured(updates=data, reload_on_update=True)  # No more needed
+            await self.hass.config_entries.async_reload(entry.entry_id)
+
+        # Otherwise create a new entry from scratch
+        else:
+            return self.async_create_entry(
+                title=user_input[CONF_HTTP_ENDPOINT],
+                data=data
+            )
 
     @staticmethod
     @callback
@@ -256,7 +259,8 @@ class MerossOptionsFlowHandler(config_entries.OptionsFlow):
                 title="",
                 data={k: v for k, v in user_input.items() if v not in (None, "")},
             )
-        
+
+        saved_options = {}
         if self.config_entry is not None:
             saved_options = self.config_entry.options
 
@@ -264,50 +268,20 @@ class MerossOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema = self._build_options_schema()    
         else:
             data_schema = self._build_options_schema(
-                enable_rate_limits=saved_options.get(CONF_OPT_ENABLE_RATE_LIMITS),
-                global_rate_limit_burst=saved_options.get(CONF_OPT_GLOBAL_RATE_LIMIT_MAX_TOKENS),
-                global_rate_limit_rate=saved_options.get(CONF_OPT_GLOBAL_RATE_LIMIT_PER_SECOND),
-                device_rate_limit_burst=saved_options.get(CONF_OPT_DEVICE_RATE_LIMIT_MAX_TOKENS),
-                device_rate_limit_rate=saved_options.get(CONF_OPT_DEVICE_RATE_LIMIT_PER_SECOND),
-                device_max_command_queue=saved_options.get(CONF_OPT_DEVICE_MAX_COMMAND_QUEUE)
+                custom_user_agent=saved_options.get(CONF_OPT_CUSTOM_USER_AGENT),
             )
 
         return self.async_show_form(
             step_id="init",
             data_schema=data_schema
-            )
+        )
 
     def _build_options_schema(self,
-                              enable_rate_limits: bool = False,
-                              global_rate_limit_burst: int = 10,
-                              global_rate_limit_rate: int = 4,
-                              device_rate_limit_burst: int = 3,
-                              device_rate_limit_rate: int = 2,
-                              device_max_command_queue: int = 5
+                              custom_user_agent: str = None,
                               ) -> vol.Schema:
         return vol.Schema({
-            vol.Required(CONF_OPT_ENABLE_RATE_LIMITS,
-                         msg="Set this flag to enable API rate limits",
-                         default=enable_rate_limits,
-                         description="When set, API rate limits are enabled."): bool,
-            vol.Required(CONF_OPT_GLOBAL_RATE_LIMIT_MAX_TOKENS,
-                         msg="Limits the global API calls burst to at most # calls",
-                         default=global_rate_limit_burst,
-                         description="Maximum global API call burst limit"): int,
-            vol.Required(CONF_OPT_GLOBAL_RATE_LIMIT_PER_SECOND,
-                         msg="Limits the global API calls to at most # calls/second",
-                         default=global_rate_limit_rate,
-                         description="Maximum global API calls rate limit"): int,
-            vol.Required(CONF_OPT_DEVICE_RATE_LIMIT_MAX_TOKENS,
-                         msg="Limits maximum burst rate for single device API calls",
-                         default=device_rate_limit_burst,
-                         description="Maximum per-device API calls burst limit"): int,
-            vol.Required(CONF_OPT_DEVICE_RATE_LIMIT_PER_SECOND,
-                         msg="Limits single device API calls to at most # calls/second",
-                         default=device_rate_limit_rate,
-                         description="Maximum per-device API calls rate limit"): int,
-            vol.Required(CONF_OPT_DEVICE_MAX_COMMAND_QUEUE,
-                         msg="Maximum per-device command queue",
-                         default=device_max_command_queue,
-                         description="Maximum per-device command queue"): int
+            vol.Optional(CONF_OPT_CUSTOM_USER_AGENT,
+                         msg="Specify a custom user agent to be used when polling Meross HTTP API",
+                         default=custom_user_agent,
+                         description="Custom user-agent header to use when polling Meross HTTP API."): str
         })

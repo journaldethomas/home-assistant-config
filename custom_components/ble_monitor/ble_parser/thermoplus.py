@@ -1,4 +1,4 @@
-# Parser for Thermoplus BLE advertisements
+"""Parser for Thermoplus BLE advertisements"""
 import logging
 from struct import unpack
 
@@ -6,13 +6,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def parse_thermoplus(self, data, source_mac, rssi):
-    # check for adstruc length
+    """Thermoplus parser"""
     msg_length = len(data)
     if msg_length == 22:
         device_id = data[2]
         if device_id == 0x10:
             device_type = "Lanyard/mini hygrometer"
-        elif device_id == 0x11:
+        elif device_id in [0x11, 0x15]:
             device_type = "Smart hygrometer"
         else:
             device_type = None
@@ -74,4 +74,5 @@ def parse_thermoplus(self, data, source_mac, rssi):
 
 
 def to_mac(addr: int):
+    """Return formatted MAC address"""
     return ':'.join('{:02x}'.format(x) for x in addr).upper()

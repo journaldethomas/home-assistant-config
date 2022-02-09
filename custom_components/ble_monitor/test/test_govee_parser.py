@@ -76,6 +76,24 @@ class TestGovee:
         assert sensor_msg["battery"] == 100
         assert sensor_msg["rssi"] == -86
 
+    def test_Govee_H5075_double(self):
+        """Test Govee H5075 parser with BLE advertisement with double manufacturer specific data packet."""
+        data_string = "043e4602010000116c2438c1a43a0d09475648353037355f36433131030388ec02010509ff88ec00012d6e64001aff4c000215494e54454c4c495f524f434b535f48575075f2ffc2b3"
+        data = bytes(bytearray.fromhex(data_string))
+        # pylint: disable=unused-variable
+        ble_parser = BleParser()
+        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+
+        assert sensor_msg["firmware"] == "Govee"
+        assert sensor_msg["type"] == "H5072/H5075"
+        assert sensor_msg["mac"] == "A4C138246C11"
+        assert sensor_msg["packet"] == "no packet id"
+        assert sensor_msg["data"]
+        assert sensor_msg["temperature"] == 7.7166
+        assert sensor_msg["humidity"] == 16.6
+        assert sensor_msg["battery"] == 100
+        assert sensor_msg["rssi"] == -77
+
     def test_Govee_H5178_sensor_0(self):
         """Test Govee H5178 parser."""
         data_string = "043E2B0201000045C5DF38C1A41F0A09423531373843353435030388EC0201050CFF010001010003A00F640000BF"
@@ -131,3 +149,20 @@ class TestGovee:
         assert sensor_msg["humidity"] == 60.5
         assert sensor_msg["battery"] == 91
         assert sensor_msg["rssi"] == -74
+
+    def test_Govee_H5183(self):
+        """Test Govee H5183 parser."""
+        data_string = "043e2b02010000edaeac38c1a41f0303518302010511ff5DA1B401000101E400800A2813240000000000000000a9"
+        data = bytes(bytearray.fromhex(data_string))
+        # pylint: disable=unused-variable
+        ble_parser = BleParser()
+        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+
+        assert sensor_msg["firmware"] == "Govee"
+        assert sensor_msg["type"] == "H5183"
+        assert sensor_msg["mac"] == "A4C138ACAEED"
+        assert sensor_msg["packet"] == "no packet id"
+        assert sensor_msg["data"]
+        assert sensor_msg["temperature probe 1"] == 26.0
+        assert sensor_msg["temperature alarm"] == 49.0
+        assert sensor_msg["rssi"] == -87

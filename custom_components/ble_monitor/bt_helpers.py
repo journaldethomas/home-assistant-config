@@ -129,7 +129,7 @@ def bluetoothctl_power_off():
     command = subprocess.run(["bluetoothctl", "power", "off"], stderr=subprocess.PIPE, check=True)
     stderr = command.stderr
     if command.returncode != 0:
-        _LOGGER.error("eexecuting bluetoothctl power off failed: %s", stderr)
+        _LOGGER.error("executing bluetoothctl power off failed: %s", stderr)
         return
 
 
@@ -139,7 +139,7 @@ def bluetoothctl_power_on():
     command = subprocess.run(["bluetoothctl", "power", "on"], stderr=subprocess.PIPE, check=True)
     stderr = command.stderr
     if command.returncode != 0:
-        _LOGGER.error("eexecuting bluetoothctl power on failed: s%s", stderr)
+        _LOGGER.error("executing bluetoothctl power on failed: s%s", stderr)
         return
 
 
@@ -150,7 +150,7 @@ def reset_bluetooth(hci):
     # Select the Bluetooth adapter and retreive the state of the adapter
     mac = hci_get_mac([hci])[0]
     if not mac:
-        _LOGGER.eror(
+        _LOGGER.error(
             "HCI%i seems not to exist (anymore), check BT interface mac address in your settings ",
             hci
         )
@@ -219,11 +219,12 @@ try:
     DEFAULT_BT_INTERFACE = list(BT_INTERFACES.items())[0][1]
     DEFAULT_HCI_INTERFACE = list(BT_INTERFACES.items())[0][0]
 except (IndexError, OSError, subprocess.CalledProcessError):
-    BT_INTERFACES = {0: "00:00:00:00:00:00"}
-    DEFAULT_BT_INTERFACE = "00:00:00:00:00:00"
-    DEFAULT_HCI_INTERFACE = 0
+    BT_INTERFACES = {}
+    DEFAULT_BT_INTERFACE = "disable"
+    DEFAULT_HCI_INTERFACE = "disable"
     _LOGGER.debug(
         "No Bluetooth interface found. Make sure Bluetooth is installed on your system"
     )
 
 BT_MULTI_SELECT = dict([(v, v + ' (hci' + str(k) + ')') for k, v in BT_INTERFACES.items()])
+BT_MULTI_SELECT["disable"] = "Don't use Bluetooth adapter"
