@@ -43,15 +43,18 @@ Cela fait maintenant plus d'un an que j'utilise Home Assistant et je veux partag
 Voici une partie de mon matériel :
 - Clé USB Conbee II pour me passer de la plupart des passerelles Zigbee;
 - Clé USB Aeotec Z-Wave Plus Z-Stick Gen5 pour centraliser tous les équipements Z-Wave;
-- Phillips Hue avec pont et Ligthstrip, spots GU10 x4, ampoules E27 x6;
+- Phillips Hue avec pont et ligthstrip, spots GU10 x4, ampoules E27 x7;
 - Ikea Tradfri spots GU10 x4;
-- Station météo NetAtmo avec pluviomètre
-- Capteurs température Aqara x4
+- Spot lumineux AwoX x2;
+- Station météo NetAtmo avec pluviomètre;
+- Capteurs température Aqara x4;
 - Détecteurs mouvement Aqara;
 - Détecteurs de mouvement Aeotec x2;
 - Détecteurs ouverture porte Aqara;
 - Détecteurs ouverture porte Aeotec x2;
+- Module Z-Wave Fibaro FGD-212;
 - Prise connectées Osram x3;
+- Prise connectée SmaBit;
 - Robot aspirateur Dreame D9;
 - Détecteur de fumée Fibaro x2.
 

@@ -889,8 +889,10 @@ class MiioEntity(BaseEntity):
     def update_attrs(self, attrs: dict, update_parent=False):
         self._state_attrs.update(attrs or {})
         if self.hass and self.platform:
-            tps = self.custom_config_list('attributes_template') or []
+            tps = cv.ensure_list(self.custom_config('attributes_template'))
             for tpl in tps:
+                if not tpl:
+                    continue
                 tpl = CUSTOM_TEMPLATES.get(tpl, tpl)
                 tpl = cv.template(tpl)
                 tpl.hass = self.hass
@@ -1185,7 +1187,6 @@ class MiotEntity(MiioEntity):
                             mapping=local_mapping,
                         )
                     )
-                self._available = True
                 self._local_state = True
             except DeviceException as exc:
                 log = self.logger.error
@@ -1208,7 +1209,6 @@ class MiotEntity(MiioEntity):
                 results = await self.hass.async_add_executor_job(
                     partial(mic.get_properties_for_mapping, self.miot_did, mapping)
                 )
-                self._available = True
                 if self.custom_config_bool('check_lan'):
                     if self.miot_device:
                         await self.hass.async_add_executor_job(self.miot_device.info)
@@ -1243,6 +1243,7 @@ class MiotEntity(MiioEntity):
             return False
         attrs.update(result.to_attributes(self._state_attrs))
         attrs['state_updater'] = updater
+        self._available = True
         self._state = True if self._state_attrs.get('power') else False
 
         if self._miot_service:
@@ -1592,7 +1593,7 @@ class MiotEntity(MiioEntity):
         if self.custom_config_bool('auto_cloud') and not self._local_state:
             mcw = self.xiaomi_cloud
         try:
-            if m2m and self._miio2miot.has_setter(siid, piid):
+            if m2m and self._miio2miot.has_setter(siid, piid=piid):
                 results = [
                     self._miio2miot.set_property(self.miot_device, siid, piid, value),
                 ]
@@ -1658,10 +1659,8 @@ class MiotEntity(MiioEntity):
         if self.custom_config_bool('auto_cloud') and not self._local_state:
             mca = self.xiaomi_cloud
         try:
-            if m2m and self._miio2miot.has_setter(siid, aiid):
-                result = [
-                    self._miio2miot.call_action(self.miot_device, siid, aiid, pms),
-                ]
+            if m2m and self._miio2miot.has_setter(siid, aiid=aiid):
+                result = self._miio2miot.call_action(self.miot_device, siid, aiid, pms)
             elif isinstance(mca, MiotCloud):
                 result = mca.do_action(pms)
                 dly = self.custom_config_integer('cloud_delay_update', 5)

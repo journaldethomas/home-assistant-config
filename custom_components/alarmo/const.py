@@ -29,7 +29,7 @@ from homeassistant.components.alarm_control_panel import (
 
 from homeassistant.helpers import config_validation as cv
 
-VERSION = "1.8.3"
+VERSION = "1.8.5"
 NAME = "Alarmo"
 MANUFACTURER = "@nielsfaber"
 
@@ -47,7 +47,7 @@ PANEL_TITLE = NAME
 PANEL_ICON = "mdi:shield-home"
 PANEL_NAME = "alarm-panel"
 
-INITIALIZATION_TIME = datetime.timedelta(seconds=30)
+INITIALIZATION_TIME = datetime.timedelta(seconds=60)
 SENSOR_ARM_TIME = datetime.timedelta(seconds=5)
 
 STATES = [
@@ -145,13 +145,7 @@ ATTR_COMMAND_PAYLOAD = "command_payload"
 ATTR_FORCE = "force"
 ATTR_SKIP_DELAY = "skip_delay"
 
-PUSH_EVENTS = [
-    "ios.notification_action_fired",
-    "mobile_app_notification_action",
-]
-EVENT_CATEGORIES = [
-    "ALARMO_ARM_FAILURE",
-]
+PUSH_EVENT = "mobile_app_notification_action"
 EVENT_ACTION_FORCE_ARM = "ALARMO_FORCE_ARM"
 EVENT_ACTION_RETRY_ARM = "ALARMO_RETRY_ARM"
 EVENT_ACTION_DISARM = "ALARMO_DISARM"

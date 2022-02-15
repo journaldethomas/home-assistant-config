@@ -262,22 +262,32 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         # Configuration in UI
         for key, value in config_entry.data.items():
             config[key] = value
-
         for key, value in config_entry.options.items():
             config[key] = value
-
         config[CONFIG_IS_FLOW] = True
-        if CONF_DEVICES not in config:
-            config[CONF_DEVICES] = []
-        else:
+    else:
+        # Configuration in YAML
+        for key, value in CONFIG_YAML.items():
+            config[key] = value
+        _LOGGER.info(
+            "Available Bluetooth interfaces for BLE monitor: %s",
+            list(BT_MULTI_SELECT.values())
+        )
+
+    if CONF_DEVICES not in config:
+        config[CONF_DEVICES] = []
+
+    if config[CONFIG_IS_FLOW]:
+        # Configuration in UI
+
+        if "ids_from_name" in config:
             # device configuration is taken from yaml, but yaml config already removed
+            devlist = config[CONF_DEVICES]
             # save unique IDs (only once)
-            if "ids_from_name" in config:
-                devlist = config[CONF_DEVICES]
-                for dev_idx, dev_conf in enumerate(devlist):
-                    if CONF_NAME in dev_conf:
-                        devlist[dev_idx][CONF_UNIQUE_ID] = dev_conf[CONF_NAME]
-                del config["ids_from_name"]
+            for dev_idx, dev_conf in enumerate(devlist):
+                if CONF_NAME in dev_conf:
+                    devlist[dev_idx][CONF_UNIQUE_ID] = dev_conf[CONF_NAME]
+            del config["ids_from_name"]
 
         if not config[CONF_BT_INTERFACE]:
             default_hci = list(BT_INTERFACES.keys())[
@@ -313,41 +323,45 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
                     bt_mac_list.append(str(DEFAULT_BT_INTERFACE))
     else:
         # Configuration in YAML
-        for key, value in CONFIG_YAML.items():
-            config[key] = value
-        _LOGGER.info(
-            "Available Bluetooth interfaces for BLE monitor: %s",
-            list(BT_MULTI_SELECT.values())
-        )
-
         if config[CONF_HCI_INTERFACE]:
             # Configuration of BT interface with hci number
-            for hci in CONFIG_YAML[CONF_HCI_INTERFACE]:
-                try:
-                    hci_list.append(int(hci))
-                    bt_mac = BT_INTERFACES.get(hci)
-                    if bt_mac:
-                        bt_mac_list.append(str(bt_mac))
-                    else:
+            if "disable" in CONFIG_YAML[CONF_HCI_INTERFACE]:
+                _LOGGER.debug("Bluetooth interface is disabled")
+                default_hci = None
+                hci_list = ["disable"]
+                bt_mac_list = ["disable"]
+            else:
+                for hci in CONFIG_YAML[CONF_HCI_INTERFACE]:
+                    try:
+                        hci_list.append(int(hci))
+                        bt_mac = BT_INTERFACES.get(hci)
+                        if bt_mac:
+                            bt_mac_list.append(str(bt_mac))
+                        else:
+                            _LOGGER.error("Bluetooth interface hci%i is not available", hci)
+                    except ValueError:
                         _LOGGER.error("Bluetooth interface hci%i is not available", hci)
-                except ValueError:
-                    _LOGGER.error("Bluetooth interface hci%i is not available", hci)
         else:
             # Configuration of BT interface with mac address
-            conf_bt_interfaces = [x.upper() for x in CONFIG_YAML[CONF_BT_INTERFACE]]
-            for bt_mac in conf_bt_interfaces:
-                try:
-                    hci = list(BT_INTERFACES.keys())[
-                        list(BT_INTERFACES.values()).index(bt_mac)
-                    ]
-                    hci_list.append(int(hci))
-                    bt_mac_list.append(str(bt_mac))
-                except ValueError:
-                    _LOGGER.error(
-                        "Bluetooth interface with MAC address %s is not available",
-                        bt_mac,
-                    )
-
+            if "disable" in config[CONF_BT_INTERFACE]:
+                _LOGGER.debug("Bluetooth interface is disabled")
+                default_hci = None
+                hci_list = ["disable"]
+                bt_mac_list = ["disable"]
+            else:
+                conf_bt_interfaces = [x.upper() for x in CONFIG_YAML[CONF_BT_INTERFACE]]
+                for bt_mac in conf_bt_interfaces:
+                    try:
+                        hci = list(BT_INTERFACES.keys())[
+                            list(BT_INTERFACES.values()).index(bt_mac)
+                        ]
+                        hci_list.append(int(hci))
+                        bt_mac_list.append(str(bt_mac))
+                    except ValueError:
+                        _LOGGER.error(
+                            "Bluetooth interface with MAC address %s is not available",
+                            bt_mac,
+                        )
     if not hci_list:
         # Fall back in case no hci interfaces are added
         default_hci = list(BT_INTERFACES.keys())[
@@ -361,14 +375,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
 
     config[CONF_HCI_INTERFACE] = hci_list
     config[CONF_BT_INTERFACE] = bt_mac_list
+    _LOGGER.debug("HCI interface is %s", config[CONF_HCI_INTERFACE])
 
     hass.config_entries.async_update_entry(config_entry, data={}, options=config)
-
     _LOGGER.debug("async_setup_entry: %s", config)
 
     UPDATE_UNLISTENER = config_entry.add_update_listener(_async_update_listener)
-
-    _LOGGER.debug("HCI interface is %s", config[CONF_HCI_INTERFACE])
 
     blemonitor = BLEmonitor(config)
     hass.bus.async_listen(EVENT_HOMEASSISTANT_STOP, blemonitor.shutdown_handler)
@@ -421,6 +433,15 @@ async def async_migrate_entry(hass, config_entry):
             options[CONF_BT_INTERFACE] = ["disable"]
 
         config_entry.version = 4
+        hass.config_entries.async_update_entry(config_entry, options=options)
+        _LOGGER.info("Migrated config entry to version %d", config_entry.version)
+
+    if config_entry.version == 4:
+        options = dict(config_entry.options)
+        if CONF_BT_AUTO_RESTART not in options:
+            options[CONF_BT_AUTO_RESTART] = DEFAULT_BT_AUTO_RESTART
+
+        config_entry.version = 5
         hass.config_entries.async_update_entry(config_entry, options=options)
         _LOGGER.info("Migrated config entry to version %d", config_entry.version)
     return True
@@ -633,11 +654,14 @@ class HCIdump(Thread):
             fac = {}
             conn = {}
             btctrl = {}
+            interface_is_ok = {}
+            initialized_evt = {}
             if self._event_loop is None:
                 self._event_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._event_loop)
+            asyncio.set_event_loop(self._event_loop)
             if "disable" not in self.config[CONF_BT_INTERFACE]:
                 for hci in self._interfaces:
+                    interface_is_ok[hci] = False
                     try:
                         mysocket[hci] = aiobs.create_bt_socket(hci)
                     except OSError as error:
@@ -649,66 +673,76 @@ class HCIdump(Thread):
                         conn[hci], btctrl[hci] = self._event_loop.run_until_complete(
                             fac[hci]
                         )
-                        _LOGGER.debug("HCIdump thread: connected to hci%i", hci)
-                        btctrl[hci].process = self.process_hci_events
+                        # Wait up to five seconds for aioblescan BLEScanRequester to initialize
+                        initialized_evt[hci] = getattr(btctrl[hci], "_initialized")
+                        _LOGGER.debug(
+                            "HCIdump thread: aioblescan BLEScanRequester._initialized is %s for hci%i, "
+                            " waiting for connection...",
+                            initialized_evt[hci].is_set(),
+                            hci,
+                        )
                         try:
-                            self._event_loop.run_until_complete(
-                                btctrl[hci].send_scan_request(self._active)
+                            self._event_loop.run_until_complete(asyncio.wait_for(initialized_evt[hci].wait(), 5))
+                        except asyncio.TimeoutError:
+                            _LOGGER.error(
+                                "HCIdump thread: Something wrong - interface hci%i not ready,"
+                                " and will be skipped for current scan period.",
+                                hci,
                             )
-                        except RuntimeError as error:
-                            if self.config[CONF_BT_AUTO_RESTART] is True:
-                                ts_now = dt_util.now()
-                                if (ts_now - self.last_bt_reset).seconds > 60:
-                                    _LOGGER.error(
-                                        "HCIdump thread: Runtime error while sending scan request on hci%i: %s. "
-                                        "Resetting Bluetooth adapter %s and trying again.",
-                                        hci,
-                                        error,
-                                        BT_INTERFACES[hci],
-                                    )
-                                    reset_bluetooth(hci)
-                                    self.last_bt_reset = ts_now
-                            else:
+                        else:
+                            btctrl[hci].process = self.process_hci_events
+                            _LOGGER.debug("HCIdump thread: connected to hci%i", hci)
+                            try:
+                                self._event_loop.run_until_complete(
+                                    btctrl[hci].send_scan_request(self._active)
+                                )
+                            except RuntimeError as error:
                                 _LOGGER.error(
                                     "HCIdump thread: Runtime error while sending scan request on hci%i: %s.",
                                     hci,
                                     error,
                                 )
+                            else:
+                                interface_is_ok[hci] = True
+                                _LOGGER.debug(
+                                    "HCIdump thread: aioblescan BLEScanRequester._initialized is %s for hci%i, "
+                                    " connection established, send_scan_request succeeded.",
+                                    initialized_evt[hci].is_set(),
+                                    hci,
+                                )
+                    if (interface_is_ok[hci] is False) and (self.config[CONF_BT_AUTO_RESTART] is True):
+                        ts_now = dt_util.now()
+                        if (ts_now - self.last_bt_reset).seconds > 60:
+                            _LOGGER.error(
+                                "HCIdump thread: Trying to reset Bluetooth adapter %s,"
+                                " will try to use it next scan period.",
+                                BT_INTERFACES[hci],
+                            )
+                            reset_bluetooth(hci)
+                            self.last_bt_reset = ts_now
             _LOGGER.debug("HCIdump thread: start main event_loop")
             try:
                 self._event_loop.run_forever()
             finally:
-                _LOGGER.debug("HCIdump thread: main event_loop stopped, finishing")
+                _LOGGER.debug("HCIdump thread: main event_loop stopped, finishing.")
                 if "disable" not in self.config[CONF_BT_INTERFACE]:
                     for hci in self._interfaces:
-                        try:
-                            self._event_loop.run_until_complete(
-                                btctrl[hci].stop_scan_request()
-                            )
-                        except RuntimeError as error:
-                            if self.config[CONF_BT_AUTO_RESTART] is True:
-                                ts_now = dt_util.now()
-                                if (ts_now - self.last_bt_reset).seconds > 60:
-                                    _LOGGER.error(
-                                        "HCIdump thread: Runtime error while stop scan request on hci%i: %s "
-                                        "Resetting Bluetooth adapter %s and trying again.",
-                                        hci,
-                                        error,
-                                        BT_INTERFACES[hci],
-                                    )
-                                    reset_bluetooth(hci)
-                                    self.last_bt_reset = ts_now
-                            else:
+                        if interface_is_ok[hci] is True:
+                            try:
+                                self._event_loop.run_until_complete(
+                                    btctrl[hci].stop_scan_request()
+                                )
+                            except RuntimeError as error:
                                 _LOGGER.error(
                                     "HCIdump thread: Runtime error while stop scan request on hci%i: %s.",
                                     hci,
                                     error,
                                 )
-                        except KeyError:
-                            _LOGGER.debug(
-                                "HCIdump thread: Key error while stop scan request on hci%i",
-                                hci,
-                            )
+                            except KeyError:
+                                _LOGGER.debug(
+                                    "HCIdump thread: Key error while stop scan request on hci%i",
+                                    hci,
+                                )
                         try:
                             conn[hci].close()
                         except KeyError:

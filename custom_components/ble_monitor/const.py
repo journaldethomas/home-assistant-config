@@ -13,8 +13,10 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
-    CONDUCTIVITY,
+    CONCENTRATION_PARTS_PER_MILLION,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+    CONDUCTIVITY,
     ELECTRIC_POTENTIAL_VOLT,
     ENERGY_KILO_WATT_HOUR,
     ENTITY_CATEGORY_DIAGNOSTIC,
@@ -726,6 +728,33 @@ SENSOR_TYPES: tuple[BLEMonitorSensorEntityDescription, ...] = (
         device_class=None,
         state_class=SensorStateClass.MEASUREMENT,
     ),
+    BLEMonitorSensorEntityDescription(
+        key="co2",
+        sensor_class="MeasuringSensor",
+        name="co2 sensor",
+        unique_id="co2_",
+        icon="mdi:molecule-co2",
+        native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
+        device_class=SensorDeviceClass.CO2,
+    ),
+    BLEMonitorSensorEntityDescription(
+        key="pm2.5",
+        sensor_class="MeasuringSensor",
+        name="PM2.5 sensor",
+        unique_id="pm25_",
+        icon="mdi:molecule-co2",
+        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        device_class=SensorDeviceClass.PM25,
+    ),
+    BLEMonitorSensorEntityDescription(
+        key="pm10",
+        sensor_class="MeasuringSensor",
+        name="PM10 sensor",
+        unique_id="pm10_",
+        icon="mdi:molecule-co2",
+        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        device_class=SensorDeviceClass.PM10,
+    ),
 )
 
 
@@ -756,15 +785,18 @@ MEASUREMENT_DICT = {
     'M1S-T500'                : [["battery", "rssi"], [], ["toothbrush"]],
     'ZNMS16LM'                : [["battery", "rssi"], [], ["lock", "fingerprint"]],
     'ZNMS17LM'                : [["battery", "rssi"], [], ["lock", "fingerprint"]],
+    'MJZNMSQ01YD'             : [["battery", "rssi"], [], ["lock", "fingerprint"]],
+    'XMZNMST02YD'             : [["battery", "rssi"], [], ["lock", "fingerprint"]],
     'CGC1'                    : [["temperature", "humidity", "battery", "rssi"], [], []],
     'CGD1'                    : [["temperature", "humidity", "battery", "rssi"], [], []],
     'CGDK2'                   : [["temperature", "humidity", "battery", "rssi"], [], []],
-    'CGG1'                    : [["temperature", "humidity", "battery", "rssi"], [], []],
-    'CGG1-ENCRYPTED'          : [["temperature", "humidity", "battery", "rssi"], [], []],
+    'CGG1'                    : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
+    'CGG1-ENCRYPTED'          : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
     'CGH1'                    : [["battery", "rssi"], [], ["opening"]],
     'CGP1W'                   : [["temperature", "humidity", "battery", "pressure", "rssi"], [], []],
     'CGPR1'                   : [["illuminance", "battery", "rssi"], [], ["light", "motion"]],
-    'MHO-C401'                : [["temperature", "humidity", "battery", "rssi"], [], []],
+    'CGDN1'                   : [["temperature", "humidity", "co2", "pm2.5", "pm10", "battery", "rssi"], [], []],
+    'MHO-C401'                : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
     'MHO-C303'                : [["temperature", "humidity", "battery", "rssi"], [], []],
     'JQJCY01YM'               : [["temperature", "humidity", "battery", "formaldehyde", "rssi"], [], []],
     'JTYJGD03MI'              : [["rssi"], ["button", "battery"], ["smoke detector"]],
@@ -822,8 +854,9 @@ MEASUREMENT_DICT = {
     'iBBQ-6'                  : [["temperature probe 1", "temperature probe 2", "temperature probe 3", "temperature probe 4", "temperature probe 5", "temperature probe 6", "rssi"], [], []],
     'IBS-TH'                  : [["temperature", "humidity", "battery", "rssi"], [], []],
     'BEC07-5'                 : [["temperature", "humidity", "rssi"], [], []],
-    'iBeacon'                 : [["rssi", "measured power", "cypress temperature", "cypress humidity"], ["uuid", "mac", "major", "minor"], []], # mac can be dynamic
-    'AltBeacon'               : [["rssi", "measured power"], ["uuid", "mac", "major", "minor"], []], # mac can be dynamic
+    'iBeacon'                 : [["rssi", "measured power", "cypress temperature", "cypress humidity"], ["uuid", "mac", "major", "minor"], []],  # mac can be dynamic
+    'AltBeacon'               : [["rssi", "measured power"], ["uuid", "mac", "major", "minor"], []],  # mac can be dynamic
+    'MyCO2'                   : [["temperature", "humidity", "co2", "rssi"], [], []],
 }
 
 
@@ -850,6 +883,8 @@ MANUFACTURER_DICT = {
     'M1S-T500'                : 'Xiaomi Soocas',
     'ZNMS16LM'                : 'Xiaomi Aqara',
     'ZNMS17LM'                : 'Xiaomi Aqara',
+    'MJZNMSQ01YD'             : 'Xiaomi',
+    'XMZNMST02YD'             : 'Xiaomi',
     'CGC1'                    : 'Qingping',
     'CGD1'                    : 'Qingping',
     'CGDK2'                   : 'Qingping',
@@ -858,6 +893,7 @@ MANUFACTURER_DICT = {
     'CGH1'                    : 'Qingping',
     'CGP1W'                   : 'Qingping',
     'CGPR1'                   : 'Qingping',
+    'CGDN1'                   : 'Qingping',
     'MHO-C401'                : 'Miaomiaoce',
     'MHO-C303'                : 'Miaomiaoce',
     'JQJCY01YM'               : 'Honeywell',
@@ -904,6 +940,7 @@ MANUFACTURER_DICT = {
     'Blue Puck RHT'           : 'Teltonika',
     'HTP.xw'                  : 'SensorPush',
     'HT.w'                    : 'SensorPush',
+    'MyCO2'                   : 'Sensirion',
     'Moat S2'                 : 'Moat',
     'Tempo Disc THD'          : 'BlueMaestro',
     'Tempo Disc THPD'         : 'BlueMaestro',
@@ -943,6 +980,7 @@ REPORT_UNKNOWN_LIST = [
     "Qingping",
     "rbaron",
     "Ruuvitag",
+    "Sensirion",
     "SensorPush",
     "Teltonika",
     "Thermoplus",
