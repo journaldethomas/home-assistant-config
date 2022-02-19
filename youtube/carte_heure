@@ -1,0 +1,42 @@
+type: custom:button-card
+entity: ''
+styles:
+  card:
+    - padding: 4%
+    - font-size: 52px
+    - border-radius: 20px
+    - color: '#212121'
+  grid:
+    - grid-template-areas: '"date time"'
+    - grid-template-columns: 2fr 1fr
+    - grid-template-rows: 1fr
+  custom_fields:
+    time:
+      - justify-self: end
+    date:
+      - justify-self: start
+      - font-size: 16px
+      - '--ha-card-box-shadow': none
+custom_fields:
+  time: |
+    [[[ return states['sensor.time'].state ]]]
+  date:
+    card:
+      type: markdown
+      content: >-
+        <center>  <b>{% if is_state('sensor.season', 'spring')%} 🌻 &nbsp; {{
+        states('sensor.date_longue') }}&nbsp; 🌻
+            {% elif is_state('sensor.season', 'summer')%} 🌴 &nbsp; {{ states('sensor.date_longue') }}&nbsp; 🌴
+            {% elif is_state('sensor.season', 'autumn')%} 🍂 &nbsp; {{ states('sensor.date_longue') }}&nbsp; 🍂 
+            {% elif is_state('sensor.season', 'winter')%} ❄️ &nbsp; {{ states('sensor.date_longue') }}&nbsp; ❄️ 
+            {% else %} Erreur Saison {% endif %} <center> </b>
+
+        <center> ☀️ &nbsp; Levé   {{
+        as_timestamp(states.sun.sun.attributes.next_rising) | timestamp_custom('
+        %H:%M') | replace(" 0", "") }}  &nbsp;🌙  &nbsp; Couché   {{
+        as_timestamp(states.sun.sun.attributes.next_setting) |
+        timestamp_custom(' %H:%M') | replace(" 0", "") }} <center> 
+
+        <center><i> 🎉 &nbsp; Nous fêtons la Saint
+        </i>{{states('sensor.fete_du_jour') }} <center>
+
