@@ -17,12 +17,13 @@
       - light.chambre_parentale_4
       - light.bandeau_dressing
       - light.lampe_salon 
-      - light.lumiere_01_spot_entree
-      - light.lumiere_02_spot_salon
       - light.lumiere_03_maxence_01
       - light.lumiere_04_maxence_02
       - light.lumiere_05_chloe_01
       - light.lumiere_06_chloe_02
+      - light.lumiere_01_spot_entree
+      - light.lumiere_02_spot_salon
+      - light.lumiere_07_sous_sol
       
   all_lights_sam:
     name: Sam
@@ -75,6 +76,11 @@
     entities:  
       - light.lumiere_01_spot_entree
 
+  all_lights_garage:
+    name: garage
+    entities:  
+      - light.lumiere_07_sous_sol
+
 ############################################################
 ##                    ALL TEMP GROUPS                   ##
 ############################################################
@@ -99,9 +105,9 @@
     name: All Motion Sensor Entities
     entities:
       - binary_sensor.mouvement_01_salle_de_jeux_occupancy
-      - binary_sensor.mouvement_02_bureau_occupancy
-      - binary_sensor.presence_garage_home_security_motion_detection
-      - binary_sensor.presence_descente_garage_home_security_motion_detection
+#      - binary_sensor.mouvement_02_bal_occupancy
+      - binary_sensor.mouvement_03_garage_motion_sensor_status
+      - binary_sensor.mouvement_04_cave_a_vin_motion_sensor_status
 
   all_person_entities:
     name: All Persons Entities
@@ -112,13 +118,14 @@
   all_doors_sensor_entities:
     name: All Doors Sensor Entities
     entities:
-      - binary_sensor.porte_fenetre_salle_a_manger_access_control_window_door_is_open
-      - binary_sensor.porte_fenetre_salon_access_control_window_door_is_open
-      - binary_sensor.strips_mazw_access_control_window_door_is_open
-      - binary_sensor.velux_maxence_access_control_window_door_is_open
+      - binary_sensor.capteur_ouverture_01_salon_door_state
+      - binary_sensor.capteur_ouverture_02_sam_door_state
+      - binary_sensor.velux_chloe_door_state
+      - binary_sensor.velux_maxence_door_state
+      - binary_sensor.capteur_ouverture_05_descente_garage
 
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
     entities:
-      - binary_sensor.detecteur_fumee_smoke_alarm_smoke_detected
-      - binary_sensor.detecteur_fumee_pallier_smoke_alarm_smoke_detected
+      - binary_sensor.detecteur_fumee_01_rdc_smoke_alarm
+      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm

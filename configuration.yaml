@@ -17,10 +17,10 @@ http:
 
 default_config:
 
-logger:
-  default: error
-  logs:
-    homeassistant.components.netatmo: debug
+#logger:
+#  default: error
+#  logs:
+#    homeassistant.components.netatmo: debug
 
 ###################################################################
 ########    Configuration de la partie systeme     ###############
@@ -32,11 +32,6 @@ logger:
 #ble_monitor:
 #  hci_interface: 0
 #  discovery: True
-
-# Configuration de la cle ConBee2
-deconz:
-  host: !secret ip_deconz
-  port: !secret port_deconz
 
 # Configuration NetAtmo à utiliser pour que Caméra Welcome remonte
 netatmo:
@@ -110,6 +105,10 @@ light:
       - light.lumiere_05_chloe_01
       - light.lumiere_06_chloe_02
 
+  - platform: group
+    name: Garage
+    entities:
+      - light.lumiere_07_sous_sol
 ###################################################################
 ##########                   Switch                  ##############
 ###################################################################
@@ -168,6 +167,17 @@ switch:
 ###################################################################
 
 input_boolean:
+
+# Machine à laver
+  machine_en_cours:
+    name: machine en cours
+    icon: mdi:washing-machine
+
+# Input boolean courrier
+  courrier_present:
+    name: courrier
+    icon: mdi:mail
+
 # Input boolean impression 3D
   nouvelle_impression:
     name: Nouvelle impression 3D
@@ -313,6 +323,7 @@ cover:
     payload_stop: "s"
     state_open: "open"
     state_closed: "closed"
+
 
 ###################################################################
 ##########              Les sensors                  ##############
@@ -590,99 +601,6 @@ sensor:
               {% endif %}
           friendly_name_template: Unifi AP Updates
 
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_01_salle_de_jeux"
-    name: "temperature salle de jeux"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_01_salle_de_jeux"
-    name: "humidite salle de jeux"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_03_garage"
-    name: "temperature garage"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_03_garage"
-    name: "humidite garage"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_04_baie_technique"
-    name: "temperature baie technique"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_04_baie_technique"
-    name: "humidite baie technique"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_02_cave_a_vin"
-    name: "temperature cave"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_02_cave_a_vin"
-    name: "humidite cave"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_05_cuisine"
-    name: "temperature cuisine"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_05_cuisine"
-    name: "humidite cuisine"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_06_bureau"
-    name: "temperature bureau"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_06_bureau"
-    name: "humidite bureau"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_07_chambre_maxence"
-    name: "temperature chambre maxence"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/temp_humidite_07_chambre_maxence"
-    name: "humidite chambre maxence"
-    value_template: "{{ value_json['humidity'] }}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/mouvement_01_salle_de_jeux"
-    name: "presence salle de jeux"
-    value_template: "{{ value_json['occupancy']}}"
-
-  - platform: mqtt
-    state_topic: "zigbee2mqtt/mouvement_02_bureau"
-    name: "presence bureau"
-    value_template: "{{ value_json['occupancy']}}"
 
 # Imprimante 3D
 
@@ -693,9 +611,9 @@ sensor:
   - platform: mqtt
     name: "Longueur Filament"
     state_topic: "octoPrint/hass/printing"
-    value_template: "{{ ((value_json.job.filament.tool0.length)|float * 0.001)|round(2) }}"
+    value_template: "{{ ((value_json.job.filament.length)|float * 0.001)|round(2) }}"
     json_attributes_topic: "octoPrint/hass/printing"
-    json_attributes_template: "{{ value_json.job.filament.tool0 | tojson }}"
+    json_attributes_template: "{{ value_json.job.filament | tojson }}"
     unit_of_measurement: "m"
 
   - platform: template
@@ -934,13 +852,6 @@ sensor:
 
 # Informations remontant de HASS
 
-  - platform: version
-    name: version installée
-    source: local
-
-  - platform: version
-    name: version disponible
-    source: docker
 
   - platform: filesize
     file_paths:
@@ -972,46 +883,46 @@ sensor:
 
     #----- Nombre d'automations
       count_automations:
-        entity_id: sensor.date
+        friendly_name: 'automations'
         icon_template: mdi:robot
         value_template: "{{ states.automation | list | length }}"
 
     #----- Nombre de Scripts
       count_scripts:
-        entity_id: sensor.date
+        friendly_name: 'scripts'
         icon_template: mdi:script-text
         value_template: "{{ states.script| list | length }}"
 
     #----- Nombre de Device Trackers
       count_device_trackers:
-        entity_id: sensor.date
+        friendly_name: 'trackers'
         value_template: "{{ states.device_tracker | list | length }}"
 
     #----- Nombre de Binary Sensors
       count_binary_sensors:
-        entity_id: sensor.date
+        friendly_name: 'binary sensors'
         value_template: "{{ states.binary_sensor| list | length }}"
 
     #----- Nombre de Sensors
       count_sensors:
-        entity_id: sensor.date
+        friendly_name: 'sensors'
         icon_template: mdi:leak
         value_template: "{{ states.sensor | list | length }}"
 
     #----- Nombre de Switches
       count_switches:
-        entity_id: sensor.date
+        friendly_name: 'switch'
         icon_template: mdi:light-switch
         value_template: "{{ states.switch | list | length }}"
 
     #----- Nombre de Zones
       count_zones:
-        entity_id: sensor.date
+        friendly_name: 'zones'
         value_template: "{{ states.zone | list | length }}"
 
     #----- Nombre de Lights
       count_lights:
-        entity_id: sensor.date
+        friendly_name: 'lumieres'
         icon_template: mdi:lightbulb-group
         value_template: "{{ states.light | list | length }}"
 
@@ -1043,6 +954,9 @@ sensor:
       all_lights_entree:
         value_template: >
           {{ states | selectattr('entity_id','in',state_attr('group.all_lights_entree','entity_id')) | selectattr('state','eq','on') | list | count }}
+      all_lights_garage:
+        value_template: >
+          {{ states | selectattr('entity_id','in',state_attr('group.all_lights_garage','entity_id')) | selectattr('state','eq','on') | list | count }}
   
   # compter toutes les lumières connectées de la maison
 
@@ -1111,8 +1025,6 @@ sensor:
       - type: ipv4_address
         arg: eth0
 
-  # POUR CONNAITRE SON IP PUBLIQUE
-  - platform: dnsip
 
   - platform: uptime
 
