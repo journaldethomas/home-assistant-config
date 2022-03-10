@@ -1256,7 +1256,6 @@ sensor:
     name: "batterie presence salon"
     value_template: "{{ value_json['battery']}}"
 
-
 ###################################################################
 ########                   BINARY SENSOR                  #########
 ###################################################################
@@ -1414,11 +1413,15 @@ telegram_bot:
     api_key: !secret telegram_token
     allowed_chat_ids: 
     - !secret id_telegram_thomas
+    - !secret id_telegram_famille
       
 notify:
   - platform: telegram
-    name: telegram
+    name: telegram_thomas
     chat_id: !secret id_telegram_thomas
+  - platform: telegram
+    name: telegram_famille
+    chat_id: !secret id_telegram_famille
 
 # Text to speech
 tts:
