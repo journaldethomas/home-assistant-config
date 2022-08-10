@@ -1483,7 +1483,7 @@ camera:
 #caméra Annke
   - platform: ffmpeg
     name: Annke_NC400
-    input: rstp://admin:AQWZzsxEDCrfv12@192.168.40.50:554/H264/ch1/main/av_stream
+    input: !secret annkenc400
 
 #pour la carte du robot aspirateur
 #pas encore opérationnel pour le D9
