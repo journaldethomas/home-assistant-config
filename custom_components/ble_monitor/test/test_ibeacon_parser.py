@@ -1,6 +1,8 @@
-'''The tests for the iBeacon ble_parser.'''
-from ble_monitor.ble_parser import BleParser
+"""The tests for the iBeacon ble_parser."""
 from uuid import UUID
+
+from ble_monitor.ble_parser import BleParser
+
 
 class TestIBeacon:
     '''Tests for the iBeacon parser'''
@@ -11,13 +13,13 @@ class TestIBeacon:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg['type'] == 'iBeacon'
         assert sensor_msg['packet'] == 'no packet id'
         assert sensor_msg['firmware'] == 'iBeacon'
         assert sensor_msg['rssi'] == -77
-        assert sensor_msg['mac'] == '6A:6B:C9:A2:3E:43'
+        assert sensor_msg['mac'] == '6A6BC9A23E43'
         assert str(UUID(sensor_msg['uuid'])) == 'e2c56db5-dffb-48d2-b060-d0f5a71096e0'
         assert sensor_msg['uuid'] == 'e2c56db5dffb48d2b060d0f5a71096e0'
         assert sensor_msg['major'] == 100
@@ -33,11 +35,11 @@ class TestIBeacon:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser(tracker_whitelist=[bytearray.fromhex('e2c56db5dffb48d2b060d0f5a71096e0')])
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert tracker_msg['is connected']
         assert tracker_msg['rssi'] == -77
-        assert tracker_msg['mac'] == '6A:6B:C9:A2:3E:43'
+        assert tracker_msg['mac'] == '6A6BC9A23E43'
         assert str(UUID(tracker_msg['uuid'])) == 'e2c56db5-dffb-48d2-b060-d0f5a71096e0'
         assert tracker_msg['uuid'] == 'e2c56db5dffb48d2b060d0f5a71096e0'
         assert tracker_msg['tracker_id'] == b'\xe2\xc5m\xb5\xdf\xfbH\xd2\xb0`\xd0\xf5\xa7\x10\x96\xe0'
@@ -54,7 +56,7 @@ class TestIBeacon:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg is None
         assert tracker_msg is None
@@ -65,7 +67,7 @@ class TestIBeacon:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg is None
         assert tracker_msg is None

@@ -1,5 +1,8 @@
 """Support for Xiaomi sensors."""
 import logging
+import time
+import json
+from typing import cast
 from datetime import datetime, timedelta
 from functools import partial
 
@@ -10,10 +13,8 @@ from homeassistant.helpers.entity import (
 from homeassistant.components.sensor import (
     DOMAIN as ENTITY_DOMAIN,
 )
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.restore_state import RestoreEntity, RestoreStateData
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from miio.waterpurifier_yunmi import WaterPurifierYunmi
 
 from . import (
@@ -23,8 +24,8 @@ from . import (
     XIAOMI_CONFIG_SCHEMA as PLATFORM_SCHEMA,  # noqa: F401
     MiioEntity,
     MiotEntity,
-    BaseEntity,
     BaseSubEntity,
+    MiCoordinatorEntity,
     MiotPropertySubEntity,
     MiotCloud,
     DeviceException,
@@ -36,82 +37,7 @@ from .core.miot_spec import (
     MiotService,
     MiotProperty,
 )
-
-_LOGGER = logging.getLogger(__name__)
-DATA_KEY = f'{ENTITY_DOMAIN}.{DOMAIN}'
-
-SERVICE_TO_METHOD = {}
-
-
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    await async_setup_config_entry(hass, config_entry, async_setup_platform, async_add_entities, ENTITY_DOMAIN)
-
-    cfg = hass.data[DOMAIN].get(config_entry.entry_id) or {}
-    mic = cfg.get(CONF_XIAOMI_CLOUD)
-    if isinstance(mic, MiotCloud) and mic.user_id:
-        hass.data[DOMAIN].setdefault('accounts', {})
-        hass.data[DOMAIN]['accounts'].setdefault(mic.user_id, {})
-        if not hass.data[DOMAIN]['accounts'][mic.user_id].get('messenger'):
-            entity = MihomeMessageSensor(hass, mic)
-            hass.data[DOMAIN]['accounts'][mic.user_id]['messenger'] = entity
-            async_add_entities([entity])
-
-
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    hass.data.setdefault(DATA_KEY, {})
-    hass.data[DOMAIN]['add_entities'][ENTITY_DOMAIN] = async_add_entities
-    config['hass'] = hass
-    model = str(config.get(CONF_MODEL) or '')
-    entities = []
-    if model in ['yunmi.waterpuri.lx9', 'yunmi.waterpuri.lx11']:
-        entity = WaterPurifierYunmiEntity(config)
-        entities.append(entity)
-    else:
-        if miot := config.get('miot_type'):
-            spec = await MiotSpec.async_from_type(hass, miot)
-            for srv in spec.get_services(
-                'battery', 'environment', 'tds_sensor', 'switch_sensor', 'vibration_sensor',
-                'temperature_humidity_sensor', 'illumination_sensor', 'gas_sensor', 'smoke_sensor',
-                'router', 'lock', 'washer', 'printer', 'sleep_monitor', 'bed', 'walking_pad', 'treadmill',
-                'oven', 'microwave_oven', 'health_pot', 'coffee_machine', 'multifunction_cooking_pot',
-                'cooker', 'induction_cooker', 'pressure_cooker', 'air_fryer', 'juicer', 'water_purifier',
-                'pet_feeder', 'fridge_chamber', 'plant_monitor', 'germicidal_lamp', 'vital_signs',
-                'fruit_vegetable_purifier', 'sterilizer', 'steriliser', 'table',
-            ):
-                if srv.name in ['lock']:
-                    if not srv.get_property('operation_method', 'operation_id'):
-                        continue
-                elif srv.name in ['battery']:
-                    if spec.name not in ['switch_sensor', 'toothbrush']:
-                        continue
-                elif srv.name in ['environment']:
-                    if spec.name not in ['air_monitor']:
-                        continue
-                elif srv.name in ['tds_sensor']:
-                    if spec.get_service('water_purifier', 'fish_tank'):
-                        continue
-                elif srv.name in ['temperature_humidity_sensor']:
-                    if spec.name not in ['temperature_humidity_sensor']:
-                        continue
-                elif srv.name in ['illumination_sensor']:
-                    if spec.name not in ['illumination_sensor']:
-                        continue
-                elif srv.name in ['pet_feeder']:
-                    # no readable properties in mmgg.feeder.petfeeder
-                    pass
-                elif not srv.mapping():
-                    continue
-                if srv.get_property('cook_mode') or srv.get_action('start_cook', 'cancel_cooking'):
-                    entities.append(MiotCookerEntity(config, srv))
-                elif srv.name in ['oven', 'microwave_oven']:
-                    entities.append(MiotCookerEntity(config, srv))
-                else:
-                    entities.append(MiotSensorEntity(config, srv))
-    for entity in entities:
-        hass.data[DOMAIN]['entities'][entity.unique_id] = entity
-    async_add_entities(entities, update_before_add=True)
-    bind_services_to_entries(hass, SERVICE_TO_METHOD)
-
+from .core.utils import local_zone
 
 try:
     # hass 2021.4.0b0+
@@ -125,6 +51,92 @@ try:
     from homeassistant.components.sensor import STATE_CLASSES
 except ImportError:
     STATE_CLASSES = []
+
+_LOGGER = logging.getLogger(__name__)
+DATA_KEY = f'{ENTITY_DOMAIN}.{DOMAIN}'
+
+SERVICE_TO_METHOD = {}
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    cfg = hass.data[DOMAIN].get(config_entry.entry_id) or {}
+    mic = cfg.get(CONF_XIAOMI_CLOUD)
+    if isinstance(mic, MiotCloud) and mic.user_id:
+        hass.data[DOMAIN]['accounts'].setdefault(mic.user_id, {})
+        if not hass.data[DOMAIN]['accounts'][mic.user_id].get('messenger'):
+            entity = MihomeMessageSensor(hass, mic)
+            hass.data[DOMAIN]['accounts'][mic.user_id]['messenger'] = entity
+            async_add_entities([entity], update_before_add=False)
+    await async_setup_config_entry(hass, config_entry, async_setup_platform, async_add_entities, ENTITY_DOMAIN)
+
+
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    hass.data.setdefault(DATA_KEY, {})
+    hass.data[DOMAIN]['add_entities'][ENTITY_DOMAIN] = async_add_entities
+    config['hass'] = hass
+    model = str(config.get(CONF_MODEL) or '')
+    spec = hass.data[DOMAIN]['miot_specs'].get(model)
+    entities = []
+    if model in ['yunmi.waterpuri.lx9', 'yunmi.waterpuri.lx11']:
+        entity = WaterPurifierYunmiEntity(config)
+        entities.append(entity)
+    elif isinstance(spec, MiotSpec):
+        for srv in spec.get_services(
+            'battery', 'environment', 'tds_sensor', 'switch_sensor', 'vibration_sensor',
+            'temperature_humidity_sensor', 'illumination_sensor', 'gas_sensor', 'smoke_sensor',
+            'router', 'lock', 'washer', 'printer', 'sleep_monitor', 'bed', 'walking_pad', 'treadmill',
+            'oven', 'microwave_oven', 'health_pot', 'coffee_machine', 'multifunction_cooking_pot',
+            'cooker', 'induction_cooker', 'pressure_cooker', 'air_fryer', 'juicer', 'water_purifier',
+            'pet_feeder', 'fridge_chamber', 'plant_monitor', 'germicidal_lamp', 'vital_signs',
+            'fruit_vegetable_purifier', 'sterilizer', 'steriliser', 'table',
+        ):
+            if srv.name in ['lock']:
+                if not srv.get_property('operation_method', 'operation_id'):
+                    continue
+            elif srv.name in ['battery']:
+                if spec.name not in ['switch_sensor', 'toothbrush']:
+                    continue
+            elif srv.name in ['environment']:
+                if spec.name not in ['air_monitor']:
+                    continue
+            elif srv.name in ['tds_sensor']:
+                if spec.get_service('water_purifier', 'fish_tank'):
+                    continue
+            elif srv.name in ['temperature_humidity_sensor']:
+                if spec.name not in ['temperature_humidity_sensor']:
+                    continue
+            elif srv.name in ['illumination_sensor']:
+                if spec.name not in ['illumination_sensor']:
+                    continue
+            elif srv.name in ['pet_feeder']:
+                # no readable properties in mmgg.feeder.petfeeder
+                pass
+            elif not srv.mapping():
+                continue
+            if srv.get_property('cook_mode') or srv.get_action('start_cook', 'cancel_cooking'):
+                entities.append(MiotCookerEntity(config, srv))
+            elif srv.name in ['oven', 'microwave_oven']:
+                entities.append(MiotCookerEntity(config, srv))
+            else:
+                entities.append(MiotSensorEntity(config, srv))
+    for entity in entities:
+        hass.data[DOMAIN]['entities'][entity.unique_id] = entity
+    async_add_entities(entities, update_before_add=False)
+    bind_services_to_entries(hass, SERVICE_TO_METHOD)
+
+
+def datetime_with_tzinfo(value):
+    if isinstance(value, datetime):
+        pass
+    elif isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    elif isinstance(value, (int, float)):
+        value = datetime.fromtimestamp(value)
+    else:
+        value = cast(datetime, value)
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=local_zone())
+    return value
 
 
 class MiotSensorEntity(MiotEntity, SensorEntity):
@@ -154,21 +166,26 @@ class MiotSensorEntity(MiotEntity, SensorEntity):
         self._name = f'{self.device_name} {self._prop_state.friendly_desc}'
         self._attr_icon = self._miot_service.entity_icon
         self._attr_state_class = None
-
-        if self._prop_state:
-            self._attr_icon = self._prop_state.entity_icon
-            self._attr_device_class = self._prop_state.device_class
-            self._attr_unit_of_measurement = self._prop_state.unit_of_measurement
-
-        self._state_attrs.update({
-            'state_property': self._prop_state.full_name if self._prop_state else None,
-        })
+        self._attr_native_unit_of_measurement = None
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
+        if prop := self.custom_config('state_property'):
+            self._prop_state = self._miot_service.get_property_by_full_name(prop) or self._prop_state
+        if self._prop_state:
+            self._attr_icon = self._prop_state.entity_icon
+            self._attr_device_class = self._prop_state.device_class
+            self._attr_native_unit_of_measurement = self._prop_state.unit_of_measurement
+            self._state_attrs.update({
+                'state_property': self._prop_state.full_name,
+            })
+
         cls = self.custom_config('state_class')
         if cls in STATE_CLASSES:
             self._attr_state_class = cls
+
+        if uom := self.custom_config('unit_of_measurement'):
+            self._attr_native_unit_of_measurement = uom
 
         if act := self._miot_service.get_action('pet_food_out'):
             prop = self._miot_service.get_property('feeding_measure')
@@ -195,9 +212,10 @@ class MiotSensorEntity(MiotEntity, SensorEntity):
                     })
         self._prop_state.description_to_dict(self._state_attrs)
 
+    async def async_update_for_main_entity(self):
+        await super().async_update_for_main_entity()
+
         if self._miot_service.name in ['washer']:
-            add_fans = self._add_entities.get('fan')
-            add_selects = self._add_entities.get('select')
             pls = self._miot_service.get_properties(
                 'mode', 'spin_speed', 'rinsh_times',
                 'target_temperature', 'target_water_level',
@@ -206,25 +224,19 @@ class MiotSensorEntity(MiotEntity, SensorEntity):
             for p in pls:
                 if not p.value_list and not p.value_range:
                     continue
-                if p.name in self._subs:
-                    self._subs[p.name].update()
-                elif add_selects and self.entry_config_version >= 0.3:
-                    from .select import MiotSelectSubEntity
+                if self.entry_config_version >= 0.3:
                     opt = {
                         'before_select': self.before_select_modes,
                     }
-                    self._subs[p.name] = MiotSelectSubEntity(self, p, option=opt)
-                    add_selects([self._subs[p.name]], update_before_add=True)
-                elif add_fans:
-                    from .fan import MiotWasherSubEntity
-                    self._subs[p.name] = MiotWasherSubEntity(self, p)
-                    add_fans([self._subs[p.name]], update_before_add=True)
+                    self._update_sub_entities(p, None, 'select', option=opt)
+                else:
+                    self._update_sub_entities(p, None, 'fan')
             add_switches = self._add_entities.get('switch')
             if self._miot_service.get_action('start_wash', 'pause'):
                 pnm = 'action'
                 prop = self._miot_service.get_property('status')
                 if pnm in self._subs:
-                    self._subs[pnm].update()
+                    self._subs[pnm].update_from_parent()
                 elif add_switches and prop:
                     from .switch import MiotWasherActionSubEntity
                     self._subs[pnm] = MiotWasherActionSubEntity(self, prop)
@@ -274,10 +286,6 @@ class MiotSensorEntity(MiotEntity, SensorEntity):
         )
 
     @property
-    def state(self):
-        return self.native_value
-
-    @property
     def native_value(self):
         key = f'{self._prop_state.full_name}_desc'
         if key in self._state_attrs:
@@ -324,11 +332,9 @@ class MiotCookerEntity(MiotSensorEntity):
                 'mode', 'cook_mode', 'heat_level', 'target_time', 'target_temperature',
             )
             for p in pls:
-                if not (p.writeable or self._action_start):
-                    continue
                 opt = None
                 if p.name in self._subs:
-                    self._subs[p.name].update()
+                    self._subs[p.name].update_from_parent()
                 elif not (p.value_list or p.value_range):
                     continue
                 elif add_selects:
@@ -338,6 +344,8 @@ class MiotCookerEntity(MiotSensorEntity):
                     )
                     if p.writeable:
                         self._subs[p.name] = MiotSelectSubEntity(self, p)
+                    elif not self._action_start:
+                        continue
                     elif p.iid in self._action_start.ins:
                         if self._action_cancel:
                             opt = {
@@ -360,7 +368,7 @@ class MiotCookerEntity(MiotSensorEntity):
             if self._action_start or self._action_cancel:
                 pnm = 'cook_switch'
                 if pnm in self._subs:
-                    self._subs[pnm].update()
+                    self._subs[pnm].update_from_parent()
                 elif add_switches:
                     from .switch import MiotCookerSwitchSubEntity
                     self._subs[pnm] = MiotCookerSwitchSubEntity(self, self._prop_state)
@@ -392,14 +400,25 @@ class MiotCookerEntity(MiotSensorEntity):
                     self._prop_state.full_name: sta,
                 })
         else:
-            _LOGGER.warning('Miot device %s has no turn_action: %s', self.name, on)
+            _LOGGER.warning('%s: Miot device has no turn_action: %s', self.name_model, on)
         return ret
 
 
 class BaseSensorSubEntity(BaseSubEntity, SensorEntity):
-    def __init__(self, parent, attr, option=None):
-        super().__init__(parent, attr, option)
-        self._attr_state_class = self._option.get('state_class')
+    def __init__(self, parent, attr, option=None, **kwargs):
+        kwargs.setdefault('domain', ENTITY_DOMAIN)
+        self._attr_state_class = None
+        super().__init__(parent, attr, option, **kwargs)
+        self._attr_native_unit_of_measurement = self._attr_unit_of_measurement
+
+    @property
+    def native_value(self):
+        value = self._attr_state
+        if hasattr(self, '_attr_native_value') and self._attr_native_value is not None:
+            value = self._attr_native_value
+        if self.device_class == DEVICE_CLASS_TIMESTAMP:
+            value = datetime_with_tzinfo(value)
+        return value
 
     @property
     def state_class(self):
@@ -407,15 +426,38 @@ class BaseSensorSubEntity(BaseSubEntity, SensorEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        self._attr_state_class = self.custom_config('state_class', self._attr_state_class)
-        if self._attr_state_class not in STATE_CLASSES:
-            self._attr_state_class = None
+        cls = self.custom_config('state_class')
+        if cls in STATE_CLASSES:
+            self._attr_state_class = cls
+
+        if uom := self.custom_config('unit_of_measurement'):
+            self._attr_native_unit_of_measurement = uom
+
+    def update(self, data=None):
+        old_state = self._attr_state
+        super().update(data)
+
+        now = datetime.now(tz=local_zone(self.hass))
+        if self.state_class in ['total_increasing'] and old_state not in [None, '', STATE_UNKNOWN]:
+            ptm = self._extra_attrs.get('updated_time') or now
+            if now.strftime('%Y-%m-%d') == ptm.strftime('%Y-%m-%d'):
+                try:
+                    if (self._attr_state or 0) < old_state:
+                        self._attr_state = old_state
+                except (TypeError, ValueError) as exc:
+                    _LOGGER.warning(
+                        '%s: Total increasing sensor state error: %s',
+                        self.name_model, [exc, self._attr_state, old_state],
+                    )
+        if self._attr_state != old_state:
+            self._extra_attrs['updated_time'] = now
 
 
 class MiotSensorSubEntity(MiotPropertySubEntity, BaseSensorSubEntity):
     def __init__(self, parent, miot_property: MiotProperty, option=None):
-        self._attr_state_class = None
-        super().__init__(parent, miot_property, option)
+        super().__init__(parent, miot_property, option, domain=ENTITY_DOMAIN)
+        self._attr_state_class = miot_property.state_class
+        self._attr_native_unit_of_measurement = self._attr_unit_of_measurement
 
         self._prop_battery = None
         for s in self._miot_service.spec.get_services('battery', self._miot_service.name):
@@ -427,8 +469,6 @@ class MiotSensorSubEntity(MiotPropertySubEntity, BaseSensorSubEntity):
 
     async def async_added_to_hass(self):
         await BaseSensorSubEntity.async_added_to_hass(self)
-        if not self._attr_state_class:
-            self._attr_state_class = self._miot_property.state_class
 
     def update(self, data=None):
         super().update(data)
@@ -437,7 +477,7 @@ class MiotSensorSubEntity(MiotPropertySubEntity, BaseSensorSubEntity):
         self._miot_property.description_to_dict(self._state_attrs)
 
     @property
-    def state(self):
+    def native_value(self):
         key = f'{self._miot_property.full_name}_desc'
         if key in self._state_attrs:
             return f'{self._state_attrs[key]}'.lower()
@@ -446,8 +486,7 @@ class MiotSensorSubEntity(MiotPropertySubEntity, BaseSensorSubEntity):
             svd = self.custom_config_number('value_ratio') or 0
             if svd:
                 val = round(float(val) * svd, 3)
-            return val
-        return STATE_UNKNOWN
+        return val
 
 
 class WaterPurifierYunmiEntity(MiioEntity, Entity):
@@ -458,7 +497,7 @@ class WaterPurifierYunmiEntity(MiioEntity, Entity):
         _LOGGER.info('%s: Initializing with host %s (token %s...)', name, host, token[:5])
 
         self._device = WaterPurifierYunmi(host, token)
-        super().__init__(name, self._device, logger=_LOGGER)
+        super().__init__(name, self._device, config=config, logger=_LOGGER)
         self._subs = {
             'tds_in':  {'keys': ['tds_warn_thd'], 'unit': CONCENTRATION_PARTS_PER_MILLION, 'icon': 'mdi:water'},
             'tds_out': {'keys': ['tds_warn_thd'], 'unit': CONCENTRATION_PARTS_PER_MILLION, 'icon': 'mdi:water-check'},
@@ -514,7 +553,7 @@ class WaterPurifierYunmiEntity(MiioEntity, Entity):
         add_entities = self._add_entities.get('sensor')
         for k, v in self._subs.items():
             if 'entity' in v:
-                v['entity'].update()
+                v['entity'].update_from_parent()
             elif add_entities:
                 v['entity'] = WaterPurifierYunmiSubEntity(self, k, v)
                 add_entities([v['entity']], update_before_add=True)
@@ -525,7 +564,9 @@ class WaterPurifierYunmiSubEntity(BaseSubEntity):
         super().__init__(parent, attr, option)
 
 
-class MihomeMessageSensor(CoordinatorEntity, SensorEntity, BaseEntity):
+class MihomeMessageSensor(MiCoordinatorEntity, SensorEntity, RestoreEntity):
+    _filter_homes = None
+
     def __init__(self, hass, cloud: MiotCloud):
         self.hass = hass
         self.cloud = cloud
@@ -536,39 +577,55 @@ class MihomeMessageSensor(CoordinatorEntity, SensorEntity, BaseEntity):
         self._attr_icon = 'mdi:message'
         self._attr_should_poll = False
         self._attr_native_value = None
-        self._attr_extra_state_attributes = {}
-        sec = self.custom_config_integer('interval_seconds') or 60
+        self._attr_extra_state_attributes = {
+            'entity_class': self.__class__.__name__,
+        }
         self.coordinator = DataUpdateCoordinator(
             hass,
             _LOGGER,
             name=self._attr_unique_id,
             update_method=self.fetch_latest_message,
-            update_interval=timedelta(seconds=sec),
+            update_interval=timedelta(seconds=15),
         )
         super().__init__(self.coordinator)
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
+        self.hass.data[DOMAIN]['entities'][self.entity_id] = self
+        self._filter_homes = self.custom_config_list('filter_home') or []
+        if sec := self.custom_config_integer('interval_seconds'):
+            self.coordinator.update_interval = timedelta(seconds=sec)
+
+        restored = await RestoreStateData.async_get_instance(self.hass)
+        if restored and self.entity_id in restored.last_states:
+            state = restored.last_states[self.entity_id].state
+            self._attr_native_value = state.state
+            self._attr_extra_state_attributes.update(state.attributes)
+
+        self._attr_extra_state_attributes['filter_homes'] = self._filter_homes
         await self.coordinator.async_config_entry_first_refresh()
 
-    async def fetch_latest_message(self):
-        res = await self.cloud.async_request_api('v2/message/v2/typelist', data={}) or {}
-        mls = (res.get('result') or {}).get('messages') or []
-        mls = list(sorted(mls, key=lambda x: x.get('ctime', 0)))
-        msg = mls.pop(-1) if mls else {}
-        self.message = msg
+    async def async_will_remove_from_hass(self):
+        """Run when entity will be removed from hass.
+        To be extended by integrations.
+        """
+        await super().async_will_remove_from_hass()
+        self.hass.data[DOMAIN]['accounts'].get(self.cloud.user_id, {}).pop('messenger', None)
+
+    async def async_set_message(self, msg):
+        if msg == self.message:
+            return
         if old := self._attr_native_value:
             self._attr_extra_state_attributes['prev_message'] = old
-        self._attr_native_value = None
         tit = msg.get('title')
         if con := msg.get('content'):
             self._attr_native_value = f'{con}: {tit}'
             logger = _LOGGER.info if old != self._attr_native_value else _LOGGER.debug
             logger('New xiaomi message for %s: %s', self.cloud.user_id, self._attr_native_value)
-        else:
-            _LOGGER.warning('Get xiaomi message for %s failed: %s', self.cloud.user_id, res)
-        self._attr_entity_picture = msg.get('img_url')
         tim = msg.get('ctime')
+        params = msg.get('params', {})
+        body = params.get('body', {})
+        self._attr_entity_picture = msg.get('img_url') or None
         self._attr_extra_state_attributes.update({
             'msg_id': msg.get('msg_id'),
             'is_new': msg.get('is_new'),
@@ -576,10 +633,122 @@ class MihomeMessageSensor(CoordinatorEntity, SensorEntity, BaseEntity):
             'title': tit,
             'content': con,
             'user_id': msg.get('uid'),
-            'timestamp': datetime.fromtimestamp(tim) if tim else None,
-            'model': msg.get('params', {}).get('model'),
-            'event': msg.get('params', {}).get('body', {}).get('event'),
-            'home_name': msg.get('params', {}).get('body', {}).get('homeRoomExtra', {}).get('homeName'),
-            'room_name': msg.get('params', {}).get('body', {}).get('homeRoomExtra', {}).get('roomName'),
+            'ctime': tim,
+            'timestamp': datetime.fromtimestamp(tim, local_zone()) if tim else None,
+            'model': params.get('model', body.get('model')),
+            'device_id': msg.get('did', body.get('did')),
+            'home_name': msg.get('homeName'),
+            'room_name': msg.get('roomName'),
+            'event': body.get('event'),
+            'event_data': body.get('extra', body.get('value')),
+        })
+
+    async def fetch_latest_message(self):
+        res = await self.cloud.async_request_api('v2/message/v2/typelist', data={}) or {}
+        mls = (res.get('result') or {}).get('messages') or []
+        mls.sort(key=lambda x: x.get('ctime', 0), reverse=False)
+        prev_time = self._attr_extra_state_attributes.get('ctime')
+        prev_mid = self._attr_extra_state_attributes.get('msg_id')
+        msg = {}
+        for m in mls:
+            hre = m.get('params', {}).get('body', {}).get('homeRoomExtra', {})
+            home = hre.get('homeName')
+            if self._filter_homes and home and home not in self._filter_homes:
+                continue
+            tim = m.get('ctime', 0)
+            mid = m.get('msg_id', 0)
+            if prev_time and tim < prev_time:
+                continue
+            if prev_mid and mid <= prev_mid:
+                continue
+            m['homeName'] = home
+            m['roomName'] = hre.get('roomName')
+            msg = m
+            break
+        if msg:
+            await self.async_set_message(msg)
+            self.message = msg
+        if not msg.get('content'):
+            _LOGGER.info('Get xiaomi message for %s failed: %s', self.cloud.user_id, res)
+        return msg
+
+
+class XiaoaiConversationSensor(MiCoordinatorEntity, BaseSensorSubEntity):
+    def __init__(self, parent, hass, option=None):
+        BaseSensorSubEntity.__init__(self, parent, 'conversation', option)
+        self.hass = hass
+        self.conversation = {}
+        self._available = True
+        self._attr_native_value = None
+        self._option.setdefault('icon', 'mdi:account-voice')
+        self.coordinator = DataUpdateCoordinator(
+            hass,
+            _LOGGER,
+            name=self.unique_id,
+            update_method=self.fetch_latest_message,
+            update_interval=timedelta(seconds=5),
+        )
+        super().__init__(self.coordinator)
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        self.hass.data[DOMAIN]['entities'][self.entity_id] = self
+        await self.coordinator.async_config_entry_first_refresh()
+        if sec := self.custom_config_integer('interval_seconds'):
+            self.coordinator.update_interval = timedelta(seconds=sec)
+
+    async def fetch_latest_message(self):
+        mic = self._parent.xiaoai_cloud
+        dvc = self._parent.xiaoai_device or {}
+        aid = dvc.get('deviceID')
+        if not isinstance(mic, MiotCloud) or not aid:
+            self._available = False
+            return
+        api = 'https://userprofile.mina.mi.com/device_profile/v2/conversation'
+        dat = {
+            'hardware': dvc.get('hardware', ''),
+            'timestamp': int(time.time() * 1000),
+            'limit': 3,
+        }
+        cks = {
+            'deviceId': aid,
+        }
+        try:
+            res = await mic.async_request_api(api, data=dat, method='GET', cookies=cks) or {}
+            rdt = res.get('data', {})
+            if not isinstance(rdt, dict):
+                rdt = json.loads(rdt) or {}
+        except (TypeError, ValueError, Exception) as exc:
+            rdt = {}
+            _LOGGER.warning(
+                '%s: Got exception while fetch xiaoai conversation: %s',
+                self.name_model, [aid, exc],
+            )
+        mls = rdt.get('records') or []
+        msg = mls.pop(0) if mls else {}
+        self.conversation = msg
+        old = self._attr_native_value
+        if con := msg.get('query'):
+            self._state = con
+            self._attr_native_value = con
+            logger = _LOGGER.info if old != self._attr_native_value else _LOGGER.debug
+            logger('%s: New xiaoai conversation: %s', self.name_model, self._attr_native_value)
+        tim = msg.get('time')
+        ans = []
+        for v in msg.get('answers', []):
+            if not isinstance(v, dict):
+                continue
+            typ = v.get('type', '').lower()
+            v.pop('bitSet', None)
+            v.get(typ, {}).pop('bitSet', None)
+            ans.append(v)
+        self._state_attrs.update({
+            'content': con,
+            'answers': ans,
+            'history': [
+                v.get('query')
+                for v in mls
+            ],
+            'timestamp': datetime.fromtimestamp(tim / 1000, local_zone()) if tim else None,
         })
         return msg

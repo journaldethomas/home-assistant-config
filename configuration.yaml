@@ -22,16 +22,44 @@ default_config:
 #  logs:
 #    homeassistant.components.netatmo: debug
 
+recorder:
+# gere les donnees sauvegardees en DB
+  auto_purge: true
+  purge_keep_days: 7 # durée de conservation des données
+  exclude: # permet d'exclure tous les éléments listé ci-dessous de votre base de données
+    domains: # filtrage par domaine
+      - automation
+      - camera
+      - device_tracker
+      - group
+      - input_datetime
+      - light
+      - person
+      - script
+      - sun
+      - switch
+      - vacuum
+      - weather
+      - zone
+    entities: # filtrage par entités spécifiques
+      - sun.sun
+      - sensor.last_boot
+      - sensor.date
+      - sensor.time
+      - sensor.date_time
+      - sensor.hacs
+    entity_globs:
+      - sensor.*uptime*
+      - sensor.docker_*
+      - sensor.unifi_gateway_*
+    event_types: # filtrage par evenements
+      - call_service 
+
 ###################################################################
 ########    Configuration de la partie systeme     ###############
 ###################################################################
 
 ########    Configuration de la partie materiel    ###############
-
-# Ajout du bluetooth
-#ble_monitor:
-#  hci_interface: 0
-#  discovery: True
 
 # Configuration NetAtmo à utiliser pour que Caméra Welcome remonte
 netatmo:
@@ -47,6 +75,19 @@ influxdb:
   password: !secret influxdb_password_ha
   max_retries: 3
   default_measurement: state
+
+# Arrosage automatique Rainbird (ne marche pas en Prod pour le moment car une seule connexion possible)
+#rainbird:
+#  host: !secret rainbird_ip
+#  password: !secret rainbird_password
+#  trigger_time:
+#    minutes: 6
+
+# Configuration Withings pour la détection du couché
+withings:
+  client_id: !secret withings_client_id
+  client_secret: !secret withings_consumer_secret
+  use_webhook: true
 
 ###################################################################
 ##########          Utilisation Browser Mod           #############
@@ -109,6 +150,7 @@ light:
     name: Garage
     entities:
       - light.lumiere_07_sous_sol
+
 ###################################################################
 ##########                   Switch                  ##############
 ###################################################################
@@ -162,6 +204,13 @@ switch:
         command_on: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":240}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
         command_off: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":0}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
 
+# Input text
+
+input_text:
+  cycle_filtration:
+    name: cycle filtration
+    initial: pas de cycle définit
+
 ###################################################################
 ##########               Input Boolean                ##############
 ###################################################################
@@ -202,11 +251,40 @@ input_boolean:
     name: notification mqtt distant
     icon: mdi:alarm-light
 
+# retour d'état des volets
+  volet_pitchouns:
+    name: volet des pitchouns
+    icon: mdi:cover
+
+  volet_salon:
+    name: volet du salon
+    icon: mdi:cover
+
+  volet_cuisine:
+    name: volet de la cuisine
+    icon: mdi:cover
+
+input_select:
+  pool_pump_mode:
+    name: Pool Pump mode
+    options:
+      - 'Auto'
+      - 'On'
+      - 'Off'
+    initial: 'Auto'
+    icon: mdi:water-pump
+    
 ###################################################################
 ##########               Input Number                ##############
 ###################################################################
 
 input_number:
+
+  pool_water_temperature:
+    name: temperature piscine
+    min: 15.00
+    max: 35.00
+    unit_of_measurement: "°C"
 
   cout_m3_eau:
     name: Cout €/m3
@@ -375,6 +453,79 @@ sensor:
           {% else -%}
           {% endif -%}
 
+ # Température max prévue du jour
+      weather_temperature:
+        friendly_name: Weather Température Max
+        value_template: "{{ states.weather.sillingy.attributes.forecast[0].temperature|float|round(2) }}"
+       
+ # Température mini prévue du jour
+      weather_temperature_mini:
+        friendly_name: Weather Température Mini
+        value_template: "{{ states.weather.sillingy.attributes.forecast[0].templow|float|round(2) }}"
+
+      weather_leve_soleil:
+        friendly_name: Soleil levé
+        value_template: >-
+            {{as_timestamp(states.sun.sun.attributes.next_rising) | timestamp_custom("%-Hh%M")  }}
+
+      weather_couche_soleil:
+        friendly_name: Soleil couché
+        value_template: >-
+            {{as_timestamp(states.sun.sun.attributes.next_setting) | timestamp_custom("%-Hh%M")  }}
+
+      meteo_force_du_vent:
+        friendly_name: "Force du vent"
+        value_template: >-
+         {% set ventVitesse = states.sensor.sillingy_wind_speed.state|float|round(2) %}
+         {% if ventVitesse < 0.3 %}
+           Air calme
+         {% elif ventVitesse >= 0.3 and ventVitesse <= 1.5 %}
+           Air léger
+         {% elif ventVitesse >= 1.6 and ventVitesse <= 3.3 %}
+           Légère brise
+         {% elif ventVitesse >= 3.4 and ventVitesse <= 5.4 %}
+           Brise légère
+         {% elif ventVitesse >= 5.5 and ventVitesse <= 7.9 %}
+           Vent modéré
+         {% elif ventVitesse >= 8 and ventVitesse <= 10.7 %}
+           Brise fraîche
+         {% elif ventVitesse >= 10.8 and ventVitesse <= 13.8 %}
+           Forte brise
+         {% elif ventVitesse >= 13.9 and ventVitesse <= 17.1 %}
+           Vent fort
+         {% elif ventVitesse >= 17.2 and ventVitesse <= 20.7 %}
+           Coup de vent
+         {% elif ventVitesse >= 20.8 and ventVitesse <= 24.4 %}
+           Coup de vent de ficelle
+         {% elif ventVitesse >= 24.5 and ventVitesse <= 28.4 %}
+           Tempête
+         {% elif ventVitesse >= 28.5 and ventVitesse <= 32.6 %}
+          Tempête violente
+         {% elif ventVitesse >= 32.7 %}
+           Ouragan
+         {% else %}
+          Pas de vent         
+         {%- endif %}
+
+      meteo_indice_uv:
+        friendly_name: "Météo indice UV"
+        value_template: >-
+          {% set indice_uv = states.sensor.sillingy_uv.state|float|round(0) %}
+          Indice UV 
+          {%if indice_uv <= 2  %}
+             {{indice_uv}} : Faible
+          {% elif indice_uv >= 3 and indice_uv <= 5  %}
+             {{indice_uv}} : Moyen
+          {% elif indice_uv >= 6 and indice_uv <= 7  %}
+             {{indice_uv}} : Elevé
+          {% elif indice_uv >= 8 and indice_uv <= 10  %}
+             {{indice_uv}} : Très élevé
+          {% elif indice_uv >= 11 %}
+             {{indice_uv}} : Extrême
+          {%- else -%}
+            ERROR
+          {%- endif %}             
+          
 # Nombre de personne dans la maison
 
       compteur_home:
@@ -438,7 +589,8 @@ sensor:
           {%- endif -%}
 
 # Connaitre la saison
-  - platform: season
+# désormais dans UI directement
+#  - platform: season
 
 # Fete du jour
   - platform: rest
@@ -850,13 +1002,6 @@ sensor:
         value_template: >-
             {{ states.sensor.pluie_annee.attributes.last_period }}
 
-# Informations remontant de HASS
-
-
-  - platform: filesize
-    file_paths:
-      - /config/home-assistant_v2.db
-
 # Informations à propos de HACS
   - platform: command_line
     name: hacs_version
@@ -875,6 +1020,16 @@ sensor:
 #    name: latest_valetudo
 #    command: curl -s https://github.com/Hypfer/Valetudo/releases/latest | cut -d'"' -f2 | rev | cut -d'/' -f1 | rev
 #    scan_interval: 21600
+
+# Pour la filtration de la piscine
+
+  - platform: template
+    sensors:
+      duree_filtration:
+        friendly_name: "temps de filtration"
+        unit_of_measurement: "h"
+        value_template: >-
+            {{ (states("sensor.temp_humidite_10_piscine_temperature")|float / 2)|round(0) }}
 
 # Quelques statistiques sur HASS
 
@@ -1147,8 +1302,10 @@ sensor:
       surveillance:
         friendly_name: Surveillance
         value_template: >-      
-          {%- if states('sensor.detecteur_porte_garage') =='True' and
-           states('sensor.presence_salon') =='False'
+          {%- if states('binary_sensor.mb_capteur_ouverture_02_porte_fenetre_contact') =='Off' and
+           states('binary_sensor.mb_capteur_ouverture_01_porte_entree_contact') =='On' and
+           states('binary_sensor.0x00158d0008091c38_contact') =='Off' and
+           states('binary_sensor.mb_capteur_ouverture_03_fenetre_cuisine_contact') =='Off'
           -%}
            Tout est OK
           {% else -%}
@@ -1164,10 +1321,12 @@ sensor:
   - platform: mqtt
     name: "temperature exterieur"
     state_topic: "paradis/capteur_exterieur/temperature"
+    unit_of_measurement: "°C"
 
   - platform: mqtt
     name: "humidite exterieur"
     state_topic: "paradis/capteur_exterieur/humidite"
+    unit_of_measurement: "%"
 
   - platform: mqtt
     state_topic: "paradis/raspberrypi/cpuload"
@@ -1199,85 +1358,65 @@ sensor:
     name: rpi uptime
     unit_of_measurement: "days"
 
-  - platform: mqtt
-    state_topic: "paradis/capteur_chambre_parents"
-    name: "temperature parents"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "paradis/capteur_chambre_parents"
-    name: "humidite parents"
-    value_template: "{{ value_json['humidity']|round(0)}}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "paradis/capteur_chambre_enfants"
-    name: "temperature enfants"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "paradis/capteur_chambre_enfants"
-    name: "humidite enfants"
-    value_template: "{{ value_json['humidity']|round(0)}}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "paradis/detecteur_porte_garage"
-    name: "detecteur porte garage"
-    value_template: "{{ value_json['contact']}}"
-
-  - platform: mqtt
-    state_topic: "paradis/capteur_piece_de_vie"
-    name: "temperature salon"
-    value_template: "{{ value_json['temperature']|round(1)}}"
-    unit_of_measurement: "°C"
-
-  - platform: mqtt
-    state_topic: "paradis/capteur_piece_de_vie"
-    name: "humidite salon"
-    value_template: "{{ value_json['humidity']|round(0)}}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "paradis/capteur_piece_de_vie"
-    name: "batterie salon"
-    value_template: "{{ value_json['battery']|round(0)}}"
-    unit_of_measurement: "%"
-
-  - platform: mqtt
-    state_topic: "paradis/presence_piece_de_vie"
-    name: "presence salon"
-    value_template: "{{ value_json['occupancy']}}"
-
-  - platform: mqtt
-    state_topic: "paradis/presence_piece_de_vie"
-    name: "batterie presence salon"
-    value_template: "{{ value_json['battery']}}"
-
 ###################################################################
 ########                   BINARY SENSOR                  #########
 ###################################################################
 
 binary_sensor:
 
-  #TEST BONNE REPONSE EQUIPEMENT RESEAU
+  #TEST BONNE REPONSE RASPBERRYPI POUR CONSO EAU
   - platform: ping
-    host: !secret rasp_eau
-    name: "RaspberryPi Eau"
+    host: !secret rasp_baie_technique
+    name: "RaspberryPi baie technique"
 
   #TEST BONNE REPONSE RASPBERRYPI OCTOPRINT
   - platform: ping
     host: !secret rasp_octoprint
-    name: "OCTOPRINT"
+    name: "RaspberryPi Octoprint"
+
+  #TEST BONNE REPONSE RASPBERRYPI POUR BLUETOOTH
+  - platform: ping
+    host: !secret rasp_salon
+    name: "RaspberryPi Salon"
+
+  #TEST BONNE REPONSE SERVEUR DOMESTIQUE
+  - platform: ping
+    host: !secret nuc_serveur_domestique
+    name: "Serveur domestique"
+  
+  #TEST BONNE REPONSE VPS OVH
+  - platform: ping
+    host: !secret vps_ovh
+    name: "VPS OVH"
+
+  #TEST BONNE REPONSE RASPBERRYPI DISTANT
+  - platform: ping
+    host: !secret vpn_paradis
+    name: "RaspberryPi Distant"
+
 
 ###################################################################
 ########                   UTILITY METER                  #########
 ###################################################################
 
 utility_meter:
+
+######   CALCUL CONSOMMATION ELECTRIQUE BAIE TECHNIQUE   ######
+
+  consommation_baie_quotidienne:
+    source: sensor.prise_06_baie_technique_energy
+    cycle: daily
+
+  consommation_baie_quotidienne:
+    source: sensor.prise_06_baie_technique_energy
+    cycle: weekly
+
+  consommation_baie_quotidienne:
+    source: sensor.prise_06_baie_technique_energy
+    cycle: monthly
+
 ######  CALCUL CONSOMMATION EAU  ######
+
   eau_mois:
     source: sensor.consommation_total
     cycle: monthly
@@ -1300,6 +1439,7 @@ utility_meter:
     cycle: yearly
 
 ######   CALCUL PLUIE   ######
+
   pluie_semaine:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
     net_consumption: true
@@ -1315,30 +1455,35 @@ utility_meter:
     net_consumption: true
     cycle: yearly
 
+######   CALCUL CONSOMMATION MASON DE FAMILLE   ######
+
+  energie_quotidienne_mb:
+    source: sensor.mb_lixee_base
+    cycle: daily
+
+  energie_hebdo_mb:
+    source: sensor.mb_lixee_base
+    cycle: weekly
+
+  energie_mensuelle_mb:
+    source: sensor.mb_lixee_base
+    cycle: monthly
+
 ###################################################################
 ########                   CAMERAS                        #########
 ###################################################################
 
 camera:
 
-#caméra EUFY
-  - platform: generic
-    name: Jardin
-    still_image_url: !secret eufy_jardin_images
-  - platform: generic
-    name: Arriere maison
-    still_image_url: !secret eufy_arriere_images
-
 #caméra Ezviz C1C
   - platform: ffmpeg
     name: C1C
     input: !secret ezviz_c1c
 
-#caméra Octoprint - imprimante 3D
-  - platform: mjpeg
-    name: OctoPrint
-    still_image_url: http://192.168.10.20/webcam/?action=snapshot
-    mjpeg_url: http://192.168.10.20/webcam/?action=stream
+#caméra Annke
+  - platform: ffmpeg
+    name: Annke_NC400
+    input: rstp://admin:AQWZzsxEDCrfv12@192.168.40.50:554/H264/ch1/main/av_stream
 
 #pour la carte du robot aspirateur
 #pas encore opérationnel pour le D9
@@ -1380,19 +1525,17 @@ monitor_docker:
       - traefik
       - grafana
       - zwavejs2mqtt
-      - deconz
+      - zigbee2mqtt
       - adguardhome
       - homeassistant
       - influxdb
       - mqtt
       - 'node-red'
-      - 'unifi-controller'
       - iobroker
       - bitwarden
       - heimdall
     rename:
       appdaemon: AppDaemon
-      deconz: DeCONZ
       adguardhome: AdGuard
       homeassistant_prod: Home Assistant
     monitored_conditions:
@@ -1427,6 +1570,7 @@ notify:
 tts:
   - platform: google_translate
 
+python_script:
 group: !include groups.yaml
 automation: !include automations.yaml
 script: !include scripts.yaml

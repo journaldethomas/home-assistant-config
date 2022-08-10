@@ -8,7 +8,6 @@ from homeassistant.components.fan import (
     SUPPORT_SET_SPEED,
     SUPPORT_DIRECTION,
     SUPPORT_OSCILLATE,
-    SPEED_OFF,
     DIRECTION_FORWARD,
     DIRECTION_REVERSE,
 )
@@ -18,6 +17,7 @@ from . import (
     CONF_MODEL,
     XIAOMI_CONFIG_SCHEMA as PLATFORM_SCHEMA,  # noqa: F401
     MiotToggleEntity,
+    MiirToggleEntity,
     MiotPropertySubEntity,
     ToggleSubEntity,
     async_setup_config_entry,
@@ -39,7 +39,7 @@ try:
         ordered_list_item_to_percentage,
         percentage_to_ordered_list_item,
     )
-except ImportError:
+except (ModuleNotFoundError, ImportError):
     SUPPORT_PRESET_MODE = None
 
     def ordered_list_item_to_percentage(ordered_list, item):
@@ -48,6 +48,12 @@ except ImportError:
     def percentage_to_ordered_list_item(ordered_list, percentage):
         raise NotImplementedError()
 
+try:
+    # hass 2022.4.0b0+
+    from homeassistant.components.fan import SPEED_OFF, OFF_SPEED_VALUES
+except ImportError:
+    SPEED_OFF = 'off'
+    OFF_SPEED_VALUES = [SPEED_OFF, None]
 
 SERVICE_TO_METHOD = {}
 
@@ -61,11 +67,17 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     hass.data[DOMAIN]['add_entities'][ENTITY_DOMAIN] = async_add_entities
     config['hass'] = hass
     model = str(config.get(CONF_MODEL) or '')
+    spec = hass.data[DOMAIN]['miot_specs'].get(model)
     entities = []
-    if miot := config.get('miot_type'):
-        spec = await MiotSpec.async_from_type(hass, miot)
-        for srv in spec.get_services(ENTITY_DOMAIN, 'ceiling_fan', 'air_fresh', 'air_purifier', 'hood'):
-            if not srv.bool_property('on'):
+    if isinstance(spec, MiotSpec):
+        for srv in spec.get_services(
+            ENTITY_DOMAIN, 'ceiling_fan', 'ir_fan_control',
+            'air_fresh', 'air_purifier', 'hood',
+        ):
+            if srv.name in ['ir_fan_control']:
+                entities.append(MiirFanEntity(config, srv))
+                continue
+            elif not srv.bool_property('on'):
                 continue
             elif srv.name in ['air_fresh'] and spec.name not in ['air_fresh']:
                 continue
@@ -98,20 +110,49 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
 
         self._prop_percentage = None
         for s in miot_service.spec.get_services():
-            for p in s.get_properties('speed_level', 'wind_speed'):
+            for p in s.get_properties('speed_level', 'wind_speed', 'fan_level'):
                 if not p.value_range:
+                    continue
+                if p.range_max() < 90:
                     continue
                 self._prop_percentage = p
                 break
 
-        if self._prop_speed:
+        if self._prop_speed or self._prop_percentage:
             self._supported_features |= SUPPORT_SET_SPEED
+            if self._prop_speed and self._prop_percentage:
+                if self._prop_speed.unique_name == self._prop_percentage.unique_name:
+                    self._prop_speed = None
         if self._prop_direction:
             self._supported_features |= SUPPORT_DIRECTION
         if self._prop_oscillate:
             self._supported_features |= SUPPORT_OSCILLATE
+
+        self._attr_preset_modes = []
         if self._prop_mode and SUPPORT_PRESET_MODE:
             self._supported_features |= SUPPORT_PRESET_MODE
+            self._attr_preset_modes = self._prop_mode.list_descriptions()
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        if per := self.custom_config('percentage_property'):
+            prop = self._miot_service.spec.specs.get(per)
+            if not isinstance(prop, MiotProperty):
+                prop = self._miot_service.get_property(per)
+            if prop:
+                self._prop_percentage = prop
+                self._supported_features |= SUPPORT_SET_SPEED
+
+        # issues/617
+        if self.custom_config_bool('disable_preset_modes'):
+            self._supported_features &= ~SUPPORT_PRESET_MODE
+            self._attr_preset_modes = []
+        elif dpm := self.custom_config_list('disable_preset_modes'):
+            self._attr_preset_modes = [
+                mode
+                for mode in self._attr_preset_modes
+                if mode not in dpm
+            ]
 
     def turn_on(self, speed=None, percentage=None, preset_mode=None, **kwargs):
         ret = False
@@ -123,7 +164,7 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
             if percentage:
                 ret = self.set_property(self._prop_percentage, percentage)
             elif percentage is not None:
-                _LOGGER.warning('Set fan speed percentage to %s failed: %s', self.name, {
+                _LOGGER.warning('%s: Set fan speed percentage failed: %s', self.name_model, {
                     'speed': speed,
                     'percentage': percentage,
                 })
@@ -137,10 +178,10 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
             if val is not None:
                 ret = self.set_property(self._prop_speed, val)
             elif speed is not None:
-                _LOGGER.warning('Set fan speed level to %s failed: %s', self.name, {
+                _LOGGER.warning('%s: Set fan speed level failed: %s', self.name_model, {
                     'speed': speed,
                     'percentage': percentage,
-                    'value':  val,
+                    'value': val,
                 })
         if preset_mode and self._prop_mode:
             val = self._prop_mode.list_first(preset_mode)
@@ -174,7 +215,8 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
         """Return the number of speeds the fan supports."""
         if self._prop_percentage:
             return round(self._prop_percentage.range_max() / self._prop_percentage.range_step())
-        return super().speed_count
+        lst = [v for v in self.speed_list if v not in OFF_SPEED_VALUES]
+        return len(lst)
 
     @property
     def percentage(self):
@@ -183,8 +225,9 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
             val = self._prop_percentage.from_dict(self._state_attrs)
             if val is not None:
                 return val
+        lst = [v for v in self.speed_list if v not in OFF_SPEED_VALUES]
         try:
-            return self.speed_to_percentage(str(self.speed))
+            return ordered_list_item_to_percentage(lst, self.speed)
         except ValueError:
             return None
 
@@ -207,14 +250,6 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
             if val is not None:
                 return self._prop_mode.list_description(val)
         return None
-
-    @property
-    def preset_modes(self):
-        """Return a list of available preset modes."""
-        lst = []
-        if self._prop_mode:
-            lst = self._prop_mode.list_descriptions()
-        return lst
 
     def set_preset_mode(self, preset_mode: str):
         """Set new preset mode."""
@@ -253,7 +288,7 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
             else:
                 if n > num:
                     num = n
-        _LOGGER.debug('Setting direction to %s: %s(%s)', self.name, direction, num)
+        _LOGGER.debug('%s: Setting direction: %s(%s)', self.name_model, direction, num)
         return self.set_property(self._prop_direction, num)
 
     @property
@@ -262,6 +297,78 @@ class MiotFanEntity(MiotToggleEntity, FanEntity):
 
     def oscillate(self, oscillating: bool):
         return self.set_property(self._prop_oscillate, oscillating)
+
+
+class MiirFanEntity(MiirToggleEntity, FanEntity):
+    def __init__(self, config: dict, miot_service: MiotService):
+        super().__init__(miot_service, config=config, logger=_LOGGER)
+
+        self._attr_percentage = 50
+        self._act_speed_up = miot_service.get_action('fan_speed_up')
+        self._act_speed_dn = miot_service.get_action('fan_speed_down')
+        if self._act_speed_up or self._act_speed_dn:
+            self._supported_features |= SUPPORT_SET_SPEED
+
+        self._act_swing_on = miot_service.get_action('horizontal_swing_on')
+        self._act_swing_off = miot_service.get_action('horizontal_swing_off')
+        if self._act_swing_on or self._act_swing_off:
+            self._supported_features |= SUPPORT_OSCILLATE
+
+        self._supported_features |= SUPPORT_PRESET_MODE
+        self._attr_preset_mode = None
+        self._attr_preset_modes = []
+        for a in miot_service.actions.values():
+            if a.ins:
+                continue
+            self._attr_preset_modes.append(a.friendly_desc)
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        # issues/617
+        if self.custom_config_bool('disable_preset_modes'):
+            self._supported_features &= ~SUPPORT_PRESET_MODE
+            self._attr_preset_modes = []
+        elif dpm := self.custom_config_list('disable_preset_modes'):
+            self._attr_preset_modes = [
+                mode
+                for mode in self._attr_preset_modes
+                if mode not in dpm
+            ]
+
+    def turn_on(self, percentage=None, preset_mode=None, **kwargs):
+        """Turn the entity on."""
+        if percentage is None:
+            pass
+        elif percentage > self._attr_percentage and self._act_speed_up:
+            return self.call_action(self._act_speed_up)
+        elif percentage < self._attr_percentage and self._act_speed_dn:
+            return self.call_action(self._act_speed_dn)
+
+        if preset_mode is None:
+            pass
+        elif act := self._miot_service.get_action(preset_mode):
+            return self.call_action(act)
+
+        return super().turn_on(**kwargs)
+
+    def set_percentage(self, percentage: int):
+        """Set the speed of the fan, as a percentage."""
+        return self.turn_on(percentage=percentage)
+
+    def set_preset_mode(self, preset_mode):
+        """Set new preset mode."""
+        return self.turn_on(preset_mode=preset_mode)
+
+    def oscillate(self, oscillating):
+        """Oscillate the fan."""
+        ret = None
+        if not oscillating and self._act_swing_off:
+            ret = self.call_action(self._act_swing_off)
+        elif oscillating and self._act_swing_on:
+            ret = self.call_action(self._act_swing_on)
+        if ret:
+            self._attr_oscillating = oscillating
+        return ret
 
 
 class MiotFanSubEntity(MiotFanEntity, ToggleSubEntity):
@@ -290,11 +397,16 @@ class MiotFanSubEntity(MiotFanEntity, ToggleSubEntity):
             **parent.miot_config,
             'name': f'{parent.device_name}',
         }, miot_service, device=parent.miot_device)
-        self.entity_id = miot_service.generate_entity_id(self)
+
+        self.entity_id = miot_service.generate_entity_id(self, domain=ENTITY_DOMAIN)
         self._prop_power = prop_power
         if parent_power:
             self._prop_power = parent_power
             self._available = True
+
+    @property
+    def available(self):
+        return self._available and self._parent.available
 
     def update(self, data=None):
         super().update(data)
@@ -356,7 +468,7 @@ class FanSubEntity(ToggleSubEntity, FanEntity):
 class MiotModesSubEntity(MiotPropertySubEntity, FanSubEntity):
     def __init__(self, parent, miot_property: MiotProperty, option=None):
         FanSubEntity.__init__(self, parent, miot_property.full_name, option)
-        super().__init__(parent, miot_property, option)
+        super().__init__(parent, miot_property, option, domain=ENTITY_DOMAIN)
         self._prop_power = self._option.get('power_property')
         if self._prop_power:
             self._option['keys'] = [self._prop_power.full_name, *(self._option.get('keys') or [])]
@@ -469,7 +581,7 @@ class MiotModesSubEntity(MiotPropertySubEntity, FanSubEntity):
                 val = round(float(preset_mode) / stp) * stp
             except ValueError as exc:
                 val = None
-                _LOGGER.warning('Switch mode: %s to %s failed: %s', preset_mode, self.name, exc)
+                _LOGGER.warning('%s: Switch mode: %s failed: %s', self.name_model, preset_mode, exc)
         else:
             val = self._miot_property.list_first(preset_mode)
         if val is not None:

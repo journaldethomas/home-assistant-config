@@ -2,13 +2,18 @@
 import logging
 from struct import unpack
 
+from .helpers import (
+    to_mac,
+    to_unformatted_mac,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
 def parse_qingping(self, data, source_mac, rssi):
     """Qingping parser"""
     msg_length = len(data)
-    if msg_length > 12 and data[4] in [0x08, 0x48]:
+    if msg_length > 12:
         firmware = "Qingping"
         device_id = data[5]
         if device_id == 0x01:
@@ -105,14 +110,9 @@ def parse_qingping(self, data, source_mac, rssi):
 
     result.update({
         "rssi": rssi,
-        "mac": ''.join('{:02X}'.format(x) for x in qingping_mac[:]),
+        "mac": to_unformatted_mac(qingping_mac),
         "type": device_type,
         "firmware": firmware,
         "data": True
     })
     return result
-
-
-def to_mac(addr: int):
-    """Return formatted MAC address"""
-    return ':'.join('{:02x}'.format(x) for x in addr).upper()

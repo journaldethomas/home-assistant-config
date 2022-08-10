@@ -10,10 +10,10 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
-        assert sensor_msg["type"] == "H5051"
+        assert sensor_msg["type"] == "H5051/H5071"
         assert sensor_msg["mac"] == "E3605961BBAA"
         assert sensor_msg["packet"] == "no packet id"
         assert sensor_msg["data"]
@@ -28,7 +28,7 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5074"
@@ -46,7 +46,7 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5101/H5102/H5177"
@@ -64,7 +64,7 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5072/H5075"
@@ -82,7 +82,7 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5072/H5075"
@@ -100,7 +100,7 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5178"
@@ -119,15 +119,15 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
-        assert sensor_msg["type"] == "H5178"
-        assert sensor_msg["mac"] == "A4C138DFC545"
+        assert sensor_msg["type"] == "H5178-outdoor"
+        assert sensor_msg["mac"] == "A4C138DFC546"
         assert sensor_msg["packet"] == "no packet id"
         assert sensor_msg["data"]
-        assert sensor_msg["temperature outdoor"] == 19.5719
-        assert sensor_msg["humidity outdoor"] == 71.9
+        assert sensor_msg["temperature"] == 19.5719
+        assert sensor_msg["humidity"] == 71.9
         assert sensor_msg["sensor id"] == 1
         assert sensor_msg["battery"] == 100
         assert sensor_msg["rssi"] == -65
@@ -138,7 +138,7 @@ class TestGovee:
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5179"
@@ -150,13 +150,51 @@ class TestGovee:
         assert sensor_msg["battery"] == 91
         assert sensor_msg["rssi"] == -74
 
+    def test_Govee_H5182(self):
+        """Test Govee H5182 parser."""
+        data_string = "043e28020100014455303031c71c0201060303518214ff30554401000101e401860834ffff860960ffffcf"
+        data = bytes(bytearray.fromhex(data_string))
+        # pylint: disable=unused-variable
+        ble_parser = BleParser()
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
+
+        assert sensor_msg["firmware"] == "Govee"
+        assert sensor_msg["type"] == "H5182"
+        assert sensor_msg["mac"] == "C73130305544"
+        assert sensor_msg["packet"] == "no packet id"
+        assert sensor_msg["data"]
+        assert sensor_msg["temperature probe 1"] == 21.0
+        assert sensor_msg["temperature alarm probe 1"] == 0.0
+        assert sensor_msg["temperature probe 2"] == 24.0
+        assert sensor_msg["temperature alarm probe 2"] == 0.0
+        assert sensor_msg["rssi"] == -49
+
+    def test_Govee_H5182_alarm(self):
+        """Test Govee H5182 parser with alarm."""
+        data_string = "043e28020100014455303031c71c0201060303518214ff30554401000101e4018608341cdc8609602249d1"
+        data = bytes(bytearray.fromhex(data_string))
+        # pylint: disable=unused-variable
+        ble_parser = BleParser()
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
+
+        assert sensor_msg["firmware"] == "Govee"
+        assert sensor_msg["type"] == "H5182"
+        assert sensor_msg["mac"] == "C73130305544"
+        assert sensor_msg["packet"] == "no packet id"
+        assert sensor_msg["data"]
+        assert sensor_msg["temperature probe 1"] == 21.0
+        assert sensor_msg["temperature alarm probe 1"] == 73.88
+        assert sensor_msg["temperature probe 2"] == 24.0
+        assert sensor_msg["temperature alarm probe 2"] == 87.77
+        assert sensor_msg["rssi"] == -47
+
     def test_Govee_H5183(self):
         """Test Govee H5183 parser."""
         data_string = "043e2b02010000edaeac38c1a41f0303518302010511ff5DA1B401000101E400800A2813240000000000000000a9"
         data = bytes(bytearray.fromhex(data_string))
         # pylint: disable=unused-variable
         ble_parser = BleParser()
-        sensor_msg, tracker_msg = ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
 
         assert sensor_msg["firmware"] == "Govee"
         assert sensor_msg["type"] == "H5183"
@@ -164,5 +202,43 @@ class TestGovee:
         assert sensor_msg["packet"] == "no packet id"
         assert sensor_msg["data"]
         assert sensor_msg["temperature probe 1"] == 26.0
-        assert sensor_msg["temperature alarm"] == 49.0
+        assert sensor_msg["temperature alarm probe 1"] == 49.0
         assert sensor_msg["rssi"] == -87
+
+    def test_Govee_H5185(self):
+        """Test Govee H5185 parser."""
+        data_string = "043e2b020100010a49323633d81f0201060303518517ff32490a01000101e4c1ff0960ffffffff0a28ffffffffc5"
+        data = bytes(bytearray.fromhex(data_string))
+        # pylint: disable=unused-variable
+        ble_parser = BleParser()
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
+
+        assert sensor_msg["firmware"] == "Govee"
+        assert sensor_msg["type"] == "H5185"
+        assert sensor_msg["mac"] == "D8333632490A"
+        assert sensor_msg["packet"] == "no packet id"
+        assert sensor_msg["data"]
+        assert sensor_msg["temperature probe 1"] == 24.0
+        assert sensor_msg["temperature alarm probe 1"] == 0.0
+        assert sensor_msg["temperature probe 2"] == 26.0
+        assert sensor_msg["temperature alarm probe 2"] == 0.0
+        assert sensor_msg["rssi"] == -59
+
+    def test_Govee_H5185_alarm(self):
+        """Test Govee H5185 parser with alarm."""
+        data_string = "043e2b020100010a49323633d81f0201060303518517ff32490a01000101e4c19609c41bbcffff0a282474ffffca"
+        data = bytes(bytearray.fromhex(data_string))
+        # pylint: disable=unused-variable
+        ble_parser = BleParser()
+        sensor_msg, tracker_msg = ble_parser.parse_raw_data(data)
+
+        assert sensor_msg["firmware"] == "Govee"
+        assert sensor_msg["type"] == "H5185"
+        assert sensor_msg["mac"] == "D8333632490A"
+        assert sensor_msg["packet"] == "no packet id"
+        assert sensor_msg["data"]
+        assert sensor_msg["temperature probe 1"] == 25.0
+        assert sensor_msg["temperature alarm probe 1"] == 71.0
+        assert sensor_msg["temperature probe 2"] == 26.0
+        assert sensor_msg["temperature alarm probe 2"] == 93.32
+        assert sensor_msg["rssi"] == -54

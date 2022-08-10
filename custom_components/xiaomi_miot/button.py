@@ -39,9 +39,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     hass.data[DOMAIN]['add_entities'][ENTITY_DOMAIN] = async_add_entities
     config['hass'] = hass
     model = str(config.get(CONF_MODEL) or '')
+    spec = hass.data[DOMAIN]['miot_specs'].get(model)
     entities = []
-    if miot := config.get('miot_type'):
-        spec = await MiotSpec.async_from_type(hass, miot)
+    if isinstance(spec, MiotSpec):
         for srv in spec.get_services('none_service'):
             if not srv.get_property('none_property'):
                 continue
@@ -63,7 +63,7 @@ class MiotButtonEntity(MiotEntity, ButtonEntity):
 
 class MiotButtonSubEntity(MiotPropertySubEntity, ButtonEntity):
     def __init__(self, parent, miot_property: MiotProperty, value, option=None):
-        super().__init__(parent, miot_property, option)
+        super().__init__(parent, miot_property, option, domain=ENTITY_DOMAIN)
         self._miot_property_value = value
         self._miot_property_desc = None
         if miot_property.value_list:
@@ -91,7 +91,7 @@ class MiotButtonSubEntity(MiotPropertySubEntity, ButtonEntity):
 class MiotButtonActionSubEntity(BaseSubEntity, ButtonEntity):
     def __init__(self, parent, miot_action: MiotAction, option=None):
         self._miot_action = miot_action
-        super().__init__(parent, miot_action.full_name, option)
+        super().__init__(parent, miot_action.full_name, option, domain=ENTITY_DOMAIN)
         self._name = f'{parent.device_name} {miot_action.friendly_desc}'.strip()
         self._unique_id = f'{parent.unique_did}-{miot_action.unique_name}'
         self.entity_id = miot_action.service.spec.generate_entity_id(self, miot_action.name)

@@ -58,10 +58,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     hass.data[DOMAIN]['add_entities'][ENTITY_DOMAIN] = async_add_entities
     config['hass'] = hass
     model = str(config.get(CONF_MODEL) or '')
+    spec = hass.data[DOMAIN]['miot_specs'].get(model)
     entities = []
-    if miot := config.get('miot_type'):
-        spec = await MiotSpec.async_from_type(hass, miot)
-        for srv in spec.get_services(ENTITY_DOMAIN, 'curtain', 'airer', 'window_opener'):
+    if isinstance(spec, MiotSpec):
+        for srv in spec.get_services(ENTITY_DOMAIN, 'curtain', 'airer', 'window_opener', 'motor_controller'):
             if not srv.get_property('motor_control'):
                 continue
             if not srv.get_property('current_position') and 'mrbond.airer' in model:
@@ -82,7 +82,12 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
 
         self._prop_status = miot_service.get_property('status')
         self._prop_motor_control = miot_service.get_property('motor_control')
-        self._prop_current_position = miot_service.get_property('current_position')
+        self._prop_current_position = None
+        for p in miot_service.get_properties('current_position'):
+            self._prop_current_position = p
+            if p.value_range:
+                # https://home.miot-spec.com/spec/hyd.airer.lyjpro
+                break
         self._prop_target_position = miot_service.get_property('target_position')
 
         self._motor_reverse = False
@@ -90,20 +95,20 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
         self._target2current = False
         self._open_texts = []
         self._close_texts = []
+        self._supported_features = SUPPORT_OPEN | SUPPORT_CLOSE
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        self._supported_features = SUPPORT_OPEN | SUPPORT_CLOSE
         if self._prop_target_position:
-            if not self.custom_config('disable_target_position'):
+            if not self.custom_config_bool('disable_target_position'):
                 self._supported_features |= SUPPORT_SET_POSITION
             else:
                 self._prop_target_position = None
         if self._prop_motor_control.list_first('Pause', 'Stop') is not None:
             self._supported_features |= SUPPORT_STOP
 
-        self._target2current = self.custom_config('target2current_position')
-        if self._target2current:
+        self._target2current = self.custom_config_bool('target2current_position')
+        if self._target2current and self._prop_target_position:
             self._prop_current_position = self._prop_target_position
 
         self._motor_reverse = self.custom_config_bool('motor_reverse', False)
@@ -259,7 +264,7 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
 
 class MiotCoverSubEntity(MiotPropertySubEntity, CoverEntity):
     def __init__(self, parent, miot_property: MiotProperty, option=None):
-        super().__init__(parent, miot_property, option)
+        super().__init__(parent, miot_property, option, domain=ENTITY_DOMAIN)
         self._prop_status = self._option.get('status_property')
         if self._prop_status:
             self._option['keys'] = [*(self._option.get('keys') or []), self._prop_status.full_name]
@@ -289,7 +294,7 @@ class MiotCoverSubEntity(MiotPropertySubEntity, CoverEntity):
             return round(val / top * 100)
 
         prop = self._miot_service.get_property('current_position')
-        if self.custom_config('target2current_position'):
+        if self.custom_config_bool('target2current_position'):
             prop = self._miot_service.get_property('target_position') or prop
         if prop:
             return round(prop.from_dict(self._state_attrs) or -1)
@@ -510,14 +515,14 @@ class MrBondAirerProEntity(MiioCoverEntity):
 
             add_lights = self._add_entities.get('light')
             if 'light' in self._subs:
-                self._subs['light'].update()
+                self._subs['light'].update_from_parent()
             elif add_lights and 'led' in attrs:
                 self._subs['light'] = MrBondAirerProLightEntity(self)
                 add_lights([self._subs['light']], update_before_add=True)
 
             add_fans = self._add_entities.get('fan')
             if 'fan' in self._subs:
-                self._subs['fan'].update()
+                self._subs['fan'].update_from_parent()
             elif add_fans and 'dry' in attrs:
                 self._subs['fan'] = MrBondAirerProDryEntity(self, option={'keys': ['drytime']})
                 add_fans([self._subs['fan']], update_before_add=True)

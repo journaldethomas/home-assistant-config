@@ -1,7 +1,6 @@
 """Parser for iBeacon BLE advertisements"""
 import logging
 from struct import unpack
-from uuid import UUID
 from typing import Final
 
 from .const import (
@@ -19,19 +18,26 @@ from .const import (
     CONF_CYPRESS_TEMPERATURE,
     CONF_CYPRESS_HUMIDITY,
 )
+from .helpers import (
+    to_mac,
+    to_uuid,
+    to_unformatted_mac,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 DEVICE_TYPE: Final = "iBeacon"
 
+
 def parse_ibeacon(self, data: str, source_mac: str, rssi: float):
+    """Parse iBeacon advertisements"""
     if data[5] == 0x15 and len(data) >= 27:
         uuid = data[6:22]
         (major, minor, power) = unpack(">HHb", data[22:27])
 
         tracker_data = {
             CONF_RSSI: rssi,
-            CONF_MAC: to_mac(source_mac),
+            CONF_MAC: to_unformatted_mac(source_mac),
             CONF_UUID: to_uuid(uuid).replace('-', ''),
             CONF_TRACKER_ID: uuid,
             CONF_MAJOR: major,
@@ -65,11 +71,3 @@ def parse_ibeacon(self, data: str, source_mac: str, rssi: float):
         return None, None
 
     return sensor_data, tracker_data
-
-
-def to_uuid(uuid: str) -> str:
-    return str(UUID(''.join('{:02X}'.format(x) for x in uuid)))
-
-
-def to_mac(addr: str) -> str:
-    return ':'.join('{:02x}'.format(x) for x in addr).upper()

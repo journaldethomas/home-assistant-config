@@ -9,7 +9,7 @@ from homeassistant.core import (
 
 from homeassistant.const import (
     ATTR_SERVICE,
-    ATTR_SERVICE_DATA,
+    CONF_SERVICE_DATA,
     ATTR_ENTITY_ID,
     CONF_TYPE,
     # STATE_UNKNOWN,
@@ -53,10 +53,21 @@ def validate_area(trigger, area_id):
 def validate_modes(trigger, mode):
     if const.ATTR_MODES not in trigger:
         return False
-    elif not trigger[const.ATTR_MODES] or not mode:
+    elif not trigger[const.ATTR_MODES]:
         return True
     else:
         return mode in trigger[const.ATTR_MODES]
+
+
+def validate_trigger(trigger, to_state, from_state=None):
+    if const.ATTR_EVENT not in trigger:
+        return False
+    elif trigger[const.ATTR_EVENT] == "untriggered" and from_state == "triggered":
+        return True
+    elif trigger[const.ATTR_EVENT] == to_state:
+        return True
+    else:
+        return False
 
 
 class AutomationHandler:
@@ -104,9 +115,8 @@ class AutomationHandler:
                 for trigger in config[const.ATTR_TRIGGERS]:
                     if (
                         validate_area(trigger, area_id) and
-                        validate_modes(trigger, alarm_entity.arm_mode) and
-                        const.ATTR_EVENT in trigger and
-                        trigger[const.ATTR_EVENT] == new_state
+                        validate_modes(trigger, alarm_entity._arm_mode) and
+                        validate_trigger(trigger, new_state, old_state)
                     ):
                         await self.async_execute_automation(automation_id, alarm_entity)
 
@@ -131,9 +141,8 @@ class AutomationHandler:
                 for trigger in config[const.ATTR_TRIGGERS]:
                     if (
                         validate_area(trigger, area_id) and
-                        validate_modes(trigger, alarm_entity.arm_mode) and
-                        const.ATTR_EVENT in trigger and
-                        trigger[const.ATTR_EVENT] == EVENT_ARM_FAILURE
+                        validate_modes(trigger, alarm_entity._arm_mode) and
+                        validate_trigger(trigger, EVENT_ARM_FAILURE)
                     ):
                         await self.async_execute_automation(automation_id, alarm_entity)
 
@@ -161,9 +170,9 @@ class AutomationHandler:
 
             if (
                 self._config[automation_id][CONF_TYPE] == const.ATTR_NOTIFICATION
-                and ATTR_MESSAGE in action[ATTR_SERVICE_DATA]
+                and ATTR_MESSAGE in action[CONF_SERVICE_DATA]
             ):
-                data = copy.copy(action[ATTR_SERVICE_DATA])
+                data = copy.copy(action[CONF_SERVICE_DATA])
 
                 res = re.search(r'{{open_sensors(\|lang=([^}]+))?(\|format=short)?}}', data[ATTR_MESSAGE])
                 if res:
@@ -204,10 +213,10 @@ class AutomationHandler:
                     changed_by = alarm_entity.changed_by if alarm_entity.changed_by else ""
                     data[ATTR_MESSAGE] = data[ATTR_MESSAGE].replace("{{changed_by}}", changed_by)
 
-                service_call["data"] = data
+                service_call[CONF_SERVICE_DATA] = data
 
-            elif ATTR_SERVICE_DATA in action:
-                service_call["data"] = action[ATTR_SERVICE_DATA]
+            elif CONF_SERVICE_DATA in action:
+                service_call[CONF_SERVICE_DATA] = action[CONF_SERVICE_DATA]
 
             await async_call_from_config(
                 self.hass,
@@ -234,7 +243,7 @@ class AutomationHandler:
             translations = await self.hass.helpers.translation.async_get_translations(
                 language,
                 "device_automation",
-                "binary_sensor"
+                ["binary_sensor"]
             )
 
             self._sensorTranslationCache = translations
@@ -283,7 +292,7 @@ class AutomationHandler:
             translations = await self.hass.helpers.translation.async_get_translations(
                 language,
                 "state",
-                "alarm_control_panel"
+                ["alarm_control_panel"]
             )
 
             self._alarmTranslationCache = translations

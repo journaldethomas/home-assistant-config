@@ -2,6 +2,11 @@
 import logging
 from struct import unpack
 
+from .helpers import (
+    to_mac,
+    to_unformatted_mac,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -14,24 +19,35 @@ def convert_temperature(temp):
     return temperature
 
 
-def parse_inkbird(self, data, source_mac, rssi):
+def parse_inkbird(self, data, complete_local_name, source_mac, rssi):
     """Inkbird parser"""
     msg_length = len(data)
     firmware = "Inkbird"
     result = {"firmware": firmware}
     if msg_length == 11:
-        device_type = "IBS-TH"
         inkbird_mac = source_mac
         xvalue = data[2:10]
         (temp, hum) = unpack("<hH", xvalue[0:4])
         bat = int.from_bytes(xvalue[7:8], 'little')
-        result.update(
-            {
-                "temperature": temp / 100,
-                "humidity": hum / 100,
-                "battery": bat,
-            }
-        )
+        if complete_local_name == "sps":
+            device_type = "IBS-TH"
+            result.update(
+                {
+                    "temperature": temp / 100,
+                    "humidity": hum / 100,
+                    "battery": bat,
+                }
+            )
+        elif complete_local_name == "tps":
+            device_type = "IBS-TH2/P01B"
+            result.update(
+                {
+                    "temperature": temp / 100,
+                    "battery": bat,
+                }
+            )
+        else:
+            return None
     elif msg_length == 14:
         device_type = "iBBQ-1"
         inkbird_mac = data[6:12]
@@ -119,15 +135,10 @@ def parse_inkbird(self, data, source_mac, rssi):
 
     result.update({
         "rssi": rssi,
-        "mac": ''.join('{:02X}'.format(x) for x in source_mac[:]),
+        "mac": to_unformatted_mac(source_mac),
         "type": device_type,
         "packet": "no packet id",
         "firmware": firmware,
         "data": True
     })
     return result
-
-
-def to_mac(addr: int):
-    """Convert MAC address."""
-    return ':'.join('{:02x}'.format(x) for x in addr).upper()

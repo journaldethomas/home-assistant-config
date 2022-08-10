@@ -34,6 +34,7 @@ from .const import (
     CONF_DEVICE_ENCRYPTION_KEY,
     CONF_DEVICE_DECIMALS,
     CONF_DEVICE_USE_MEDIAN,
+    CONF_DEVICE_REPORT_UNKNOWN,
     CONF_DEVICE_RESTORE_STATE,
     CONF_DEVICE_RESET_TIMER,
     CONF_DEVICE_TRACK,
@@ -55,6 +56,7 @@ from .const import (
     DEFAULT_DEVICE_MAC,
     DEFAULT_DEVICE_UUID,
     DEFAULT_DEVICE_USE_MEDIAN,
+    DEFAULT_DEVICE_REPORT_UNKNOWN,
     DEFAULT_DEVICE_RESTORE_STATE,
     DEFAULT_DEVICE_RESET_TIMER,
     DEFAULT_DEVICE_TRACK,
@@ -103,6 +105,9 @@ DEVICE_SCHEMA = vol.Schema(
         vol.Optional(
             CONF_DEVICE_RESET_TIMER, default=DEFAULT_DEVICE_RESET_TIMER
         ): cv.positive_int,
+        vol.Optional(
+            CONF_DEVICE_REPORT_UNKNOWN, default=DEFAULT_DEVICE_REPORT_UNKNOWN
+        ): cv.boolean,
         vol.Optional(CONF_DEVICE_TRACK, default=DEFAULT_DEVICE_TRACK): cv.boolean,
         vol.Optional(
             CONF_DEVICE_TRACKER_SCAN_INTERVAL,
@@ -257,6 +262,10 @@ class BLEMonitorFlow(data_entry_flow.FlowHandler):
                             default=user_input[CONF_DEVICE_RESET_TIMER],
                         ): cv.positive_int,
                         vol.Optional(
+                            CONF_DEVICE_REPORT_UNKNOWN,
+                            default=user_input[CONF_DEVICE_REPORT_UNKNOWN],
+                        ): cv.boolean,
+                        vol.Optional(
                             CONF_DEVICE_TRACK,
                             default=user_input[CONF_DEVICE_TRACK],
                         ): cv.boolean,
@@ -281,7 +290,7 @@ class BLEMonitorFlow(data_entry_flow.FlowHandler):
                 )
             if self._sel_device:
                 # Remove device from device registry
-                device_registry = await self.hass.helpers.device_registry.async_get_registry()
+                device_registry = self.hass.helpers.device_registry.async_get(self.hass)
 
                 conf_key = dict_get_key_or(self._sel_device)
                 key = dict_get_or(self._sel_device).upper()
@@ -344,6 +353,12 @@ class BLEMonitorFlow(data_entry_flow.FlowHandler):
                         CONF_DEVICE_RESET_TIMER, DEFAULT_DEVICE_RESET_TIMER
                     ),
                 ): cv.positive_int,
+                vol.Optional(
+                    CONF_DEVICE_REPORT_UNKNOWN,
+                    default=self._sel_device.get(
+                        CONF_DEVICE_REPORT_UNKNOWN, DEFAULT_DEVICE_REPORT_UNKNOWN
+                    ),
+                ): cv.boolean,
                 vol.Optional(
                     CONF_DEVICE_TRACK,
                     default=self._sel_device.get(
@@ -536,7 +551,7 @@ class BLEMonitorOptionsFlow(BLEMonitorFlow, config_entries.OptionsFlow):
             )
         for dev in self.config_entry.options.get(CONF_DEVICES):
             self._devices[dict_get_or(dev).upper()] = dev
-        devreg = await self.hass.helpers.device_registry.async_get_registry()
+        devreg = self.hass.helpers.device_registry.async_get(self.hass)
         for dev in device_registry.async_entries_for_config_entry(
             devreg, self.config_entry.entry_id
         ):

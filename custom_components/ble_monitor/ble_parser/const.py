@@ -1,3 +1,4 @@
+"""Constants for the ble_parser"""
 from typing import Final
 
 CONF_MAC: Final = "mac"
@@ -8,13 +9,20 @@ CONF_DATA: Final = "data"
 CONF_MANUFACTURER: Final = "manufacturer"
 CONF_RSSI: Final = "rssi"
 
-CONF_UUID: Final = "uuid"
-CONF_TRACKER_ID: Final = "tracker_id"
-CONF_MAJOR: Final = "major"
-CONF_MINOR: Final = "minor"
-CONF_MEASURED_POWER: Final = "measured power"
-CONF_CYPRESS_TEMPERATURE: Final = "cypress temperature"
+CONF_BATTERY: Final = "battery"
+CONF_CONDUCTIVITY: Final = "conductivity"
 CONF_CYPRESS_HUMIDITY: Final = "cypress humidity"
+CONF_CYPRESS_TEMPERATURE: Final = "cypress temperature"
+CONF_GRAVITY: Final = "gravity"
+CONF_HUMIDITY: Final = "humidity"
+CONF_ILLUMINANCE: Final = "illuminance"
+CONF_MAJOR: Final = "major"
+CONF_MEASURED_POWER: Final = "measured power"
+CONF_MINOR: Final = "minor"
+CONF_MOISTURE: Final = "moisture"
+CONF_TEMPERATURE: Final = "temperature"
+CONF_TRACKER_ID: Final = "tracker_id"
+CONF_UUID: Final = "uuid"
 
 DEFAULT_MANUFACTURER: Final = "Other"
 
@@ -556,4 +564,16 @@ MANUFACTURER_DICT: Final = {
     0x0217: "Tech4home, Lda",
     0x0218: "Hiotech AB",
     0x06D5: "Sensirion AG",
+}
+
+
+TILT_TYPES: Final = {
+    0xA495BB10C5B14B44B5121370F02D74DE: "Red",
+    0xA495BB20C5B14B44B5121370F02D74DE: "Green",
+    0xA495BB30C5B14B44B5121370F02D74DE: "Black",
+    0xA495BB40C5B14B44B5121370F02D74DE: "Purple",
+    0xA495BB50C5B14B44B5121370F02D74DE: "Orange",
+    0xA495BB60C5B14B44B5121370F02D74DE: "Blue",
+    0xA495BB70C5B14B44B5121370F02D74DE: "Yellow",
+    0xA495BB80C5B14B44B5121370F02D74DE: "Pink",
 }

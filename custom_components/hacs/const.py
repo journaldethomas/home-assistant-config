@@ -6,16 +6,14 @@ from aiogithubapi.common.const import ACCEPT_HEADERS
 NAME_SHORT = "HACS"
 DOMAIN = "hacs"
 CLIENT_ID = "395a8e669c5de9f7c6e8"
-MINIMUM_HA_VERSION = "2021.9.0"
+MINIMUM_HA_VERSION = "2022.4.0"
 
 TV = TypeVar("TV")
 
 PACKAGE_NAME = "custom_components.hacs"
 
 DEFAULT_CONCURRENT_TASKS = 15
-DEFAULT_CONCURRENT_BACKOFF_TIME = 0
-
-PLATFORMS = ["sensor"]
+DEFAULT_CONCURRENT_BACKOFF_TIME = 1
 
 HACS_ACTION_GITHUB_API_HEADERS = {
     "User-Agent": "HACS/action",
@@ -24,6 +22,8 @@ HACS_ACTION_GITHUB_API_HEADERS = {
 
 VERSION_STORAGE = "6"
 STORENAME = "hacs"
+
+HACS_SYSTEM_ID = "0717a0cd-745c-48fd-9b16-c8534c9704f9-bc944b0f-fd42-4a58-a072-ade38d1444cd"
 
 STARTUP = """
 -------------------------------------------------------------------

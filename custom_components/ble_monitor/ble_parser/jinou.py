@@ -1,6 +1,11 @@
 """Parser for JINOU Beacon BLE advertisements"""
 import logging
 
+from .helpers import (
+    to_mac,
+    to_unformatted_mac,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -40,15 +45,10 @@ def parse_jinou(self, data, source_mac, rssi):
 
     result.update({
         "rssi": rssi,
-        "mac": ''.join('{:02X}'.format(x) for x in jinou_mac[:]),
+        "mac": to_unformatted_mac(jinou_mac),
         "type": device_type,
         "packet": "no packet id",
         "firmware": firmware,
         "data": True
     })
     return result
-
-
-def to_mac(addr: int):
-    """Convert MAC address."""
-    return ':'.join('{:02x}'.format(x) for x in addr).upper()

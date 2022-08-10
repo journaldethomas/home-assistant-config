@@ -2,6 +2,11 @@
 import logging
 from struct import unpack
 
+from .helpers import (
+    to_mac,
+    to_unformatted_mac,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -18,6 +23,8 @@ def parse_teltonika(self, data, complete_local_name, source_mac, rssi):
         device_type = "Blue Coin T"
     elif complete_local_name[0:3] == "P T":
         device_type = "Blue Puck T"
+    elif complete_local_name[0:5] == "P RHT":
+        device_type = "Blue Puck RHT"
     else:
         device_type = None
 
@@ -60,14 +67,9 @@ def parse_teltonika(self, data, complete_local_name, source_mac, rssi):
 
     result.update({
         "rssi": rssi,
-        "mac": ''.join('{:02X}'.format(x) for x in teltonika_mac[:]),
+        "mac": to_unformatted_mac(teltonika_mac),
         "type": device_type,
         "packet": "no packet id",
         "data": True
     })
     return result
-
-
-def to_mac(addr: int):
-    """Return formatted MAC address"""
-    return ':'.join('{:02x}'.format(x) for x in addr).upper()

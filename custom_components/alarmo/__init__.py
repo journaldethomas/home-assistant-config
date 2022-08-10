@@ -38,6 +38,7 @@ from .sensors import (
 )
 from .automations import AutomationHandler
 from .mqtt import MqttHandler
+from .event import EventHandler
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     store = await async_get_registry(hass)
     coordinator = AlarmoCoordinator(hass, session, entry, store)
 
-    device_registry = await dr.async_get_registry(hass)
+    device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(const.DOMAIN, coordinator.id)},
@@ -140,6 +141,7 @@ class AlarmoCoordinator(DataUpdateCoordinator):
         self.hass.data[const.DOMAIN]["sensor_handler"] = SensorHandler(self.hass)
         self.hass.data[const.DOMAIN]["automation_handler"] = AutomationHandler(self.hass)
         self.hass.data[const.DOMAIN]["mqtt_handler"] = MqttHandler(self.hass)
+        self.hass.data[const.DOMAIN]["event_handler"] = EventHandler(self.hass)
 
         areas = self.store.async_get_areas()
         config = self.store.async_get_config()
@@ -310,61 +312,27 @@ class AlarmoCoordinator(DataUpdateCoordinator):
                 _LOGGER.info("Cannot process the push action, since there are multiple areas.")
                 return
 
-            arm_mode = alarm_entity.arm_mode
+            arm_mode = alarm_entity._arm_mode
             if not arm_mode:
                 _LOGGER.info("Cannot process the push action, since the arm mode is not known.")
                 return
 
             if action == const.EVENT_ACTION_FORCE_ARM:
                 _LOGGER.info("Received request for force arming")
-                await alarm_entity.async_arm(arm_mode, bypass_open_sensors=True)
+                await alarm_entity.async_handle_arm_request(arm_mode, skip_code=True, bypass_open_sensors=True)
             elif action == const.EVENT_ACTION_RETRY_ARM:
                 _LOGGER.info("Received request for retry arming")
-                await alarm_entity.async_arm(arm_mode)
+                await alarm_entity.async_handle_arm_request(arm_mode, skip_code=True)
             elif action == const.EVENT_ACTION_DISARM:
                 _LOGGER.info("Received request for disarming")
-                await alarm_entity.async_alarm_disarm(None, True)
+                await alarm_entity.async_alarm_disarm(code=None, skip_code=True)
 
         self._subscriptions.append(
             self.hass.bus.async_listen(const.PUSH_EVENT, async_handle_push_event)
         )
 
-        @callback
-        async def async_handle_event(event: str, area_id: str, args: dict = {}):
-            """fire events in HA for use with automations"""
-            if event not in [
-                const.EVENT_FAILED_TO_ARM,
-                const.EVENT_COMMAND_NOT_ALLOWED,
-                const.EVENT_INVALID_CODE_PROVIDED,
-                const.EVENT_NO_CODE_PROVIDED
-            ]:
-                return
-
-            reasons = {
-                const.EVENT_FAILED_TO_ARM: "open_sensors",
-                const.EVENT_COMMAND_NOT_ALLOWED: "not_allowed",
-                const.EVENT_INVALID_CODE_PROVIDED: "invalid_code",
-                const.EVENT_NO_CODE_PROVIDED: "invalid_code",
-            }
-
-            data = {
-                "reason": reasons[event],
-            }
-            if "command" in args:
-                data["command"] = args["command"].upper()
-            if event == const.EVENT_FAILED_TO_ARM:
-                data["sensors"] = list(args["open_sensors"].keys())
-
-            self.hass.bus.fire("alarmo_failed_to_arm", data)
-
-        self._subscriptions.append(
-            async_dispatcher_connect(
-                self.hass, "alarmo_event", async_handle_event
-            )
-        )
-
     async def async_remove_entity(self, area_id: str):
-        entity_registry = await self.hass.helpers.entity_registry.async_get_registry()
+        entity_registry = self.hass.helpers.entity_registry.async_get(self.hass)
         if area_id == "master":
             entity = self.hass.data[const.DOMAIN]["master"]
             entity_registry.async_remove(entity.entity_id)
@@ -430,6 +398,7 @@ class AlarmoCoordinator(DataUpdateCoordinator):
         del self.hass.data[const.DOMAIN]["sensor_handler"]
         del self.hass.data[const.DOMAIN]["automation_handler"]
         del self.hass.data[const.DOMAIN]["mqtt_handler"]
+        del self.hass.data[const.DOMAIN]["event_handler"]
 
         # remove subscriptions for coordinator
         while len(self._subscriptions):

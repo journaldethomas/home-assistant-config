@@ -1,0 +1,4 @@
+# Describes the format for available Pool Pump services
+
+check:
+  description: Check if the pool pump should be running now.

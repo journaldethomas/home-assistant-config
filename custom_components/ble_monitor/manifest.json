@@ -5,12 +5,14 @@
   "documentation": "https://github.com/custom-components/ble_monitor",
   "issue_tracker": "https://github.com/custom-components/ble_monitor/issues",
   "requirements": [
-    "pycryptodomex>=3.12.0",
+    "pycryptodomex>=3.14.1",
     "janus>=1.0.0",
-    "aioblescan>=0.2.12"
+    "aioblescan>=0.2.13",
+    "btsocket>=0.2.0",
+    "pyric>=0.1.6.3"
   ],
   "dependencies": [],
   "codeowners": ["@Ernst79", "@Magalex2x14", "@Thrilleratplay"],
-  "version": "7.5.2",
+  "version": "9.0.7",
   "iot_class": "local_polling"
 }

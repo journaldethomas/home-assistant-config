@@ -1,6 +1,11 @@
-# Parser for Govee BLE advertisements
+"""Parser for Govee BLE advertisements"""
 import logging
 from struct import unpack
+
+from .helpers import (
+    to_mac,
+    to_unformatted_mac,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,8 +18,19 @@ def decode_temps(packet_value: int) -> float:
     return float(packet_value / 10000)
 
 
+def decode_temps_probes(packet_value: int) -> float:
+    """Filter potential negative temperatures."""
+    if packet_value < 0:
+        return 0.0
+    return float(packet_value / 100)
+
+
 def parse_govee(self, data, source_mac, rssi):
-    # check for adstruc length
+    """Parser for Govee sensors"""
+    # The parser needs to handle the bug in the Govee BLE advertisement
+    # data as INTELLI_ROCKS sometimes ends up glued on to the end of the message
+    if len(data) > 25 and b"INTELLI_ROCKS" in data:
+        data = data[:-25]
     msg_length = len(data)
     firmware = "Govee"
     govee_mac = source_mac
@@ -41,47 +57,64 @@ def parse_govee(self, data, source_mac, rssi):
         (temp, humi, batt) = unpack("<hHB", data[5:10])
         result.update({"temperature": temp / 100, "humidity": humi / 100, "battery": batt})
     elif msg_length == 13 and device_id == 0xEC88:
-        device_type = "H5051"
+        device_type = "H5051/H5071"
         (temp, humi, batt) = unpack("<hHB", data[5:10])
         result.update({"temperature": temp / 100, "humidity": humi / 100, "battery": batt})
     elif msg_length == 13 and device_id == 0x0001:
-        device_type = "H5178"
         packet_5178 = data[7:10].hex()
         packet = int(packet_5178, 16)
         temp = decode_temps(packet)
         humi = float((packet % 1000) / 10)
         batt = int(data[10])
         sensor_id = data[6]
+        result.update(
+            {
+                "temperature": temp,
+                "humidity": humi,
+                "battery": batt,
+                "sensor id": sensor_id
+            }
+        )
         if sensor_id == 0:
-            result.update(
-                {
-                    "temperature": temp,
-                    "humidity": humi,
-                    "battery": batt,
-                    "sensor id": sensor_id
-                }
-            )
+            device_type = "H5178"
         elif sensor_id == 1:
-            result.update(
-                {
-                    "temperature outdoor": temp,
-                    "humidity outdoor": humi,
-                    "battery": batt,
-                    "sensor id": sensor_id
-                }
-            )
+            device_type = "H5178-outdoor"
+            govee_mac_outdoor = int.from_bytes(govee_mac, 'big') + 1
+            govee_mac = bytearray(govee_mac_outdoor.to_bytes(len(govee_mac), 'big'))
         else:
-            _LOGGER.debug("Unknown sensor id for Govee H5178, please report to the developers, data: %s", data.hex())
+            _LOGGER.debug(
+                "Unknown sensor id for Govee H5178, please report to the developers, data: %s",
+                data.hex()
+            )
     elif msg_length == 13 and device_id == 0x8801:
         device_type = "H5179"
         (temp, humi, batt) = unpack("<hHB", data[8:13])
         result.update({"temperature": temp / 100, "humidity": humi / 100, "battery": batt})
     elif msg_length == 18:
         device_type = "H5183"
-        (temp_probe, temp_alarm) = unpack(">hh", data[12:16])
-        temp_probe = 0 if temp_probe < 0 else temp_probe
-        temp_alarm = 0 if temp_alarm < 0 else temp_alarm
-        result.update({"temperature probe 1": temp_probe / 100, "temperature alarm": temp_alarm / 100})
+        (temp_probe_1, temp_alarm_1) = unpack(">hh", data[12:16])
+        result.update({
+            "temperature probe 1": decode_temps_probes(temp_probe_1),
+            "temperature alarm probe 1": decode_temps_probes(temp_alarm_1)
+        })
+    elif msg_length == 21:
+        device_type = "H5182"
+        (temp_probe_1, temp_alarm_1, dummy, temp_probe_2, temp_alarm_2) = unpack(">hhbhh", data[12:21])
+        result.update({
+            "temperature probe 1": decode_temps_probes(temp_probe_1),
+            "temperature alarm probe 1": decode_temps_probes(temp_alarm_1),
+            "temperature probe 2": decode_temps_probes(temp_probe_2),
+            "temperature alarm probe 2": decode_temps_probes(temp_alarm_2)
+        })
+    elif msg_length == 24:
+        device_type = "H5185"
+        (temp_probe_1, temp_alarm_1, dummy, temp_probe_2, temp_alarm_2) = unpack(">hhhhh", data[12:22])
+        result.update({
+            "temperature probe 1": decode_temps_probes(temp_probe_1),
+            "temperature alarm probe 1": decode_temps_probes(temp_alarm_1),
+            "temperature probe 2": decode_temps_probes(temp_probe_2),
+            "temperature alarm probe 2": decode_temps_probes(temp_alarm_2)
+        })
     else:
         if self.report_unknown == "Govee":
             _LOGGER.info(
@@ -99,14 +132,10 @@ def parse_govee(self, data, source_mac, rssi):
 
     result.update({
         "rssi": rssi,
-        "mac": ''.join('{:02X}'.format(x) for x in govee_mac[:]),
+        "mac": to_unformatted_mac(govee_mac),
         "type": device_type,
         "packet": "no packet id",
         "firmware": firmware,
         "data": True
     })
     return result
-
-
-def to_mac(addr: int):
-    return ':'.join('{:02x}'.format(x) for x in addr).upper()

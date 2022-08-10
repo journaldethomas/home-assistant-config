@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from aiogithubapi import AIOGitHubAPIException
 
-from ..enums import HacsCategory
+from ..enums import HacsCategory, HacsDispatchEvent
 from ..exceptions import HacsException
 from ..utils.decorator import concurrent
 from .base import HacsRepository
@@ -40,11 +40,11 @@ class HacsAppdaemonRepository(HacsRepository):
             addir = await self.repository_object.get_contents("apps", self.ref)
         except AIOGitHubAPIException:
             raise HacsException(
-                f"Repository structure for {self.ref.replace('tags/','')} is not compliant"
+                f"{self.string} Repository structure for {self.ref.replace('tags/','')} is not compliant"
             ) from None
 
         if not isinstance(addir, list):
-            self.validate.errors.append("Repository structure not compliant")
+            self.validate.errors.append(f"{self.string} Repository structure not compliant")
 
         self.content.path.remote = addir[0].path
         self.content.objects = await self.repository_object.get_contents(
@@ -55,7 +55,7 @@ class HacsAppdaemonRepository(HacsRepository):
         if self.validate.errors:
             for error in self.validate.errors:
                 if not self.hacs.status.startup:
-                    self.logger.error("%s %s", self, error)
+                    self.logger.error("%s %s", self.string, error)
         return self.validate.success
 
     @concurrent(concurrenttasks=10, backoff_time=5)
@@ -66,7 +66,7 @@ class HacsAppdaemonRepository(HacsRepository):
 
         # Get appdaemon objects.
         if self.repository_manifest:
-            if self.data.content_in_root:
+            if self.repository_manifest.content_in_root:
                 self.content.path.remote = ""
 
         if self.content.path.remote == "apps":
@@ -78,3 +78,15 @@ class HacsAppdaemonRepository(HacsRepository):
 
         # Set local path
         self.content.path.local = self.localpath
+
+        # Signal entities to refresh
+        if self.data.installed:
+            self.hacs.async_dispatch(
+                HacsDispatchEvent.REPOSITORY,
+                {
+                    "id": 1337,
+                    "action": "update",
+                    "repository": self.data.full_name,
+                    "repository_id": self.data.id,
+                },
+            )
