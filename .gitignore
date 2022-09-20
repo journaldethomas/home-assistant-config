@@ -5,6 +5,7 @@ home-assistant*
 deps
 core
 scripts
+backups
 
 # Generic ignores
 *.log
