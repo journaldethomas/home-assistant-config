@@ -62,9 +62,10 @@ recorder:
 ########    Configuration de la partie materiel    ###############
 
 # Configuration NetAtmo à utiliser pour que Caméra Welcome remonte
-netatmo:
-  client_id: !secret netatmo_id
-  client_secret: !secret netatmo_secret
+# DEPRECIE DANS LE FUTUR
+#netatmo:
+#  client_id: !secret netatmo_id
+#  client_secret: !secret netatmo_secret
 
 # InfluxDB
 influxdb:
@@ -84,10 +85,11 @@ influxdb:
 #    minutes: 6
 
 # Configuration Withings pour la détection du couché
-withings:
-  client_id: !secret withings_client_id
-  client_secret: !secret withings_consumer_secret
-  use_webhook: true
+# DEPRECIE DANS LE FUTUR
+#withings:
+#  client_id: !secret withings_client_id
+#  client_secret: !secret withings_consumer_secret
+#  use_webhook: true
 
 ###################################################################
 ##########          Utilisation Browser Mod           #############
@@ -137,14 +139,12 @@ light:
   - platform: group
     name: Maxence
     entities:
-      - light.lumiere_03_maxence_01
-      - light.lumiere_04_maxence_02
+      - light.hue_white_lamp_1
 
   - platform: group
     name: Chloe
     entities:
-      - light.lumiere_05_chloe_01
-      - light.lumiere_06_chloe_02
+      - light.hue_ambiance_lamp_1
 
   - platform: group
     name: Garage
@@ -364,43 +364,43 @@ input_number:
 ##########               Les volets                  ##############
 ###################################################################
 
-cover:
+#cover:
 
-  - platform: mqtt
-    name: "Volet cuisine"
-    command_topic: "volet/cuisine"
-    payload_open: "u"
-    payload_close: "d"
-    payload_stop: "s"
-    state_open: "open"
-    state_closed: "closed"
+#  - platform: mqtt
+#    name: "Volet cuisine"
+#    command_topic: "volet/cuisine"
+#    payload_open: "u"
+#    payload_close: "d"
+#    payload_stop: "s"
+#    state_open: "open"
+#    state_closed: "closed"
 
-  - platform: mqtt
-    name: "Volet salon"
-    command_topic: "volet/salon"
-    payload_open: "u"
-    payload_close: "d"
-    payload_stop: "s"
-    state_open: "open"
-    state_closed: "closed"
+#  - platform: mqtt
+#    name: "Volet salon"
+#    command_topic: "volet/salon"
+#    payload_open: "u"
+#    payload_close: "d"
+#    payload_stop: "s"
+#    state_open: "open"
+#    state_closed: "closed"
 
-  - platform: mqtt
-    name: "Volet parent"
-    command_topic: "volet/chambre_parentale"
-    payload_open: "u"
-    payload_close: "d"
-    payload_stop: "s"
-    state_open: "open"
-    state_closed: "closed"
+#  - platform: mqtt
+#    name: "Volet parent"
+#    command_topic: "volet/chambre_parentale"
+#    payload_open: "u"
+#    payload_close: "d"
+#    payload_stop: "s"
+#    state_open: "open"
+#    state_closed: "closed"
   
-  - platform: mqtt
-    name: "Volet pitchouns"
-    command_topic: "volet/chambre_pitchouns"
-    payload_open: "u"
-    payload_close: "d"
-    payload_stop: "s"
-    state_open: "open"
-    state_closed: "closed"
+#  - platform: mqtt
+#    name: "Volet pitchouns"
+#    command_topic: "volet/chambre_pitchouns"
+#    payload_open: "u"
+#    payload_close: "d"
+#    payload_stop: "s"
+#    state_open: "open"
+#    state_closed: "closed"
 
 
 ###################################################################
@@ -421,7 +421,6 @@ sensor:
           {{ now().strftime('%d') + ' ' + month }}
 
 # Pour la météo
-
       weather_temperature:
         friendly_name: "Weather Température"
         value_template: "{{ state_attr('weather.sillingy' , 'temperature') }}°"
@@ -454,7 +453,7 @@ sensor:
           {% endif -%}
 
  # Température max prévue du jour
-      weather_temperature:
+      weather_temperature_max:
         friendly_name: Weather Température Max
         value_template: "{{ states.weather.sillingy.attributes.forecast[0].temperature|float|round(2) }}"
        
@@ -756,18 +755,6 @@ sensor:
 
 # Imprimante 3D
 
-  - platform: mqtt
-    name: "dispo imprimante"
-    state_topic: "octoPrint/hass/Connected"
-
-  - platform: mqtt
-    name: "Longueur Filament"
-    state_topic: "octoPrint/hass/printing"
-    value_template: "{{ ((value_json.job.filament.length)|float * 0.001)|round(2) }}"
-    json_attributes_topic: "octoPrint/hass/printing"
-    json_attributes_template: "{{ value_json.job.filament | tojson }}"
-    unit_of_measurement: "m"
-
   - platform: template
     sensors:
       quantite_filament_imprime:
@@ -776,19 +763,7 @@ sensor:
         value_template: >-
             {{ states.sensor.quantite_filament_imprime | float + states('input_number.longueur_filament')|float  }}
 
-# Consommation d'eau via MQTT
-
-  - platform: mqtt
-    name: "consommation total"
-    state_topic: "tele/eau/consommation"
-    unit_of_measurement: "m³"
-    value_template: "{{ value_json['total_m3']}}"
-    icon: mdi:counter
-  
-  - platform: mqtt
-    name: "compteur eau status"
-    state_topic: "tele/eau/consommation"
-    value_template: "{{ value_json['status']}}"
+# Consommation d'eau
 
   - platform: template
     sensors:
@@ -1002,6 +977,60 @@ sensor:
         value_template: >-
             {{ states.sensor.pluie_annee.attributes.last_period }}
 
+  - platform: template # Consommation journalière HP + HC
+    sensors:
+      vph_energy_total_daily:
+        friendly_name: 'Energie journalière consommée par VPH'
+        entity_id:
+          - sensor.vph_consommation_quotidienne_jour
+          - sensor.vph_consommation_quotidienne_nuit
+        value_template: "{{ (states('sensor.vph_consommation_quotidienne_jour')|float + states('sensor.vph_consommation_quotidienne_nuit')|float)|round(3) }}"
+        unit_of_measurement: "kWh"
+
+  - platform: template
+    sensors:
+      energie_vph:
+        friendly_name: "energie VPH"
+        value_template:  >-
+            {{ (states("sensor.vph_energy")|float / 1000)|round(3)}}
+        unit_of_measurement: kWh
+        availability_template: >-
+            {% if is_state("sensor.vph_energy", "unknown") %}
+              false
+            {% else %}
+              true
+            {%- endif %}
+
+  - platform: template # Consommation hebdo HP + HC
+    sensors:
+      vph_energy_total_weekly:
+        friendly_name: 'Energie hebdomadaire consommée par VPH'
+        entity_id:
+          - sensor.vph_consommation_hebdo_jour
+          - sensor.vph_consommation_hebdo_nuit
+        value_template: "{{ (states('sensor.vph_consommation_hebdo_jour')|float + states('sensor.vph_consommation_hebdo_nuit')|float)|round(3) }}"
+        unit_of_measurement: "kWh"
+
+  - platform: template # Consommation mensuelle HP + HC
+    sensors:
+      vph_energy_total_monthly:
+        friendly_name: 'Energie mensuelle consommée par VPH'
+        entity_id:
+          - sensor.vph_consommation_mensuelle_jour
+          - sensor.vph_consommation_mensuelle_nuit
+        value_template: "{{ (states('sensor.vph_consommation_mensuelle_jour')|float + states('sensor.vph_consommation_mensuelle_nuit')|float)|round(3) }}"
+        unit_of_measurement: "kWh"
+
+  - platform: template # Consommation annuelle HP + HC
+    sensors:
+      vph_energy_total_yearly:
+        friendly_name: 'Energie annuelle consommée par VPH'
+        entity_id:
+          - sensor.vph_consommation_annuelle_jour
+          - sensor.vph_consommation_annuelle_nuit
+        value_template: "{{ (states('sensor.vph_consommation_annuelle_jour')|float + states('sensor.vph_consommation_annuelle_nuit')|float)|round(3) }}"
+        unit_of_measurement: "kWh"
+
 # Informations à propos de HACS
   - platform: command_line
     name: hacs_version
@@ -1208,7 +1237,7 @@ sensor:
     sensors:
       netatmo_hvac_action:
         friendly_name: 'chauffage'
-        value_template: "{{ 0 if state_attr('climate.piece_de_vie', 'hvac_action') == 'idle' else 1}}"
+        value_template: "{{ 'off' if state_attr('climate.piece_de_vie', 'hvac_action') == 'idle' else 'on'}}"
 
   # POUR LES CAMERAS EUFY
 
@@ -1312,51 +1341,65 @@ sensor:
            AVERTISSEMENT
           {% endif -%}
 
-  # ZIGBEE2MQTT DEPUIS MAISON DE FAMILLE
+mqtt:
+  sensor:
+    # Consommation d'eau via MQTT
+    - name: "consommation total"
+      state_topic: "tele/eau/consommation"
+      unit_of_measurement: "m³"
+      value_template: "{{ value_json['total_m3']}}"
+      icon: mdi:counter
 
-  - platform: mqtt
-    name: "disponibilité"
-    state_topic: "paradis/bridge/state"
+    - name: "compteur eau status"
+      state_topic: "tele/eau/consommation"
+      value_template: "{{ value_json['status']}}"
 
-  - platform: mqtt
-    name: "temperature exterieur"
-    state_topic: "paradis/capteur_exterieur/temperature"
-    unit_of_measurement: "°C"
+    # MQTT DEPUIS MAISON DE FAMILLE
+    - name: "disponibilité"
+      state_topic: "paradis/bridge/state"
 
-  - platform: mqtt
-    name: "humidite exterieur"
-    state_topic: "paradis/capteur_exterieur/humidite"
-    unit_of_measurement: "%"
+    - name: "temperature exterieur"
+      state_topic: "paradis/capteur_exterieur/temperature"
+      unit_of_measurement: "°C"
 
-  - platform: mqtt
-    state_topic: "paradis/raspberrypi/cpuload"
-    name: rpi cpu load
-    unit_of_measurement: "%"
+    - name: "humidite exterieur"
+      state_topic: "paradis/capteur_exterieur/humidite"
+      unit_of_measurement: "%"
 
-  - platform: mqtt
-    state_topic: "paradis/raspberrypi/cputemp"
-    name: rpi cpu temp
-    unit_of_measurement: "°C"
+#    - name: rpi cpu load
+#      state_topic: "paradis/raspberrypi/cpuload"
+#      unit_of_measurement: "%"
 
-  - platform: mqtt
-    state_topic: "paradis/raspberrypi/diskusage"
-    name: rpi diskusage
-    unit_of_measurement: "%"
+#    - name: rpi cpu temp
+#      state_topic: "paradis/raspberrypi/cputemp"
+#      unit_of_measurement: "°C"
 
-  - platform: mqtt
-    state_topic: "paradis/raspberrypi/swap"
-    name: rpi swap
-    unit_of_measurement: "%"
+#    - name: rpi diskusage
+#      state_topic: "paradis/raspberrypi/diskusage"
+#      unit_of_measurement: "%"
 
-  - platform: mqtt
-    state_topic: "paradis/raspberrypi/memory"
-    name: rpi memory
-    unit_of_measurement: "%"
+#    - name: rpi swap
+#      state_topic: "paradis/raspberrypi/swap"
+#      unit_of_measurement: "%"
 
-  - platform: mqtt
-    state_topic: "paradis/raspberrypi/uptime_days"
-    name: rpi uptime
-    unit_of_measurement: "days"
+#    - name: rpi memory
+#      state_topic: "paradis/raspberrypi/memory"
+#      unit_of_measurement: "%"
+
+#    - name: rpi uptime
+#      state_topic: "paradis/raspberrypi/uptime_days"
+#      unit_of_measurement: "days"
+
+  # Imprimante 3D
+    - name: "Longueur Filament"
+      state_topic: "octoPrint/hass/printing"
+      unit_of_measurement: "m"
+      value_template: "{{ ((value_json.job.filament.length)|float * 0.001)|round(2) }}"
+      json_attributes_topic: "octoPrint/hass/printing"
+      json_attributes_template: "{{ value_json.job.filament | tojson }}"
+
+    - name: "dispo imprimante"
+      state_topic: "octoPrint/hass/Connected"
 
 ###################################################################
 ########                   BINARY SENSOR                  #########
@@ -1404,16 +1447,81 @@ utility_meter:
 ######   CALCUL CONSOMMATION ELECTRIQUE BAIE TECHNIQUE   ######
 
   consommation_baie_quotidienne:
-    source: sensor.prise_06_baie_technique_energy
+    source: sensor.consommation_baie_technique
     cycle: daily
 
-  consommation_baie_quotidienne:
-    source: sensor.prise_06_baie_technique_energy
+  consommation_baie_hebdo:
+    source: sensor.consommation_baie_technique
     cycle: weekly
 
-  consommation_baie_quotidienne:
-    source: sensor.prise_06_baie_technique_energy
+  consommation_baie_mensuelle:
+    source: sensor.consommation_baie_technique
     cycle: monthly
+
+  consommation_bureau_thomas_quotidienne:
+    source: sensor.consommation_bureau_thomas
+    cycle: daily
+
+  consommation_bureau_thomas_hebdo:
+    source: sensor.consommation_bureau_thomas
+    cycle: weekly
+
+  consommation_bureau_thomas_mensuelle:
+    source: sensor.consommation_bureau_thomas
+    cycle: monthly
+
+  consommation_machine_laver_quotidienne:
+    source: sensor.prise_05_machine_a_laver_energy
+    cycle: daily
+
+  consommation_machine_laver_hebdo:
+    source: sensor.prise_05_machine_a_laver_energy
+    cycle: weekly
+
+  consommation_machine_laver_mensuelle:
+    source: sensor.prise_05_machine_a_laver_energy
+    cycle: monthly
+
+  vph_consommation_quotidienne:
+    source: sensor.energie_vph
+    name: consommation quotidienne VPH
+    cycle: daily
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_hebdo:
+    source: sensor.energie_vph
+    name: consommation hebdomadaire VPH
+    cycle: weekly
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_mensuelle:
+    source: sensor.energie_vph
+    name: consommation mensuelle VPH
+    cycle: monthly
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_trimestrielle:
+    source: sensor.energie_vph
+    name: consommation trimestrielle VPH
+    cycle: quarterly
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_annuelle:
+    source: sensor.energie_vph
+    name: consommation annuelle VPH
+    cycle: yearly
+    tariffs:
+      - jour
+      - nuit
+
 
 ######  CALCUL CONSOMMATION EAU  ######
 

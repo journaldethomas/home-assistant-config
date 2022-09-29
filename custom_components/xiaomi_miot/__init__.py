@@ -164,6 +164,7 @@ SERVICE_TO_METHOD_BASE = {
                 vol.Optional('method', default='POST'): cv.string,
                 vol.Optional('crypt', default=True): cv.boolean,
                 vol.Optional('sid', default=None): vol.Any(cv.string, None),
+                vol.Optional('throw', default=False): cv.boolean,
             },
         ),
     },
@@ -1806,7 +1807,7 @@ class MiotEntity(MiioEntity):
                 ]
             elif isinstance(mcw, MiotCloud):
                 results = mcw.set_props([pms])
-                dly = self.custom_config_integer('cloud_delay_update', 5)
+                dly = self.custom_config_integer('cloud_delay_update', 6)
             else:
                 results = self.miot_device.send('set_properties', [pms])
             ret = MiotResults(results).first
@@ -2110,12 +2111,13 @@ class MiotEntity(MiioEntity):
             'data': dat,
             'result': result,
         })
-        persistent_notification.async_create(
-            self.hass,
-            f'{result}',
-            f'Xiaomi Api: {api}',
-            f'{DOMAIN}-debug',
-        )
+        if kwargs.get('throw'):
+            persistent_notification.async_create(
+                self.hass,
+                f'{result}',
+                f'Xiaomi Api: {api}',
+                f'{DOMAIN}-debug',
+            )
         _LOGGER.debug('Xiaomi Api %s: %s', api, result)
         return result
 

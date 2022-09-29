@@ -16,13 +16,13 @@
       - light.chambre_parentale_3
       - light.chambre_parentale_4
       - light.bandeau_dressing
+      - light.hue_white_lamp_1
+      - light.hue_ambiance_lamp_1
       - light.lampe_salon
       - light.lumiere_01_spot_entree
       - light.lumiere_02_spot_salon
       - light.lumiere_03_maxence_01
-      - light.lumiere_04_maxence_02
       - light.lumiere_05_chloe_01
-      - light.lumiere_06_chloe_02
       - light.lumiere_07_sous_sol
       - light.lumiere_08_cuisine
       
@@ -63,14 +63,12 @@
   all_lights_maxence:
     name: Maxence
     entities:
-      - light.lumiere_03_maxence_01
-      - light.lumiere_04_maxence_02
+      - light.hue_white_lamp_1
 
   all_lights_chloe:
     name: Chloe
     entities:
-      - light.lumiere_05_chloe_01
-      - light.lumiere_06_chloe_02
+      - light.hue_ambiance_lamp_1
 
   all_lights_entree:
     name: Entree
@@ -136,5 +134,5 @@
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
     entities:
-      - binary_sensor.detecteur_fumee_01_rdc_smoke_alarm
-      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm
+      - binary_sensor.detecteur_fumee_01_rdc_smoke_alarm_2
+      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm_2
