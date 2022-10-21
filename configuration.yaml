@@ -17,10 +17,16 @@ http:
 
 default_config:
 
+# ajout de cette partie pour icones personnalisées
+frontend:
+  extra_module_url:
+    - /local/custom-brand-icons.js
+    - /hacsfiles/hass-hue-icons/hass-hue-icons.js
+
 #logger:
 #  default: error
 #  logs:
-#    homeassistant.components.netatmo: debug
+#    homeassistant.components.ble_monitor: debug
 
 recorder:
 # gere les donnees sauvegardees en DB

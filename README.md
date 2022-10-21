@@ -48,7 +48,8 @@ Voici une partie de mon matériel :
 - Spot lumineux AwoX x2;
 - Station météo NetAtmo avec pluviomètre;
 - Capteurs température Aqara x4;
-- Détecteurs mouvement Aqara;
+- Détecteurs mouvement Aqara x3;
+- Détecteur de mouvement Aqara FP1;
 - Détecteurs de mouvement Aeotec x2;
 - Détecteurs ouverture porte Aqara;
 - Détecteurs ouverture porte Aeotec x2;

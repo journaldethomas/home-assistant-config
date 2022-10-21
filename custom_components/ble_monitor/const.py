@@ -280,6 +280,15 @@ BINARY_SENSOR_TYPES: tuple[BLEMonitorBinarySensorEntityDescription, ...] = (
         force_update=True,
     ),
     BLEMonitorBinarySensorEntityDescription(
+        key="armed away",
+        sensor_class="BaseBinarySensor",
+        update_behavior="Instantly",
+        name="ble armed away",
+        unique_id="armedaway_",
+        device_class=BinarySensorDeviceClass.LOCK,
+        force_update=True,
+    ),
+    BLEMonitorBinarySensorEntityDescription(
         key="toothbrush",
         sensor_class="BaseBinarySensor",
         update_behavior="Instantly",
@@ -704,6 +713,17 @@ SENSOR_TYPES: tuple[BLEMonitorSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
     ),
     BLEMonitorSensorEntityDescription(
+        key="shake",
+        sensor_class="InstantUpdateSensor",
+        update_behavior="Instantly",
+        name="ble shake",
+        unique_id="sh_",
+        icon="mdi:vibrate",
+        native_unit_of_measurement=None,
+        device_class=None,
+        state_class=None,
+    ),
+    BLEMonitorSensorEntityDescription(
         key="acceleration",
         sensor_class="AccelerationSensor",
         update_behavior="Instantly",
@@ -983,10 +1003,12 @@ MEASUREMENT_DICT = {
     'RTCGQ02LM'               : [["battery", "rssi"], ["button"], ["light", "motion"]],
     'MMC-T201-1'              : [["temperature", "battery", "rssi"], [], []],
     'M1S-T500'                : [["battery", "rssi"], [], ["toothbrush"]],
-    'ZNMS16LM'                : [["battery", "rssi"], [], ["lock", "door", "fingerprint"]],
-    'ZNMS17LM'                : [["battery", "rssi"], [], ["lock", "door", "fingerprint", "antilock", "childlock"]],
+    'ZNMS16LM'                : [["battery", "rssi"], [], ["lock", "door", "fingerprint", "armed away"]],
+    'ZNMS17LM'                : [["battery", "rssi"], [], ["lock", "door", "fingerprint", "antilock", "childlock", "armed away"]],
     'MJZNMSQ01YD'             : [["battery", "rssi"], [], ["lock", "fingerprint"]],
     'XMZNMST02YD'             : [["battery", "rssi"], [], ["lock", "door", "fingerprint"]],
+    'XMZNMS04LM'              : [["battery", "rssi"], [], ["lock", "fingerprint"]],
+    'XMZNMS08LM'              : [["battery", "rssi"], [], ["lock", "door"]],
     'CGC1'                    : [["temperature", "humidity", "battery", "rssi"], [], []],
     'CGD1'                    : [["temperature", "humidity", "battery", "rssi"], [], []],
     'CGDK2'                   : [["temperature", "humidity", "battery", "voltage", "rssi"], [], []],
@@ -1003,6 +1025,8 @@ MEASUREMENT_DICT = {
     'K9B-1BTN'                : [["rssi"], ["one btn switch"], []],
     'K9B-2BTN'                : [["rssi"], ["two btn switch left", "two btn switch right"], []],
     'K9B-3BTN'                : [["rssi"], ["three btn switch left", "three btn switch middle", "three btn switch right"], []],
+    'MS1BB(MI)'               : [["battery", "rssi"], ["button"], ["opening"]],
+    'HS1BB(MI)'               : [["illuminance", "battery", "rssi"], [], ["motion"]],
     'XMWXKG01YL'              : [["rssi"], ["two btn switch left", "two btn switch right"], []],
     'YLAI003'                 : [["rssi", "battery"], ["button"], []],
     'YLYK01YL'                : [["rssi"], ["remote"], ["remote single press", "remote long press"]],
@@ -1063,8 +1087,6 @@ MEASUREMENT_DICT = {
     'iBBQ-2'                  : [["temperature probe 1", "temperature probe 2", "rssi"], [], []],
     'iBBQ-4'                  : [["temperature probe 1", "temperature probe 2", "temperature probe 3", "temperature probe 4", "rssi"], [], []],
     'iBBQ-6'                  : [["temperature probe 1", "temperature probe 2", "temperature probe 3", "temperature probe 4", "temperature probe 5", "temperature probe 6", "rssi"], [], []],
-    'IBS-TH'                  : [["temperature", "humidity", "battery", "rssi"], [], []],
-    'IBS-TH2/P01B'            : [["temperature", "battery", "rssi"], [], []],
     'BEC07-5'                 : [["temperature", "humidity", "rssi"], [], []],
     'iBeacon'                 : [["rssi", "measured power", "cypress temperature", "cypress humidity"], ["uuid", "mac", "major", "minor"], []],  # mac can be dynamic
     'AltBeacon'               : [["rssi", "measured power"], ["uuid", "mac", "major", "minor"], []],  # mac can be dynamic
@@ -1077,7 +1099,7 @@ MEASUREMENT_DICT = {
     "Acconeer XM122"          : [["temperature", "battery", "rssi"], [], ["motion"]],
     'K6 Sensor Beacon'        : [["temperature", "humidity", "acceleration", "voltage", "battery", "rssi"], [], []],
     'DSL-C08'                 : [["battery", "rssi", "voltage"], [], ["lock", "childlock"]],
-    'SmartDry cloth dryer'    : [["temperature", "humidity", "voltage", "rssi"], [], ["switch"]],
+    'SmartDry cloth dryer'    : [["temperature", "humidity", "voltage", "battery", "shake", "rssi"], [], ["switch"]],
 }
 
 # Sensor manufacturer dictionary
@@ -1107,6 +1129,8 @@ MANUFACTURER_DICT = {
     'ZNMS17LM'                : 'Xiaomi Aqara',
     'MJZNMSQ01YD'             : 'Xiaomi',
     'XMZNMST02YD'             : 'Xiaomi',
+    'XMZNMS04LM'              : 'Xiaomi',
+    'XMZNMS08LM'              : 'Xiaomi',
     'CGC1'                    : 'Qingping',
     'CGD1'                    : 'Qingping',
     'CGDK2'                   : 'Qingping',
@@ -1129,6 +1153,8 @@ MANUFACTURER_DICT = {
     'K9B-1BTN'                : 'Linptech',
     'K9B-2BTN'                : 'Linptech',
     'K9B-3BTN'                : 'Linptech',
+    'MS1BB(MI)'               : 'Linptech',
+    'HS1BB(MI)'               : 'Linptech',
     'XMWXKG01YL'              : 'Xiaomi',
     'SU001-T'                 : 'Petoneer',
     'ATC'                     : 'ATC',
@@ -1183,8 +1209,6 @@ MANUFACTURER_DICT = {
     'iBBQ-2'                  : 'Inkbird',
     'iBBQ-4'                  : 'Inkbird',
     'iBBQ-6'                  : 'Inkbird',
-    'IBS-TH'                  : 'Inkbird',
-    'IBS-TH2/P01B'            : 'Inkbird',
     'BEC07-5'                 : 'Jinou',
     'iBeacon'                 : 'Apple',
     'AltBeacon'               : 'Radius Networks',
@@ -1202,11 +1226,22 @@ MANUFACTURER_DICT = {
 
 # Renamed model dictionary
 RENAMED_MODEL_DICT = {
-    'H5051/H5074': 'H5074',
-    'H5051': 'H5051/H5071',
-    'IBS-TH2': 'IBS-TH',
-    'IBS-TH2 (T only)': 'IBS-TH2/P01B',
-    'IBS-TH2/P01R': 'IBS-TH2/P01B',
+    'HA BLE DIY': 'BTHome',
+    'LINP-M1': 'MS1BB(MI)',
+    'M1SBB(MI)': 'MS1BB(MI)',
+}
+
+
+# Renamed firmware dictionary
+RENAMED_FIRMWARE_DICT =  {
+    'HA BLE': 'BTHome',
+    'HA BLE (encrypted)': 'BTHome (encrypted)',
+}
+
+
+# Renamed manufacturer dictionary
+RENAMED_MANUFACTURER_DICT =  {
+    'Home Assistant DIY': 'BTHome',
 }
 
 
@@ -1214,7 +1249,7 @@ RENAMED_MODEL_DICT = {
 AUTO_MANUFACTURER_DICT = {
     'HHCCJCY10'               : 'HHCC',
     'HHCCJCY10'               : 'HHCC',
-    'HA BLE DIY'              : 'Home Assistant DIY',
+    'BTHome'                  : 'BTHome',
     'TG-BT5-IN'               : 'Mikrotik',
     'TG-BT5-OUT'              : 'Mikrotik',
     'TP357'                   : 'Thermopro',
@@ -1228,6 +1263,8 @@ AUTO_MANUFACTURER_DICT = {
     'Tilt Yellow'             : 'Tilt',
     'Tilt Pink'               : 'Tilt',
     'Tilt Green'              : 'Tilt',
+    'IBS-TH'                  : 'Inkbird',
+    'IBS-TH2/P01B'            : 'Inkbird',
 }
 
 
@@ -1261,6 +1298,7 @@ AUTO_SENSOR_LIST = [
     "pressure",
     "rssi",
     "temperature",
+    "temperature probe 1",
     "tvoc",
     "voltage",
     "weight",
@@ -1275,8 +1313,8 @@ REPORT_UNKNOWN_LIST = [
     "ATC",
     "BlueMaestro",
     "Brifit",
+    "BTHome",
     "Govee",
-    "HA BLE",
     "HHCC",
     "Inkbird",
     "iNode",

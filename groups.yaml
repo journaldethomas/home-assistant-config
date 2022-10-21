@@ -81,7 +81,7 @@
       - light.lumiere_07_sous_sol
 
 ############################################################
-##                    ALL TEMP GROUPS                   ##
+##                     ALL TEMP GROUPS                    ##
 ############################################################
 
   all_temp_maison:
@@ -115,6 +115,20 @@
       - binary_sensor.mouvement_05_cuisine_occupancy
       - binary_sensor.mouvement_06_salle_a_manger_occupancy
       - binary_sensor.mouvement_07_salon_occupancy
+
+  all_motion_sensor_entities_mb:
+    name: All Motion Sensor Entities MB
+    entities:
+      - binary_sensor.mb_mouvement_01_piece_de_vie_occupancy
+      - binary_sensor.mb_mouvement_02_pallier_occupancy
+
+  all_doors_sensor_entities_mb:
+    name: All Doors Sensor Entities MB
+    entities:
+      - binary_sensor.mb_capteur_ouverture_01_porte_entree_contact
+      - binary_sensor.mb_capteur_ouverture_02_porte_fenetre_contact
+      - binary_sensor.mb_capteur_ouverture_03_fenetre_cuisine_contact
+      - binary_sensor.mb_capteur_ouverture_04_porte_garage_contact
 
   all_person_entities:
     name: All Persons Entities
