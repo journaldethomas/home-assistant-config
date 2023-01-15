@@ -1,0 +1,15 @@
+{
+  "codeowners": ["@kamaradclimber"],
+  "requirements": [
+    "Async-OAuthlib==0.0.9"
+  ],
+  "iot_class": "cloud_polling",
+  "domain": "rte_ecowatt",
+  "documentation": "https://github.com/kamaradclimber/rte-ecowatt",
+  "issue_tracker": "https://github.com/kamaradclimber/rte-ecowatt/issues",
+  "integration_type": "device",
+  "codeowners": ["@kamaradclimber"],
+  "name": "My EcoWatt by RTE",
+  "config_flow": true,
+  "version": "0.6.3"
+}

@@ -4,6 +4,7 @@ homeassistant:
   longitude: !secret homeassistant_longitude
   elevation: !secret homeassistant_elevation
   time_zone: Europe/Paris
+  country: FR
   external_url: !secret homeassistant_external
   internal_url: !secret homeassistant_interne
   allowlist_external_dirs:
@@ -22,6 +23,8 @@ frontend:
   extra_module_url:
     - /local/custom-brand-icons.js
     - /hacsfiles/hass-hue-icons/hass-hue-icons.js
+
+  themes: !include_dir_merge_named themes
 
 #logger:
 #  default: error
@@ -414,8 +417,15 @@ input_number:
 ###################################################################
 
 sensor:
-
+    
 # Date au format français
+  - platform: template
+    sensors:
+      consommation_gaz:
+        friendly_name: "consommation gaz"
+        unit_of_measurement: 'm³'
+        value_template: "{{ states('input_number.compteur_gaz') | int / 1000 | round(3) }}"
+        device_class: energy
 
   - platform: template
     sensors:
@@ -596,6 +606,16 @@ sensor:
 # Connaitre la saison
 # désormais dans UI directement
 #  - platform: season
+
+# remontée des informations du compteur de gaz
+
+  - platform: 'gazpar'
+#    name: 'gazpar'
+    username: !secret grdf_username
+    password: !secret grdf_password
+    pce_identifier: !secret grdf_pceidentifier
+    tmpdir: '/tmp'
+    scan_interval: '08:00:00'
 
 # Fete du jour
   - platform: rest
@@ -1216,7 +1236,8 @@ sensor:
         arg: eth0
 
 
-  - platform: uptime
+#  - platform: uptime
+# supprimé dans la version 2022.12
 
   - platform: time_date
     display_options:
@@ -1353,6 +1374,8 @@ mqtt:
     - name: "consommation total"
       state_topic: "tele/eau/consommation"
       unit_of_measurement: "m³"
+      state_class: total_increasing
+      device_class: water
       value_template: "{{ value_json['total_m3']}}"
       icon: mdi:counter
 
@@ -1553,6 +1576,27 @@ utility_meter:
     cycle: yearly
 
 ######   CALCUL PLUIE   ######
+
+  pluie_heure_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: hourly
+  pluie_aujourdhui_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: daily
+  pluie_semaine_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: weekly
+  pluie_mois_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: monthly
+  pluie_annee_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: yearly
+
+  pluie_aujourdhui:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    net_consumption: true
+    cycle: daily
 
   pluie_semaine:
     source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today

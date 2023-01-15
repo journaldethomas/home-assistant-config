@@ -440,6 +440,8 @@ async def async_reload_integration_config(hass, config):
     dcs = config.get('device_customizes')
     if dcs and isinstance(dcs, dict):
         for m, cus in dcs.items():
+            if not isinstance(cus, dict):
+                continue
             DEVICE_CUSTOMIZES.setdefault(m, {})
             DEVICE_CUSTOMIZES[m].update(cus)
     return config
@@ -450,16 +452,10 @@ async def async_setup_component_services(hass):
     async def async_get_token(call):
         nam = call.data.get('name')
         kwd = f'{nam}'.strip().lower()
-        cls = []
-        for k, v in hass.data[DOMAIN].items():
-            if isinstance(v, dict):
-                v = v.get(CONF_XIAOMI_CLOUD)
-            if isinstance(v, MiotCloud):
-                cls.append(v)
         cnt = 0
         lst = []
         dls = {}
-        for cld in cls:
+        for cld in MiotCloud.all_clouds(hass):
             dvs = await cld.async_get_devices() or []
             for d in dvs:
                 if not isinstance(d, dict):
@@ -490,9 +486,30 @@ async def async_setup_component_services(hass):
 
     hass.services.async_register(
         DOMAIN, 'get_token', async_get_token,
-        schema=XIAOMI_MIIO_SERVICE_SCHEMA.extend(
-        {
+        schema=XIAOMI_MIIO_SERVICE_SCHEMA.extend({
             vol.Required('name', default=''): cv.string,
+        }),
+    )
+
+    async def async_renew_devices(call):
+        nam = call.data.get('username')
+        for cld in MiotCloud.all_clouds(hass):
+            if nam and str(nam) not in [cld.user_id, cld.username]:
+                continue
+            dvs = await cld.async_renew_devices()
+            cnt = len(dvs)
+            hass.bus.async_fire(f'{DOMAIN}.renew_devices', {
+                CONF_USERNAME: cld.username,
+                'user_id': cld.user_id,
+                'device_count': cnt,
+            })
+            _LOGGER.info('Renew xiaomi devices for %s. Got %s devices.', cld.username, cnt)
+        return True
+
+    hass.services.async_register(
+        DOMAIN, 'renew_devices', async_renew_devices,
+        schema=vol.Schema({
+            vol.Optional('username', default=''): cv.string,
         }),
     )
 
@@ -1020,7 +1037,7 @@ class MiioEntity(BaseEntity):
 
     def update_attrs(self, attrs: dict, update_parent=False, update_subs=True):
         self._state_attrs.update(attrs or {})
-        if self.hass and self.platform:
+        if self.hass and self.platform and update_subs:
             tps = cv.ensure_list(self.custom_config('attributes_template'))
             for tpl in tps:
                 if not tpl:
@@ -1448,7 +1465,7 @@ class MiotEntity(MiioEntity):
                 pls = self.custom_config_list(f'{d}_properties') or []
                 if pls:
                     self._update_sub_entities(pls, '*', domain=d)
-            for d in ['button']:
+            for d in ['button', 'text']:
                 als = self.custom_config_list(f'{d}_actions') or []
                 if als:
                     self._update_sub_entities(None, '*', domain=d, actions=als)
@@ -1953,6 +1970,7 @@ class MiotEntity(MiioEntity):
         add_numbers = self._add_entities.get('number')
         add_selects = self._add_entities.get('select')
         add_buttons = self._add_entities.get('button')
+        add_texts = self._add_entities.get('text')
         exclude_services = self._state_attrs.get('exclude_miot_services') or []
         for s in sls:
             if s.name in exclude_services:
@@ -2009,6 +2027,10 @@ class MiotEntity(MiioEntity):
                         from .button import MiotButtonActionSubEntity
                         self._subs[fnm] = MiotButtonActionSubEntity(self, p, option=opt)
                         add_buttons([self._subs[fnm]])
+                    elif add_texts and domain == 'text':
+                        from .text import MiotTextActionSubEntity
+                        self._subs[fnm] = MiotTextActionSubEntity(self, p, option=opt)
+                        add_texts([self._subs[fnm]])
                 elif add_buttons and domain == 'button' and p.value_list:
                     from .button import MiotButtonSubEntity
                     nls = []
@@ -2123,23 +2145,34 @@ class MiotEntity(MiioEntity):
 
 
 class MiotToggleEntity(MiotEntity, ToggleEntity):
+    _reverse_state = None
+
     def __init__(self, miot_service=None, device=None, **kwargs):
         super().__init__(miot_service, device, **kwargs)
         self._prop_power = None
         if miot_service:
             self._prop_power = miot_service.get_property('on', 'power', 'switch')
 
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        self._reverse_state = self.custom_config_bool('reverse_state', None)
+
     @property
     def is_on(self):
+        val = None
         if self._prop_power:
-            return not not self._state_attrs.get(self._prop_power.full_name)
-        return None
+            val = not not self._state_attrs.get(self._prop_power.full_name)
+            if self._reverse_state:
+                val = not val
+        return val
 
     def turn_on(self, **kwargs):
         if self._prop_power:
             val = True
             if self._prop_power.value_range:
                 val = self._prop_power.range_max() or 1
+            elif self._reverse_state:
+                val = not val
             return self.set_property(self._prop_power, val)
         return False
 
@@ -2148,6 +2181,8 @@ class MiotToggleEntity(MiotEntity, ToggleEntity):
             val = False
             if self._prop_power.value_range:
                 val = self._prop_power.range_min() or 0
+            elif self._reverse_state:
+                val = not val
             return self.set_property(self._prop_power, val)
         act = self._miot_service.get_action('stop_working', 'power_off')
         if act:
@@ -2168,6 +2203,11 @@ class MiirToggleEntity(MiotEntity, ToggleEntity):
         self._act_turn_on = miot_service.get_action('turn_on')
         self._act_turn_off = miot_service.get_action('turn_off')
         self._attr_should_poll = False
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        if self.is_main_entity:
+            await self.async_update_for_main_entity()
 
     @property
     def is_on(self):
@@ -2211,7 +2251,7 @@ class BaseSubEntity(BaseEntity):
         self.generate_entity_id()
         self._supported_features = int(self._option.get('supported_features', 0))
         self._attr_entity_category = self._option.get('entity_category')
-        self._attr_unit_of_measurement = self._option.get('unit')
+        self._attr_native_unit_of_measurement = self._option.get('unit')
         self._extra_attrs = {
             'entity_class': self.__class__.__name__,
             'parent_entity_id': parent.entity_id,
@@ -2318,6 +2358,7 @@ class BaseSubEntity(BaseEntity):
             if hasattr(self, '_miot_property'):
                 prop = getattr(self, '_miot_property')
                 if prop:
+                    mar.append(f'{mod}:{prop.full_name}')
                     mar.append(f'{mod}:{prop.name}')
         return mar
 
@@ -2328,7 +2369,7 @@ class BaseSubEntity(BaseEntity):
         self._option['icon'] = self.custom_config('icon', self.icon)
         self._option['device_class'] = self.custom_config('device_class', self.device_class)
         if uom := self.custom_config('unit_of_measurement'):
-            self._attr_unit_of_measurement = uom
+            self._attr_native_unit_of_measurement = uom
         if hasattr(self, 'entity_category'):
             self._attr_entity_category = self.custom_config('entity_category', self.entity_category)
 
@@ -2389,9 +2430,10 @@ class BaseSubEntity(BaseEntity):
     def set_parent_property(self, val, prop):
         ret = self.call_parent('set_property', prop, val)
         if ret:
+            key = prop.full_name if isinstance(prop, MiotProperty) else prop
             self.update_attrs({
-                prop: val,
-            })
+                key: val,
+            }, update_parent=False)
         return ret
 
 
@@ -2414,8 +2456,8 @@ class MiotPropertySubEntity(BaseSubEntity):
             self._option['icon'] = miot_property.entity_icon
         if 'device_class' not in self._option:
             self._option['device_class'] = miot_property.device_class
-        if self._attr_unit_of_measurement is None:
-            self._attr_unit_of_measurement = miot_property.unit_of_measurement
+        if self._attr_native_unit_of_measurement is None:
+            self._attr_native_unit_of_measurement = miot_property.unit_of_measurement
         if self._attr_entity_category is None:
             self._attr_entity_category = miot_property.entity_category
         self._extra_attrs.update({

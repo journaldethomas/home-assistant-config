@@ -25,7 +25,7 @@
                     "captcha": "Captcha",
                     "server_country": "Server location of MiCloud",
                     "conn_mode": "Connection mode for device",
-                    "filter_models": "Filter devices via model/WiFi (Advanced)"
+                    "filter_models": "Filter devices via model/home/WiFi (Advanced)"
                 }
             },
             "cloud_filter": {
@@ -34,6 +34,8 @@
                 "data": {
                     "filter_model": "Filter Device Model",
                     "model_list": "Device Model List",
+                    "filter_home_id": "Filter Home",
+                    "home_id_list": "Home List",
                     "filter_ssid": "Filter WiFi SSID",
                     "ssid_list": "WiFi SSID List",
                     "filter_bssid": "Filter WiFi BSSID",
@@ -51,6 +53,7 @@
                     "model": "Select device model",
                     "model_specified": "Specified device model (Optional)",
                     "only_main_entity": "Only main (parent) entities",
+                    "reset_customizes": "Reset to default customizes",
 
                     "binary_sensor_attributes": "binary_sensor_attributes",
                     "binary_sensor_properties": "binary_sensor_properties",
@@ -116,7 +119,7 @@
             "none_devices": "None devices in the xiaomi cloud account"
         },
         "abort": {
-            "config_saved": "Configuration saved\n{tip}\n\nSome customizable options require [reload integration](/developer-tools/yaml) to take effect.",
+            "config_saved": "Configuration saved! [Customize again](/_my_redirect/config_flow_start?domain=xiaomi_miot).\n{tip}\n\nSome customizable options require [reload integration](/developer-tools/yaml) to take effect.",
             "already_configured": "Device is already configured",
             "not_xiaomi_miio": "Not a Xiaomi miio/miot device."
         }
@@ -141,7 +144,8 @@
                     "captcha": "Captcha",
                     "server_country": "Server location of MiCloud",
                     "conn_mode": "Connection mode for device",
-                    "renew_devices": "Force renew devices"
+                    "renew_devices": "Force renew devices",
+                    "disable_message": "Disable Mihome notification sensor"
                 }
             },
             "cloud_filter": {
@@ -150,6 +154,8 @@
                 "data": {
                     "filter_model": "Filter Device Model",
                     "model_list": "Device Model List",
+                    "filter_home_id": "Filter Home",
+                    "home_id_list": "Home List",
                     "filter_ssid": "Filter WiFi SSID",
                     "ssid_list": "WiFi SSID List",
                     "filter_bssid": "Filter WiFi BSSID",
@@ -161,7 +167,7 @@
         },
         "error": {
             "cannot_connect": "Failed to connect the device",
-            "cannot_login": "Failed to login the xiaomi cloud account, please check password. If you always fail to login, login to mi.com in the same environment as the current network and try again.",
+            "cannot_login": "Mi account login failed, please check the account password. If the login fails after several attempts, please use another device under the same LAN as the HA host to login the Xiaomi official website (mi.com) and try again.",
             "cannot_reach": "Unable to access Xiaomi API",
             "tzinfo_error": "See: https://github.com/al-one/hass-xiaomi-miot/issues/260",
             "none_devices": "None devices in the xiaomi cloud account"

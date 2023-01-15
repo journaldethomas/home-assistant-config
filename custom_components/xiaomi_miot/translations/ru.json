@@ -1,0 +1,130 @@
+{
+    "config": {
+        "flow_title": "Xiaomi Miot Auto",
+        "step": {
+            "user": {
+                "title": "Выберите действие",
+                "data": {
+                    "action": "Действие"
+                }
+            },
+            "token": {
+                "description": "Конфигурация устройства.",
+                "data": {
+                    "host": "Локальный IP-адрес",
+                    "token": "Токен",
+                    "name": "Имя устройства",
+                    "scan_interval": "Интервал обновления (секунды)"
+                }
+            },
+            "cloud": {
+                "description": "Настройка облачного аккаунта Сяоми.\n{tip}",
+                "data": {
+                    "username": "Xiaomi Account ID / Email",
+                    "password": "Пароль",
+                    "captcha": "Captcha",
+                    "server_country": "Регион сервера MiCloud",
+                    "conn_mode": "Режим подключения устройства",
+                    "filter_models": "Фильтровать устройства по модели/семья/WiFi (Продвинутые настр.)"
+                }
+            },
+            "cloud_filter": {
+                "title": "Фильтрация облачных устройств",
+                "description": "Вы можете включать или исключать устройства которые хотите интегрировать. В режиме исключения, если не выбрать ни одного устройства - добавятся все.\n{tip}",
+                "data": {
+                    "filter_model": "Режим фильтрации по устройствам",
+                    "model_list": "Список модели устройств",
+                    "filter_ssid": "Фильтр WiFi SSID",
+                    "ssid_list": "Список WiFi SSID",
+                    "filter_bssid": "Фильтр WiFi BSSID",
+                    "bssid_list": "СписокWiFi BSSID",
+                    "filter_did": "Фильтр устройств",
+                    "did_list": "Список устройств"
+                }
+            },
+            "customizing": {
+                "title": "Изменение сущьностей / устройств",
+                "description": "{tip}",
+                "data": {
+                    "domain": "Выберите домен сущности",
+                    "entity": "Выберите сущность",
+                    "model": "Выберите модель устройств",
+                    "model_specified": "Особая модель устройства (Дополнительно)",
+                    "only_main_entity": "Только основные (родительские) сущности",
+                    "reset_customizes": "Сбросить настройки по умолчанию",
+                    "bool2selects": "Настройка опций"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Не удалость подключиться к устройству",
+            "cannot_login": "Не удалось полключиться к аккаунту Сяоми. Проверьте пароль. При повторных ошибках авторизируйтесь на mi.com в той же среде и попробуйте снова.",
+            "cannot_reach": "Нет доступа к API Сяоми",
+            "tzinfo_error": "Перейдите по ссылке: https://github.com/al-one/hass-xiaomi-miot/issues/260",
+            "none_devices": "Не найдено устройств в облаке Сяоми"
+        },
+        "abort": {
+            "config_saved": "Конфигурация сохранена! [Настроить снова](/_my_redirect/config_flow_start?domain=xiaomi_miot).\n{tip}\n\nНекоторые опции требуют перезагрузки конфигурации [reload integration](/developer-tools/yaml) для эффекта.",
+            "already_configured": "Устройство уже сконфигурировано",
+            "not_xiaomi_miio": "Не является устройством miio/miot."
+        }
+    },
+    "options": {
+        "step": {
+            "user": {
+                "title": "Xiaomi Miot",
+                "description": "Конфигурация устройства.",
+                "data": {
+                    "host": "Локальный IP-адрес",
+                    "token": "Токен",
+                    "scan_interval": "Интервал обновления (секунды)",
+                    "miot_cloud": "Enable miot cloud (Config account in YAML)"
+                }
+            },
+            "cloud": {
+                "description": "Конфигурация облачного аккаунта Сяоми.\n{tip}",
+                "data": {
+                    "username": "Xiaomi Account ID / Email",
+                    "password": "Пароль",
+                    "captcha": "Captcha",
+                    "server_country": "Регион сервера MiCloud",
+                    "conn_mode": "Режим подключения устройств",
+                    "renew_devices": "Заставлять устройства обновляться"
+                }
+            },
+            "cloud_filter": {
+                "title": "Фильтрация облачных устройств",
+                "description": "Вы можете включать или исключать устройства которые хотите интегрировать. В режиме исключения, если не выбрать ни одного устройства - добавятся все.\n{tip}",
+                "data": {
+                    "filter_model": "Режим фильтрации по устройствам",
+                    "model_list": "Список модели устройств",
+                    "filter_ssid": "Фильтр WiFi SSID",
+                    "ssid_list": "Список WiFi SSID",
+                    "filter_bssid": "Фильтр WiFi BSSID",
+                    "bssid_list": "СписокWiFi BSSID",
+                    "filter_did": "Фильтр устройств",
+                    "did_list": "Список устройств"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Не удалость подключиться к устройству",
+            "cannot_login": "Не удалось полключиться к аккаунту Сяоми. Проверьте пароль. При повторных ошибках авторизируйтесь на mi.com в той же среде и попробуйте снова.",
+            "cannot_reach": "Нет доступа к API Сяоми",
+            "tzinfo_error": "Перейдите по ссылке: https://github.com/al-one/hass-xiaomi-miot/issues/260",
+            "none_devices": "Не найдено устройств в облаке Сяоми"
+        },
+        "abort": {
+            "show_customizes": "[![Add new integration](https://my.home-assistant.io/badges/config_flow_start.svg)](/_my_redirect/config_flow_start?domain=xiaomi_miot)\n[Add a new integration](/_my_redirect/config_flow_start?domain=xiaomi_miot) to modify customization.\n{tip}"
+        }
+    },
+    "system_health": {
+        "info": {
+            "component_version": "Версия компонента",
+            "can_reach_server": "Доступность API сервера Сяоми",
+            "can_reach_spec": "Доступность MIoT-Spec сервера",
+            "logged_accounts": "Авторизованные аккаунты",
+            "total_devices": "Общее количесво устройств MiHome"
+        }
+    }
+}

@@ -6,10 +6,10 @@ from .acconeer import parse_acconeer
 from .airmentor import parse_airmentor
 from .almendo import parse_almendo
 from .altbeacon import parse_altbeacon
+from .amazfit import parse_amazfit
 from .atc import parse_atc
 from .bluemaestro import parse_bluemaestro
 from .bparasite import parse_bparasite
-from .brifit import parse_brifit
 from .const import TILT_TYPES
 from .govee import parse_govee
 from .helpers import to_mac, to_unformatted_mac
@@ -18,6 +18,7 @@ from .hhcc import parse_hhcc
 from .ibeacon import parse_ibeacon
 from .inkbird import parse_inkbird
 from .inode import parse_inode
+from .jaalee import parse_jaalee
 from .jinou import parse_jinou
 from .kegtron import parse_kegtron
 from .kkm import parse_kkm
@@ -34,7 +35,7 @@ from .sensirion import parse_sensirion
 from .switchbot import parse_switchbot
 from .smartdry import parse_smartdry
 from .teltonika import parse_teltonika
-from .thermoplus import parse_thermoplus
+from .thermobeacon import parse_thermobeacon
 from .thermopro import parse_thermopro
 from .tilt import parse_tilt
 from .xiaomi import parse_xiaomi
@@ -203,6 +204,14 @@ class BleParser:
                         # UUID16 = Relsib
                         sensor_data = parse_relsib(self, service_data, mac, rssi)
                         break
+                    elif uuid16 == 0xF525:
+                        # UUID16 = Jaalee
+                        sensor_data = parse_jaalee(self, service_data, mac, rssi)
+                        break
+                    elif uuid16 == 0xFCD2:
+                        # UUID16 = Allterco Robotics ltd (BTHome V2)
+                        sensor_data = parse_bthome(self, service_data, uuid16, mac, rssi)
+                        break
                     elif uuid16 in [0xFD3D, 0x0D00]:
                         # UUID16 = unknown (used by Switchbot)
                         sensor_data = parse_switchbot(self, service_data, mac, rssi)
@@ -228,6 +237,10 @@ class BleParser:
                             # UUID16 = Google (used by Ruuvitag V2/V4)
                             sensor_data = parse_ruuvitag(self, service_data, mac, rssi)
                             break
+                    elif uuid16 == 0xFEE0:
+                        # UUID16 = Anhui Huami Information Technology Co., Ltd. (Amazfit)
+                        sensor_data = parse_amazfit(self, service_data, mac, rssi)
+                        break
                     elif uuid16 == 0xFFF9:
                         # UUID16 = FIDO (used by Cleargrass)
                         sensor_data = parse_qingping(self, service_data, mac, rssi)
@@ -265,6 +278,10 @@ class BleParser:
                         # Ruuvitag V3/V5
                         sensor_data = parse_ruuvitag(self, man_spec_data, mac, rssi)
                         break
+                    elif comp_id == 0x0757:
+                        # Teltonika (Ela rebrand)
+                        sensor_data = parse_teltonika(self, man_spec_data, local_name, mac, rssi)
+                        break
                     elif comp_id == 0x094F and data_len == 0x15:
                         # Mikrotik
                         sensor_data = parse_mikrotik(self, man_spec_data, mac, rssi)
@@ -277,7 +294,7 @@ class BleParser:
                         # Moat S2
                         sensor_data = parse_moat(self, man_spec_data, mac, rssi)
                         break
-                    elif comp_id == 0x0133 and data_len == 0x11:
+                    elif comp_id == 0x0133 and data_len in [0x11, 0x15]:
                         # BlueMaestro
                         sensor_data = parse_bluemaestro(self, man_spec_data, mac, rssi)
                         break
@@ -289,7 +306,7 @@ class BleParser:
                         # Sensirion
                         sensor_data = parse_sensirion(self, man_spec_data, local_name, mac, rssi)
                         break
-                    elif comp_id in [0x2121, 0x2122] and data_len == 0x0B:
+                    elif comp_id in [0x2111, 0x2112, 0x2121, 0x2122] and data_len == 0x0B:
                         # Air Mentor
                         sensor_data = parse_airmentor(self, man_spec_data, mac, rssi)
                         break
@@ -298,8 +315,8 @@ class BleParser:
                         sensor_data = parse_govee(self, man_spec_data, mac, rssi)
                         break
                     elif comp_id == 0xAA55 and data_len == 0x14:
-                        # Brifit
-                        sensor_data = parse_brifit(self, man_spec_data, mac, rssi)
+                        # Thermobeacon
+                        sensor_data = parse_thermobeacon(self, man_spec_data, mac, rssi)
                         break
                     elif comp_id == 0xEC88 and data_len in [0x09, 0x0A, 0x0C, 0x22, 0x24, 0x25]:
                         # Govee H5051/H5071/H5072/H5075/H5074
@@ -348,9 +365,9 @@ class BleParser:
                         sensor_data = parse_govee(self, man_spec_data, mac, rssi)
                         break
                     elif service_class_uuid16 == 0xF0FF:
-                        if comp_id in [0x0010, 0x0011, 0x0015] and data_len in [0x15, 0x17]:
-                            # Thermoplus
-                            sensor_data = parse_thermoplus(self, man_spec_data, mac, rssi)
+                        if comp_id in [0x0010, 0x0011, 0x0015, 0x0018, 0x001B] and data_len in [0x15, 0x17]:
+                            # Thermobeacon
+                            sensor_data = parse_thermobeacon(self, man_spec_data, mac, rssi)
                             break
                         elif (comp_id in [0x0000, 0x0001] or local_name in ["iBBQ", "xBBQ", "sps", "tps"]) and (
                             data_len in [0x0A, 0x0D, 0x0F, 0x13, 0x17]

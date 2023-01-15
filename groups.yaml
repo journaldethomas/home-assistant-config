@@ -115,6 +115,13 @@
       - binary_sensor.mouvement_05_cuisine_occupancy
       - binary_sensor.mouvement_06_salle_a_manger_occupancy
       - binary_sensor.mouvement_07_salon_occupancy
+      - binary_sensor.mouvement_08_bureau_presence
+
+  all_motion_sensor_garage:
+    name: All Motion Sensor Garage
+    entities:
+      - binary_sensor.mouvement_03_garage_motion_sensor_status
+      - binary_sensor.mouvement_04_cave_a_vin_motion_sensor_status
 
   all_motion_sensor_entities_mb:
     name: All Motion Sensor Entities MB
@@ -139,14 +146,16 @@
   all_doors_sensor_entities:
     name: All Doors Sensor Entities
     entities:
-      - binary_sensor.capteur_ouverture_01_salon_door_state
-      - binary_sensor.capteur_ouverture_02_sam_door_state
-      - binary_sensor.velux_chloe_door_state
-      - binary_sensor.velux_maxence_door_state
+      - binary_sensor.nodeid_20_door_state
+      - binary_sensor.capteur_ouverture_01_salon_door_state_2
+      - binary_sensor.capteur_ouverture_02_sam_door_state_2
+      - binary_sensor.capteur_ouverture_03_chloe_door_state_2
+      - binary_sensor.capteur_ouverture_04_maxence_door_state_2
+      - binary_sensor.capteur_ouverture_06_parents_velux_contact
       - binary_sensor.capteur_ouverture_05_descente_garage_contact
 
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
     entities:
-      - binary_sensor.detecteur_fumee_01_rdc_smoke_alarm_2
-      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm_2
+      - binary_sensor.detecteur_fumee_01_rdc_smoke_alarm
+      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm

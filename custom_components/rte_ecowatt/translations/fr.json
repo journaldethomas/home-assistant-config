@@ -1,0 +1,72 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Saisir les identifiants pour accéder à l'API RTE",
+        "data": {
+          "api_client_id": "API Client ID",
+          "api_client_secret": "API Client secret"
+        },
+        "menu_options": {
+          "finish_configuration": "Terminer la configuration et utiliser les capteurs par défaut"
+        }
+      }
+    },
+    "error": {
+      "auth_error": "L'authentification a échoué, les informations d'identification doivent être invalides",
+      "generic_error": "La connexion à l'api RTE a échoué pour une raison inconnue"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "menu_options": {
+          "finish_configuration": "Terminer la configuration",
+          "configure_hours_sensor": "Configurer un autre capteur avec une granularité horaire",
+          "configure_days_sensor": "Configurer un autre capteur avec une granularité journalière",
+          "enable_load_shedding_announcements": "Obtenir liste des délestages locaux via Enedis"
+        }
+      },
+      "enable_load_shedding_announcements": {
+        "description": "Récupération des délestages locaux via Enedis",
+        "data": {
+          "enedis_load_shedding": "Récupérer la liste des déléstages locaux via le site d'Enedis. Je comprends que les informations de locatisation (latitude/longitude) configurées dans HA seront envoyées à api-adresse.data.gouv.fr pour obtenir cette information."
+        },
+        "menu_options": {
+          "finish_configuration": "Terminer la configuration",
+          "configure_hours_sensor": "Configurer un autre capteur avec une granularité horaire",
+          "configure_days_sensor": "Configurer un autre capteur avec une granularité journalière",
+          "enable_load_shedding_announcements": "Obtenir liste des délestages locaux via Enedis"
+        }
+      },
+      "configure_hours_sensor": {
+        "description": "Nouveau capteur horaire",
+        "data": {
+          "shift": "Combien d'heures dans le futur ?"
+        },
+        "menu_options": {
+          "finish_configuration": "Terminer la configuration",
+          "configure_hours_sensor": "Configurer un autre capteur avec une granularité horaire",
+          "configure_days_sensor": "Configurer un autre capteur avec une granularité journalière",
+          "enable_load_shedding_announcements": "Obtenir liste des délestages locaux via Enedis"
+        }
+      },
+      "configure_days_sensor": {
+        "description": "Nouveau capteur quotidien",
+        "data": {
+          "shift": "Combien de jours dans le futur ?"
+        },
+        "menu_options": {
+          "finish_configuration": "Terminer la configuration",
+          "configure_hours_sensor": "Configurer un autre capteur avec une granularité horaire",
+          "configure_days_sensor": "Configurer un autre capteur avec une granularité journalière",
+          "enable_load_shedding_announcements": "Obtenir liste des délestages locaux via Enedis"
+        }
+      }
+    },
+    "error": {
+      "auth_error": "L'authentification a échoué, les informations d'identification doivent être invalides",
+      "generic_error": "La connexion à l'api RTE a échoué pour une raison inconnue"
+    }
+  }
+}

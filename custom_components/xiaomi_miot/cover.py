@@ -117,7 +117,7 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
         ]
         self._close_texts = [
             *(self.custom_config_list('close_texts') or []),
-            'Closing', 'Closed', 'Close', 'Down',
+            'Closing', 'Closed', 'Close', 'Down', 'Falling', 'Descent',
         ]
         if self._motor_reverse:
             self._open_texts, self._close_texts = self._close_texts, self._open_texts
@@ -204,7 +204,12 @@ class MiotCoverEntity(MiotEntity, CoverEntity):
                 continue
             if p.range_min() <= pos <= p.range_max():
                 return self.set_miot_property(srv.iid, p.iid, pos)
-        raise NotImplementedError()
+        cur = self.current_cover_position or 50
+        if pos > cur:
+            return self.open_cover()
+        if pos < cur:
+            return self.close_cover()
+        return False
 
     @property
     def is_closed(self):

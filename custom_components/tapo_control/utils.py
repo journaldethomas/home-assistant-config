@@ -1,12 +1,21 @@
+import asyncio
+import datetime
 import onvif
 import os
-import asyncio
-import urllib.parse
 import socket
-import datetime
 import time
+import urllib.parse
+
+from haffmpeg.tools import IMAGE_JPEG, ImageFrame
 from onvif import ONVIFCamera
 from pytapo import Tapo
+
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.components.ffmpeg import DATA_FFMPEG
+from homeassistant.components.onvif.event import EventManager
+from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.util import slugify
+
 from .const import (
     BRAND,
     ENABLE_MOTION_SENSOR,
@@ -14,17 +23,32 @@ from .const import (
     LOGGER,
     CLOUD_PASSWORD,
     ENABLE_TIME_SYNC,
+    CONF_CUSTOM_STREAM,
 )
-from homeassistant.const import CONF_IP_ADDRESS, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.components.onvif.event import EventManager
-from homeassistant.components.ffmpeg import DATA_FFMPEG
-from homeassistant.helpers.entity import DeviceInfo
-from haffmpeg.tools import IMAGE_JPEG, ImageFrame
-from homeassistant.util import slugify
 
 
-def registerController(host, username, password):
-    return Tapo(host, username, password)
+def getStreamSource(entry, hdStream):
+    custom_stream = entry.data.get(CONF_CUSTOM_STREAM)
+    username = entry.data.get(CONF_USERNAME)
+    password = entry.data.get(CONF_PASSWORD)
+    host = entry.data.get(CONF_IP_ADDRESS)
+    if custom_stream != "":
+        return custom_stream
+
+    if hdStream:
+        streamType = "stream1"
+    else:
+        streamType = "stream2"
+    username = urllib.parse.quote_plus(username)
+    password = urllib.parse.quote_plus(password)
+    streamURL = f"rtsp://{username}:{password}@{host}:554/{streamType}"
+    return streamURL
+
+
+def registerController(
+    host, username, password, password_cloud="", super_secret_key="", device_id=None
+):
+    return Tapo(host, username, password, password_cloud, super_secret_key, device_id)
 
 
 def isOpen(ip, port):
@@ -96,22 +120,44 @@ async def initOnvifEvents(hass, host, username, password):
     return False
 
 
-async def getCamData(hass, controller):
-    camData = {}
-    presets = await hass.async_add_executor_job(controller.isSupportingPresets)
-    camData["user"] = controller.user
-    camData["basic_info"] = await hass.async_add_executor_job(controller.getBasicInfo)
-    camData["basic_info"] = camData["basic_info"]["device_info"]["basic_info"]
+def tryParseInt(value):
     try:
-        motionDetectionData = await hass.async_add_executor_job(
-            controller.getMotionDetection
-        )
+        return int(value)
+    except Exception as e:
+        LOGGER.error("Couldnt parse as integer: %s", str(e))
+        return None
+
+
+async def getCamData(hass, controller):
+    LOGGER.debug("getCamData")
+    data = await hass.async_add_executor_job(controller.getMost)
+    LOGGER.debug("Raw update data:")
+    LOGGER.debug(data)
+    camData = {}
+
+    camData["raw"] = data
+
+    camData["user"] = controller.user
+    camData["basic_info"] = data["getDeviceInfo"]["device_info"]["basic_info"]
+    try:
+        motionDetectionData = data["getDetectionConfig"]["motion_detection"][
+            "motion_det"
+        ]
         motion_detection_enabled = motionDetectionData["enabled"]
-        if motionDetectionData["digital_sensitivity"] == "20":
+        if motionDetectionData["digital_sensitivity"] == "20" or (
+            "sensitivity" in motionDetectionData
+            and motionDetectionData["sensitivity"] == "low"
+        ):
             motion_detection_sensitivity = "low"
-        elif motionDetectionData["digital_sensitivity"] == "50":
+        elif motionDetectionData["digital_sensitivity"] == "50" or (
+            "sensitivity" in motionDetectionData
+            and motionDetectionData["sensitivity"] == "medium"
+        ):
             motion_detection_sensitivity = "normal"
-        elif motionDetectionData["digital_sensitivity"] == "80":
+        elif motionDetectionData["digital_sensitivity"] == "80" or (
+            "sensitivity" in motionDetectionData
+            and motionDetectionData["sensitivity"] == "high"
+        ):
             motion_detection_sensitivity = "high"
         else:
             motion_detection_sensitivity = None
@@ -122,39 +168,144 @@ async def getCamData(hass, controller):
     camData["motion_detection_sensitivity"] = motion_detection_sensitivity
 
     try:
-        privacy_mode = await hass.async_add_executor_job(controller.getPrivacyMode)
-        privacy_mode = privacy_mode["enabled"]
+        personDetectionData = data["getPersonDetectionConfig"]["people_detection"][
+            "detection"
+        ]
+        person_detection_enabled = personDetectionData["enabled"]
+        person_detection_sensitivity = None
+
+        sensitivity = tryParseInt(personDetectionData["sensitivity"])
+        if sensitivity is not None:
+            if sensitivity <= 33:
+                person_detection_sensitivity = "low"
+            elif sensitivity <= 66:
+                person_detection_sensitivity = "normal"
+            else:
+                person_detection_sensitivity = "high"
+    except Exception:
+        person_detection_enabled = None
+        person_detection_sensitivity = None
+    camData["person_detection_enabled"] = person_detection_enabled
+    camData["person_detection_sensitivity"] = person_detection_sensitivity
+
+    try:
+        presets = {
+            id: data["getPresetConfig"]["preset"]["preset"]["name"][key]
+            for key, id in enumerate(data["getPresetConfig"]["preset"]["preset"]["id"])
+        }
+    except Exception:
+        presets = False
+
+    try:
+        privacy_mode = data["getLensMaskConfig"]["lens_mask"]["lens_mask_info"][
+            "enabled"
+        ]
     except Exception:
         privacy_mode = None
     camData["privacy_mode"] = privacy_mode
 
     try:
-        alarmData = await hass.async_add_executor_job(controller.getAlarm)
+        lens_distrotion_correction = data["getLdc"]["image"]["switch"]["ldc"]
+    except Exception:
+        lens_distrotion_correction = None
+    camData["lens_distrotion_correction"] = lens_distrotion_correction
+
+    try:
+        light_frequency_mode = data["getLdc"]["image"]["common"]["light_freq_mode"]
+    except Exception:
+        light_frequency_mode = None
+
+    if light_frequency_mode is None:
+        try:
+            light_frequency_mode = data["getLightFrequencyInfo"]["image"]["common"][
+                "light_freq_mode"
+            ]
+        except Exception:
+            light_frequency_mode = None
+    camData["light_frequency_mode"] = light_frequency_mode
+
+    try:
+        day_night_mode = data["getLdc"]["image"]["common"]["inf_type"]
+    except Exception:
+        day_night_mode = None
+
+    if day_night_mode is None:
+        try:
+            if (
+                data["getNightVisionModeConfig"]["image"]["switch"]["night_vision_mode"]
+                == "inf_night_vision"
+            ):
+                day_night_mode = "on"
+            elif (
+                data["getNightVisionModeConfig"]["image"]["switch"]["night_vision_mode"]
+                == "wtl_night_vision"
+            ):
+                day_night_mode = "off"
+            elif (
+                data["getNightVisionModeConfig"]["image"]["switch"]["night_vision_mode"]
+                == "md_night_vision"
+            ):
+                day_night_mode = "auto"
+        except Exception:
+            day_night_mode = None
+    camData["day_night_mode"] = day_night_mode
+
+    try:
+        force_white_lamp_state = data["getLdc"]["image"]["switch"]["force_wtl_state"]
+    except Exception:
+        force_white_lamp_state = None
+    camData["force_white_lamp_state"] = force_white_lamp_state
+
+    try:
+        flip = (
+            "on"
+            if data["getLdc"]["image"]["switch"]["flip_type"] == "center"
+            else "off"
+        )
+    except Exception:
+        flip = None
+
+    if flip is None:
+        try:
+            flip = (
+                "on"
+                if data["getRotationStatus"]["image"]["switch"]["flip_type"] == "center"
+                else "off"
+            )
+        except Exception:
+            flip = None
+    camData["flip"] = flip
+
+    try:
+        alarmData = data["getLastAlarmInfo"]["msg_alarm"]["chn1_msg_alarm_info"]
         alarm = alarmData["enabled"]
         alarm_mode = alarmData["alarm_mode"]
     except Exception:
         alarm = None
         alarm_mode = None
+
+    if alarm is None or alarm_mode is None:
+        try:
+            alarmData = data["getAlarmConfig"]
+            alarm = alarmData["enabled"]
+            alarm_mode = alarmData["alarm_mode"]
+        except Exception:
+            alarm = None
+            alarm_mode = None
     camData["alarm"] = alarm
     camData["alarm_mode"] = alarm_mode
 
     try:
-        commonImageData = await hass.async_add_executor_job(controller.getCommonImage)
-        day_night_mode = commonImageData["image"]["common"]["inf_type"]
-    except Exception:
-        day_night_mode = None
-    camData["day_night_mode"] = day_night_mode
-
-    try:
-        led = await hass.async_add_executor_job(controller.getLED)
-        led = led["enabled"]
+        led = data["getLedStatus"]["led"]["config"]["enabled"]
     except Exception:
         led = None
     camData["led"] = led
 
+    # todo rest
     try:
-        auto_track = await hass.async_add_executor_job(controller.getAutoTrackTarget)
-        auto_track = auto_track["enabled"]
+        auto_track = data["getTargetTrackConfig"]["target_track"]["target_track_info"][
+            "enabled"
+        ]
     except Exception:
         auto_track = None
     camData["auto_track"] = auto_track
@@ -165,14 +316,20 @@ async def getCamData(hass, controller):
         camData["presets"] = {}
 
     try:
-        firmwareUpdateStatus = await hass.async_add_executor_job(
-            controller.getFirmwareUpdateStatus
-        )
-        firmwareUpdateStatus = firmwareUpdateStatus["cloud_config"]
+        firmwareUpdateStatus = data["getFirmwareUpdateStatus"]["cloud_config"]
     except Exception:
         firmwareUpdateStatus = None
     camData["firmwareUpdateStatus"] = firmwareUpdateStatus
 
+    try:
+        childDevices = data["getChildDeviceList"]
+    except Exception:
+        childDevices = None
+    camData["childDevices"] = childDevices
+
+    LOGGER.debug("getCamData - done")
+    LOGGER.debug("Processed update data:")
+    LOGGER.debug(camData)
     return camData
 
 
@@ -219,10 +376,8 @@ async def update_listener(hass, entry):
             await setupOnvif(hass, entry)
 
 
-async def getLatestFirmwareVersion(hass, entry, controller):
-    hass.data[DOMAIN][entry.entry_id][
-        "lastFirmwareCheck"
-    ] = datetime.datetime.utcnow().timestamp()
+async def getLatestFirmwareVersion(hass, config_entry, entry, controller):
+    entry["lastFirmwareCheck"] = datetime.datetime.utcnow().timestamp()
     try:
         updateInfo = await hass.async_add_executor_job(controller.isUpdateAvailable)
         if (
@@ -241,8 +396,8 @@ async def getLatestFirmwareVersion(hass, entry, controller):
     return updateInfo
 
 
-async def syncTime(hass, entry):
-    device_mgmt = hass.data[DOMAIN][entry.entry_id]["onvifManagement"]
+async def syncTime(hass, entry_id):
+    device_mgmt = hass.data[DOMAIN][entry_id]["onvifManagement"]
     if device_mgmt:
         now = datetime.datetime.utcnow()
 
@@ -258,7 +413,7 @@ async def syncTime(hass, entry):
             },
         }
         await device_mgmt.SetSystemDateAndTime(time_params)
-        hass.data[DOMAIN][entry.entry_id][
+        hass.data[DOMAIN][entry_id][
             "lastTimeSync"
         ] = datetime.datetime.utcnow().timestamp()
 
@@ -278,21 +433,24 @@ async def setupOnvif(hass, entry):
         )
 
 
-async def setupEvents(hass, entry):
+async def setupEvents(hass, config_entry):
     LOGGER.debug("setupEvents - entry")
-    if not hass.data[DOMAIN][entry.entry_id]["events"].started:
+    if not hass.data[DOMAIN][config_entry.entry_id]["events"].started:
         LOGGER.debug("Setting up events...")
-        events = hass.data[DOMAIN][entry.entry_id]["events"]
+        events = hass.data[DOMAIN][config_entry.entry_id]["events"]
         if await events.async_start():
             LOGGER.debug("Events started.")
-            if not hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"]:
-                LOGGER.debug("Creating motion binary sensor...")
-                hass.data[DOMAIN][entry.entry_id]["motionSensorCreated"] = True
-                hass.async_create_task(
-                    hass.config_entries.async_forward_entry_setup(
-                        entry, "binary_sensor"
+            if not hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"]:
+                hass.data[DOMAIN][config_entry.entry_id]["motionSensorCreated"] = True
+                if hass.data[DOMAIN][config_entry.entry_id]["eventsListener"]:
+                    hass.data[DOMAIN][config_entry.entry_id][
+                        "eventsListener"
+                    ].createBinarySensor()
+                else:
+                    LOGGER.error(
+                        "Trying to create motion sensor but motion listener not set up!"
                     )
-                )
+
                 LOGGER.debug(
                     "Binary sensor creation for motion has been forwarded to component."
                 )
@@ -310,3 +468,99 @@ def build_device_info(attributes: dict) -> DeviceInfo:
         model=attributes["device_model"],
         sw_version=attributes["sw_version"],
     )
+
+
+def pytapoFunctionMap(pytapoFunctionName):
+    if pytapoFunctionName == "getPrivacyMode":
+        return ["getLensMaskConfig"]
+    elif pytapoFunctionName == "getBasicInfo":
+        return ["getDeviceInfo"]
+    elif pytapoFunctionName == "getMotionDetection":
+        return ["getDetectionConfig"]
+    elif pytapoFunctionName == "getPersonDetection":
+        return ["getPersonDetectionConfig"]
+    elif pytapoFunctionName == "getLdc":
+        return ["getLensDistortionCorrection"]
+    elif pytapoFunctionName == "getAlarm":
+        return ["getLastAlarmInfo", "getAlarmConfig"]
+    elif pytapoFunctionName == "getLED":
+        return ["getLedStatus"]
+    elif pytapoFunctionName == "getAutoTrackTarget":
+        return ["getTargetTrackConfig"]
+    elif pytapoFunctionName == "getPresets":
+        return ["getPresetConfig"]
+    elif pytapoFunctionName == "getFirmwareUpdateStatus":
+        return ["getFirmwareUpdateStatus"]
+    elif pytapoFunctionName == "getMediaEncrypt":
+        return ["getMediaEncrypt"]
+    elif pytapoFunctionName == "getLightFrequencyMode":
+        return ["getLightFrequencyInfo", "getLightFrequencyCapability"]
+    elif pytapoFunctionName == "getChildDevices":
+        return ["getChildDeviceList"]
+    elif pytapoFunctionName == "getRotationStatus":
+        return ["getRotationStatus"]
+    elif pytapoFunctionName == "getForceWhitelampState":
+        return ["getLdc"]
+    elif pytapoFunctionName == "getDayNightMode":
+        return ["getLightFrequencyInfo", "getNightVisionModeConfig"]
+    elif pytapoFunctionName == "getImageFlipVertical":
+        return ["getRotationStatus", "getLdc"]
+    elif pytapoFunctionName == "getLensDistortionCorrection":
+        return ["getLdc"]
+    return []
+
+
+def isCacheSupported(check_function, rawData):
+    rawFunctions = pytapoFunctionMap(check_function)
+    for function in rawFunctions:
+        if function in rawData and rawData[function]:
+            if check_function == "getForceWhitelampState":
+                return (
+                    "image" in rawData["getLdc"]
+                    and "switch" in rawData["getLdc"]["image"]
+                    and "force_wtl_state" in rawData["getLdc"]["image"]["switch"]
+                )
+            elif check_function == "getDayNightMode":
+                return (
+                    "image" in rawData["getLightFrequencyInfo"]
+                    and "common" in rawData["getLightFrequencyInfo"]["image"]
+                    and "inf_type"
+                    in rawData["getLightFrequencyInfo"]["image"]["common"]
+                )
+            elif check_function == "getImageFlipVertical":
+                return (
+                    "image" in rawData["getLdc"]
+                    and "switch" in rawData["getLdc"]["image"]
+                    and "flip_type" in rawData["getLdc"]["image"]["switch"]
+                ) or (
+                    "image" in rawData["getRotationStatus"]
+                    and "switch" in rawData["getRotationStatus"]["image"]
+                    and "flip_type" in rawData["getRotationStatus"]["image"]["switch"]
+                )
+            elif check_function == "getLensDistortionCorrection":
+                return (
+                    "image" in rawData["getLdc"]
+                    and "switch" in rawData["getLdc"]["image"]
+                    and "ldc" in rawData["getLdc"]["image"]["switch"]
+                )
+            return True
+    return False
+
+
+async def check_and_create(entry, hass, cls, check_function, config_entry):
+    if isCacheSupported(check_function, entry["camData"]["raw"]):
+        LOGGER.debug(
+            f"Found cached capability {check_function}, creating {cls.__name__}"
+        )
+        return cls(entry, hass, config_entry)
+    else:
+        LOGGER.debug(f"Capability {check_function} not found, querying again...")
+        try:
+            await hass.async_add_executor_job(
+                getattr(entry["controller"], check_function)
+            )
+        except Exception:
+            LOGGER.info(f"Camera does not support {cls.__name__}")
+            return None
+        LOGGER.debug(f"Creating {cls.__name__}")
+        return cls(entry, hass, config_entry)

@@ -25,7 +25,7 @@
                     "captcha": "验证码",
                     "server_country": "小米服务器",
                     "conn_mode": "设备连接模式",
-                    "filter_models": "通过型号/WiFi筛选设备 (高级模式，新手勿选)"
+                    "filter_models": "通过型号/家庭/WiFi筛选设备 (高级模式，新手勿选)"
                 }
             },
             "cloud_filter": {
@@ -34,6 +34,8 @@
                 "data": {
                     "filter_model": "筛选设备型号",
                     "model_list": "设备型号列表",
+                    "filter_home_id": "筛选家庭",
+                    "home_id_list": "家庭列表",
                     "filter_ssid": "筛选 WiFi SSID",
                     "ssid_list": "WiFi SSID 列表",
                     "filter_bssid": "筛选 WiFi BSSID",
@@ -51,6 +53,7 @@
                     "model": "选择设备型号",
                     "model_specified": "指定设备型号 (可选)",
                     "only_main_entity": "仅主(父)实体",
+                    "reset_customizes": "重置为默认自定义",
                     "bool2selects": "自定义选项"
                 }
             }
@@ -63,7 +66,7 @@
             "none_devices": "该小米账户下没有设备"
         },
         "abort": {
-            "config_saved": "配置已保存\n{tip}\n\n有些自定义选项需要[重载集成](/developer-tools/yaml)才能生效。",
+            "config_saved": "配置已保存！[再次自定义](/_my_redirect/config_flow_start?domain=xiaomi_miot)。\n{tip}\n\n有些自定义选项需要[重载集成](/developer-tools/yaml)才能生效。",
             "already_configured": "该设备已经配置过",
             "not_xiaomi_miio": "该设备不支持miio/miot协议"
         }
@@ -88,7 +91,8 @@
                     "captcha": "验证码",
                     "server_country": "小米服务器",
                     "conn_mode": "设备连接模式",
-                    "renew_devices": "更新设备列表"
+                    "renew_devices": "更新设备列表",
+                    "disable_message": "禁用米家APP通知消息实体"
                 }
             },
             "cloud_filter": {
@@ -97,6 +101,8 @@
                 "data": {
                     "filter_model": "筛选设备型号",
                     "model_list": "设备型号列表",
+                    "filter_home_id": "筛选家庭",
+                    "home_id_list": "家庭列表",
                     "filter_ssid": "筛选 WiFi SSID",
                     "ssid_list": "WiFi SSID 列表",
                     "filter_bssid": "筛选 WiFi BSSID",
@@ -108,7 +114,7 @@
         },
         "error": {
             "cannot_connect": "连接设备失败",
-            "cannot_login": "小米账户登录失败，请检查账号密码。如多次尝试仍登陆失败，请在与当前网络相同的环境下登陆小米官网(mi.com)后重试",
+            "cannot_login": "小米账户登录失败，请检查账号密码。如多次尝试仍登陆失败，请使用与HA宿主机同一局域网下的其他设备登录小米官网(mi.com)后重试",
             "cannot_reach": "无法访问小米API接口",
             "tzinfo_error": "你的Hass环境看起来有点问题，请参考: https://github.com/al-one/hass-xiaomi-miot/issues/260",
             "none_devices": "该小米账户下没有设备"

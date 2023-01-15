@@ -1,109 +1,52 @@
 import logging
+from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import COORDINATOR, DOMAIN, Device
-from .const import get_child_value
-from .entity import EufySecurityEntity
+from .const import (
+    COORDINATOR,
+    DOMAIN,
+    Platform,
+    PlatformToPropertyType,
+)
 from .coordinator import EufySecurityDataUpdateCoordinator
+from .entity import EufySecurityEntity
+from .eufy_security_api.metadata import Metadata
+from .eufy_security_api.util import get_child_value
+from .util import get_product_properties_by_filter
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_devices
-):
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+    """Setup switch entities."""
+
     coordinator: EufySecurityDataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
-
-    INSTRUMENTS = [
-        ("enabled", "Enabled", "enabled"),
-        ("motion_detection", "Motion Detection", "motionDetection"),
-        ("motion_tracking", "Motion Tracking", "motionTracking"),
-        ("person_detection", "Person Detection", "personDetection"),
-        ("pet_detection", "Pet Detection", "petDetection"),
-        ("crying_detection", "Crying Detection", "cryingDetection"),
-        ("indoor_chime", "Indoor Chime", "chimeIndoor"),
-        ("status_led", "Status Led", "statusLed"),
-        ("anti_theft_detection", "Anti Theft Detection", "antitheftDetection"),
-        ("auto_night_vision", "Auto Night Vision", "autoNightvision"),
-        ("night_vision", "Night Vision", "nightvision"),
-        ("microphone", "Microphone", "microphone"),
-        ("speaker", "Speaker", "speaker"),
-        ("audio_recording", "Audio Recording", "audioRecording"),
-        ("light", "Light", "light"),
-        ("rtsp_stream", "RTSP Stream", "rtspStream"),
-    ]
-
-    entities = []
-    for device in coordinator.devices.values():
-        instruments = INSTRUMENTS
-        for id, description, key in instruments:
-            if not get_child_value(device.state, key) is None:
-                entities.append(
-                    EufySwitchEntity(
-                        coordinator,
-                        config_entry,
-                        device,
-                        id,
-                        description,
-                        key,
-                        "False",
-                        "True",
-                    )
-                )
-
-    async_add_devices(entities, True)
+    product_properties = get_product_properties_by_filter(
+        [coordinator.devices.values(), coordinator.stations.values()], PlatformToPropertyType[Platform.SWITCH.name].value
+    )
+    entities = [EufySwitchEntity(coordinator, metadata) for metadata in product_properties]
+    async_add_entities(entities)
 
 
-class EufySwitchEntity(EufySecurityEntity, SwitchEntity):
-    def __init__(
-        self,
-        coordinator: EufySecurityDataUpdateCoordinator,
-        config_entry: ConfigEntry,
-        device: Device,
-        id: str,
-        description: str,
-        key: str,
-        off_value: str,
-        on_value: str,
-    ):
-        EufySecurityEntity.__init__(self, coordinator, config_entry, device)
-        SwitchEntity.__init__(self)
-        self._id = id
-        self.description = description
-        self.key = key
-        self.off_value = str(off_value)
-        self.on_value = str(on_value)
+class EufySwitchEntity(SwitchEntity, EufySecurityEntity):
+    """Base switch entity for integration"""
+
+    def __init__(self, coordinator: EufySecurityDataUpdateCoordinator, metadata: Metadata) -> None:
+        super().__init__(coordinator, metadata)
 
     @property
     def is_on(self):
-        value = str(get_child_value(self.device.state, self.key))
-        if value == self.off_value:
-            return False
-        if value == self.on_value:
-            return True
-        return None
+        """Return true if the switch is on."""
+        return bool(get_child_value(self.product.properties, self.metadata.name))
 
-    async def async_turn_off(self):
-        await self.coordinator.async_set_property(
-            self.device.serial_number, self.key, self.off_value
-        )
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the entity off."""
+        await self.product.set_property(self.metadata, False)
 
-    async def async_turn_on(self):
-        await self.coordinator.async_set_property(
-            self.device.serial_number, self.key, self.on_value
-        )
-
-    @property
-    def name(self):
-        return f"{self.device.name} {self.description}"
-
-    @property
-    def id(self):
-        return f"{DOMAIN}_{self.device.serial_number}_{self._id}_switch"
-
-    @property
-    def unique_id(self):
-        return self.id
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the entity on."""
+        await self.product.set_property(self.metadata, True)
