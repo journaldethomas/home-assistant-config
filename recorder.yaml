@@ -1,0 +1,30 @@
+  auto_purge: true
+  purge_keep_days: 7 # durée de conservation des données
+  exclude: # permet d'exclure tous les éléments listé ci-dessous de votre base de données
+    domains: # filtrage par domaine
+      - automation
+      - camera
+      - device_tracker
+      - group
+      - input_datetime
+      - light
+      - person
+      - script
+      - sun
+      - switch
+      - vacuum
+      - weather
+      - zone
+    entities: # filtrage par entités spécifiques
+      - sun.sun
+      - sensor.last_boot
+      - sensor.date
+      - sensor.time
+      - sensor.date_time
+      - sensor.hacs
+    entity_globs:
+      - sensor.*uptime*
+      - sensor.docker_*
+      - sensor.unifi_gateway_*
+    event_types: # filtrage par evenements
+      - call_service 

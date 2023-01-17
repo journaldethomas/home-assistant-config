@@ -20,7 +20,7 @@ http:
 
 default_config:
 
-# ajout de cette partie pour icones personnalisées
+# ajout de cette partie pour icones personnalisées et themes
 frontend:
   extra_module_url:
     - /local/custom-brand-icons.js
@@ -28,43 +28,17 @@ frontend:
 
   themes: !include_dir_merge_named themes
 
+# à activer que lorsque de nouvelles intégrations à débugguer
+
 #logger:
 #  default: error
 #  logs:
 #    homeassistant.components.ble_monitor: debug
 
-recorder:
 # gere les donnees sauvegardees en DB
-  auto_purge: true
-  purge_keep_days: 7 # durée de conservation des données
-  exclude: # permet d'exclure tous les éléments listé ci-dessous de votre base de données
-    domains: # filtrage par domaine
-      - automation
-      - camera
-      - device_tracker
-      - group
-      - input_datetime
-      - light
-      - person
-      - script
-      - sun
-      - switch
-      - vacuum
-      - weather
-      - zone
-    entities: # filtrage par entités spécifiques
-      - sun.sun
-      - sensor.last_boot
-      - sensor.date
-      - sensor.time
-      - sensor.date_time
-      - sensor.hacs
-    entity_globs:
-      - sensor.*uptime*
-      - sensor.docker_*
-      - sensor.unifi_gateway_*
-    event_types: # filtrage par evenements
-      - call_service 
+# cela permet de garder une base de données de taille correcte
+
+recorder: !include recorder.yaml
 
 ###################################################################
 ########    Configuration de la partie systeme     ###############
@@ -1331,30 +1305,6 @@ mqtt:
       state_topic: "paradis/capteur_exterieur/humidite"
       unit_of_measurement: "%"
 
-#    - name: rpi cpu load
-#      state_topic: "paradis/raspberrypi/cpuload"
-#      unit_of_measurement: "%"
-
-#    - name: rpi cpu temp
-#      state_topic: "paradis/raspberrypi/cputemp"
-#      unit_of_measurement: "°C"
-
-#    - name: rpi diskusage
-#      state_topic: "paradis/raspberrypi/diskusage"
-#      unit_of_measurement: "%"
-
-#    - name: rpi swap
-#      state_topic: "paradis/raspberrypi/swap"
-#      unit_of_measurement: "%"
-
-#    - name: rpi memory
-#      state_topic: "paradis/raspberrypi/memory"
-#      unit_of_measurement: "%"
-
-#    - name: rpi uptime
-#      state_topic: "paradis/raspberrypi/uptime_days"
-#      unit_of_measurement: "days"
-
   # Imprimante 3D
     - name: "Longueur Filament"
       state_topic: "octoPrint/hass/printing"
@@ -1671,6 +1621,7 @@ switch: !include switch.yaml
 # définition des groupes
 group: !include groups.yaml
 
+python_script:
 automation: !include automations.yaml
 script: !include scripts.yaml
 panel_iframe: !include panel_iframe.yaml
