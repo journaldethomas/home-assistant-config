@@ -12,6 +12,9 @@ _LOGGER = logging.getLogger(__name__)
 
 def parse_jaalee(self, data, source_mac, rssi):
     """Jaalee parser"""
+    if not data:
+        # skip all messages with only iBeacon data, as the UUID is not unique
+        return None
     msg_length = len(data)
     firmware = "Jaalee"
     result = {"firmware": firmware}
@@ -21,11 +24,18 @@ def parse_jaalee(self, data, source_mac, rssi):
         jaalee_mac_reversed = data[5:11]
         jaalee_mac = jaalee_mac_reversed[::-1]
         if jaalee_mac != source_mac:
-            _LOGGER.debug("Jaalee MAC address doesn't match data MAC address. Data: %s", data.hex())
+            _LOGGER.debug(
+                "Jaalee MAC address doesn't match data MAC address. "
+                "Data: %s with source mac: %s and jaalee mac: %s",
+                data.hex(),
+                source_mac,
+                jaalee_mac,
+            )
             return None
         (temp, humi) = unpack(">HH", data[11:])
-        temp = round(0.0026821682 * temp - 46.873, 2)
-        humi = round(0.0019213762 * humi - 6.332, 2)
+        # data follows the iBeacon temperature and humidity definition
+        temp = round(175.72 * temp / 65536 - 46.85, 2)
+        humi = round(125.0 * humi / 65536 - 6, 2)
 
         result.update(
             {

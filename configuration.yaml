@@ -40,10 +40,6 @@ frontend:
 
 recorder: !include recorder.yaml
 
-###################################################################
-########    Configuration de la partie systeme     ###############
-###################################################################
-
 ########    Configuration de la partie materiel    ###############
 
 # InfluxDB
@@ -63,26 +59,22 @@ influxdb:
 #  trigger_time:
 #    minutes: 6
 
-###################################################################
 ##########          Utilisation Browser Mod           #############
-###################################################################
 
 browser_mod: 
   prefix: "browser_"
 
-###################################################################
 ##########            Les compte-à-rebours            #############
-###################################################################
 
-timer:
-  test:
-    duration: "00:00:10"
-  coton40:
-    duration: "03:00:00"
-  synthetique30:
-    duration: "02:40:00"
-  rapide:
-    duration: "00:30:00"
+#timer:
+#  test:
+#    duration: "00:00:10"
+#  coton40:
+#    duration: "03:00:00"
+#  synthetique30:
+#    duration: "02:40:00"
+#  rapide:
+#    duration: "00:30:00"
 
 ###################################################################
 ##########              Les lumieres                 ##############
@@ -169,19 +161,6 @@ input_boolean:
   notification_connexion_distante:
     name: notification mqtt distant
     icon: mdi:alarm-light
-
-# retour d'état des volets
-  volet_pitchouns:
-    name: volet des pitchouns
-    icon: mdi:cover
-
-  volet_salon:
-    name: volet du salon
-    icon: mdi:cover
-
-  volet_cuisine:
-    name: volet de la cuisine
-    icon: mdi:cover
 
 input_select:
   pool_pump_mode:
@@ -1145,10 +1124,6 @@ sensor:
       - type: ipv4_address
         arg: eth0
 
-
-#  - platform: uptime
-# supprimé dans la version 2022.12
-
   - platform: time_date
     display_options:
       ['time', 'date']
@@ -1279,8 +1254,11 @@ sensor:
           {% endif -%}
 
 mqtt:
+
   sensor:
-    # Consommation d'eau via MQTT
+
+    # Consommation d'eau
+
     - name: "consommation total"
       state_topic: "tele/eau/consommation"
       unit_of_measurement: "m³"
@@ -1293,18 +1271,6 @@ mqtt:
       state_topic: "tele/eau/consommation"
       value_template: "{{ value_json['status']}}"
 
-    # MQTT DEPUIS MAISON DE FAMILLE
-    - name: "disponibilité"
-      state_topic: "paradis/bridge/state"
-
-    - name: "temperature exterieur"
-      state_topic: "paradis/capteur_exterieur/temperature"
-      unit_of_measurement: "°C"
-
-    - name: "humidite exterieur"
-      state_topic: "paradis/capteur_exterieur/humidite"
-      unit_of_measurement: "%"
-
   # Imprimante 3D
     - name: "Longueur Filament"
       state_topic: "octoPrint/hass/printing"
@@ -1316,202 +1282,13 @@ mqtt:
     - name: "dispo imprimante"
       state_topic: "octoPrint/hass/Connected"
 
-###################################################################
-########                   BINARY SENSOR                  #########
-###################################################################
-
-binary_sensor:
-
-  #TEST BONNE REPONSE RASPBERRYPI POUR CONSO EAU
-  - platform: ping
-    host: !secret rasp_baie_technique
-    name: "RaspberryPi baie technique"
-
-  #TEST BONNE REPONSE RASPBERRYPI OCTOPRINT
-  - platform: ping
-    host: !secret rasp_octoprint
-    name: "RaspberryPi Octoprint"
-
-  #TEST BONNE REPONSE RASPBERRYPI POUR BLUETOOTH
-  - platform: ping
-    host: !secret rasp_salon
-    name: "RaspberryPi Salon"
-
-  #TEST BONNE REPONSE SERVEUR DOMESTIQUE
-  - platform: ping
-    host: !secret nuc_serveur_domestique
-    name: "Serveur domestique"
-  
-  #TEST BONNE REPONSE VPS OVH
-  - platform: ping
-    host: !secret vps_ovh
-    name: "VPS OVH"
-
-  #TEST BONNE REPONSE RASPBERRYPI DISTANT
-  - platform: ping
-    host: !secret vpn_paradis
-    name: "RaspberryPi Distant"
+# Binary Sensor - ping des serveurs
+binary_sensor: !include binary_sensor.yaml
 
 
-###################################################################
-########                   UTILITY METER                  #########
-###################################################################
+# calcul des cumuls via utility meter
+utility_meter: !include utility_meter.yaml
 
-utility_meter:
-
-######   CALCUL CONSOMMATION ELECTRIQUE BAIE TECHNIQUE   ######
-
-  consommation_baie_quotidienne:
-    source: sensor.consommation_baie_technique
-    cycle: daily
-
-  consommation_baie_hebdo:
-    source: sensor.consommation_baie_technique
-    cycle: weekly
-
-  consommation_baie_mensuelle:
-    source: sensor.consommation_baie_technique
-    cycle: monthly
-
-  consommation_bureau_thomas_quotidienne:
-    source: sensor.consommation_bureau_thomas
-    cycle: daily
-
-  consommation_bureau_thomas_hebdo:
-    source: sensor.consommation_bureau_thomas
-    cycle: weekly
-
-  consommation_bureau_thomas_mensuelle:
-    source: sensor.consommation_bureau_thomas
-    cycle: monthly
-
-  consommation_machine_laver_quotidienne:
-    source: sensor.prise_05_machine_a_laver_energy
-    cycle: daily
-
-  consommation_machine_laver_hebdo:
-    source: sensor.prise_05_machine_a_laver_energy
-    cycle: weekly
-
-  consommation_machine_laver_mensuelle:
-    source: sensor.prise_05_machine_a_laver_energy
-    cycle: monthly
-
-  vph_consommation_quotidienne:
-    source: sensor.energie_vph
-    name: consommation quotidienne VPH
-    cycle: daily
-    tariffs:
-      - jour
-      - nuit
-
-  vph_consommation_hebdo:
-    source: sensor.energie_vph
-    name: consommation hebdomadaire VPH
-    cycle: weekly
-    tariffs:
-      - jour
-      - nuit
-
-  vph_consommation_mensuelle:
-    source: sensor.energie_vph
-    name: consommation mensuelle VPH
-    cycle: monthly
-    tariffs:
-      - jour
-      - nuit
-
-  vph_consommation_trimestrielle:
-    source: sensor.energie_vph
-    name: consommation trimestrielle VPH
-    cycle: quarterly
-    tariffs:
-      - jour
-      - nuit
-
-  vph_consommation_annuelle:
-    source: sensor.energie_vph
-    name: consommation annuelle VPH
-    cycle: yearly
-    tariffs:
-      - jour
-      - nuit
-
-
-######  CALCUL CONSOMMATION EAU  ######
-
-  eau_mois:
-    source: sensor.consommation_total
-    cycle: monthly
-
-  eau_semaine:
-    source: sensor.consommation_total
-    cycle: weekly
-
-  eau_quotidien:
-    source: sensor.consommation_total
-    cycle: daily
-
-  eau_heure:
-    source: sensor.consommation_total
-    net_consumption: true
-    cycle: hourly
-  eau_annee:
-    source: sensor.consommation_total
-    net_consumption: true
-    cycle: yearly
-
-######   CALCUL PLUIE   ######
-
-  pluie_heure_netatmo:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    cycle: hourly
-  pluie_aujourdhui_netatmo:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    cycle: daily
-  pluie_semaine_netatmo:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    cycle: weekly
-  pluie_mois_netatmo:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    cycle: monthly
-  pluie_annee_netatmo:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    cycle: yearly
-
-  pluie_aujourdhui:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
-    cycle: daily
-
-  pluie_semaine:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
-    cycle: weekly
-
-  pluie_mois:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
-    cycle: monthly
-
-  pluie_annee:
-    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
-    net_consumption: true
-    cycle: yearly
-
-######   CALCUL CONSOMMATION MASON DE FAMILLE   ######
-
-  energie_quotidienne_mb:
-    source: sensor.mb_lixee_base
-    cycle: daily
-
-  energie_hebdo_mb:
-    source: sensor.mb_lixee_base
-    cycle: weekly
-
-  energie_mensuelle_mb:
-    source: sensor.mb_lixee_base
-    cycle: monthly
 
 ###################################################################
 ########                   CAMERAS                        #########

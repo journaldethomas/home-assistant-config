@@ -8,6 +8,7 @@ from homeassistant.components.climate import (
     ClimateEntity,
 )
 from homeassistant.components.climate.const import *
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import (
@@ -91,9 +92,9 @@ class BaseClimateEntity(MiotEntity, ClimateEntity):
             if num is not None:
                 cls = sta.attributes.get(ATTR_DEVICE_CLASS)
                 unit = sta.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-                if cls == DEVICE_CLASS_TEMPERATURE or unit in [TEMP_CELSIUS, TEMP_KELVIN, TEMP_FAHRENHEIT]:
+                if cls == SensorDeviceClass.TEMPERATURE.value or unit in [TEMP_CELSIUS, TEMP_KELVIN, TEMP_FAHRENHEIT]:
                     ext[ATTR_CURRENT_TEMPERATURE] = self.hass.config.units.temperature(num, unit)
-                elif cls == DEVICE_CLASS_HUMIDITY:
+                elif cls == SensorDeviceClass.HUMIDITY.value:
                     ext[ATTR_CURRENT_HUMIDITY] = num
         if ext:
             self.update_attrs(ext)
@@ -168,6 +169,14 @@ class MiotClimateEntity(MiotToggleEntity, BaseClimateEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
+        self._vars['turn_on_hvac'] = self.custom_config('turn_on_hvac')
+
+        if self.custom_config_bool('ignore_fan_switch'):
+            self._prop_fan_power = None
+        if prop := self.custom_config('current_temp_property'):
+            if prop := self._miot_service.spec.get_property(prop):
+                self._prop_temperature = prop
+
         if self._prop_mode:
             mvs = []
             dls = []
@@ -196,6 +205,7 @@ class MiotClimateEntity(MiotToggleEntity, BaseClimateEntity):
                     'list':  [fst.get('description')],
                     'value': fst.get('value'),
                 }
+
         if self._preset_modes:
             self._supported_features |= SUPPORT_PRESET_MODE
 
@@ -351,7 +361,9 @@ class MiotClimateEntity(MiotToggleEntity, BaseClimateEntity):
             for mk, mv in self._hvac_modes.items():
                 if acm == mv.get('value'):
                     return mk
-        elif self._prop_power:
+        if self._prop_power:
+            if mod := self._vars.get('turn_on_hvac'):
+                return mod
             return HVAC_MODE_AUTO
         return None
 
@@ -363,8 +375,10 @@ class MiotClimateEntity(MiotToggleEntity, BaseClimateEntity):
                 if mv.get('value') is None:
                     continue
                 hms.append(mk)
-        elif self._prop_power:
-            hms.append(HVAC_MODE_AUTO)
+        if self._prop_power:
+            mod = self._vars.get('turn_on_hvac') or HVAC_MODE_AUTO
+            if mod and mod not in hms:
+                hms.append(mod)
         if HVAC_MODE_OFF not in hms:
             hms.append(HVAC_MODE_OFF)
         return hms
@@ -411,6 +425,8 @@ class MiotClimateEntity(MiotToggleEntity, BaseClimateEntity):
             return self.turn_off()
         if not self.is_on:
             self.turn_on(without_modes=True)
+        if self._prop_power and mode == self._vars.get('turn_on_hvac'):
+            return True
         if not self._prop_mode:
             return False
         val = self._hvac_modes.get(mode, {}).get('value')

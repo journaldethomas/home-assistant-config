@@ -161,8 +161,6 @@ async def get_cloud_filter_schema(hass, user_input, errors, schema=None, via_did
         for d in dvs:
             for f in fls:
                 v = d.get(f)
-                if not grp:
-                    _LOGGER.warning('get_cloud_filter_schema: %s', d)
                 if v is None:
                     continue
                 grp.setdefault(v, 0)
@@ -730,9 +728,12 @@ def get_customize_options(hass, options={}, bool2selects=[], entity_id='', model
             'motion_stream_slice': cv.string,
         })
 
-    if domain == 'climate' or re.search(r'aircondition|acpartner', model, re.I):
+    if domain == 'climate' or re.search(r'aircondition|acpartner|airrtc', model, re.I):
+        bool2selects.extend(['ignore_fan_switch'])
         options.update({
             'bind_sensor': cv.string,
+            'turn_on_hvac': cv.string,
+            'current_temp_property': cv.string,
         })
 
     if domain == 'cover' or re.search(r'airer|curtain|wopener', model, re.I):

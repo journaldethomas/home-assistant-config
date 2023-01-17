@@ -1,0 +1,130 @@
+######   Calcul de la consommation électrique de la baie technique   ######
+
+  consommation_baie_quotidienne:
+    source: sensor.consommation_baie_technique
+    cycle: daily
+
+  consommation_baie_hebdo:
+    source: sensor.consommation_baie_technique
+    cycle: weekly
+
+  consommation_baie_mensuelle:
+    source: sensor.consommation_baie_technique
+    cycle: monthly
+
+######   Calcul de la consommation électrique des équipements de mon bureau   ######
+
+  consommation_bureau_thomas_quotidienne:
+    source: sensor.consommation_bureau_thomas
+    cycle: daily
+
+  consommation_bureau_thomas_hebdo:
+    source: sensor.consommation_bureau_thomas
+    cycle: weekly
+
+  consommation_bureau_thomas_mensuelle:
+    source: sensor.consommation_bureau_thomas
+    cycle: monthly
+
+######   Calcul de la consommation électrique de la machine à laver   ######
+
+  consommation_machine_laver_quotidienne:
+    source: sensor.prise_05_machine_a_laver_energy
+    cycle: daily
+
+  consommation_machine_laver_hebdo:
+    source: sensor.prise_05_machine_a_laver_energy
+    cycle: weekly
+
+  consommation_machine_laver_mensuelle:
+    source: sensor.prise_05_machine_a_laver_energy
+    cycle: monthly
+
+######  Calcul de la consommation électrique de la VPH  ######
+
+  vph_consommation_quotidienne:
+    source: sensor.energie_vph
+    name: consommation quotidienne VPH
+    cycle: daily
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_hebdo:
+    source: sensor.energie_vph
+    name: consommation hebdomadaire VPH
+    cycle: weekly
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_mensuelle:
+    source: sensor.energie_vph
+    name: consommation mensuelle VPH
+    cycle: monthly
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_trimestrielle:
+    source: sensor.energie_vph
+    name: consommation trimestrielle VPH
+    cycle: quarterly
+    tariffs:
+      - jour
+      - nuit
+
+  vph_consommation_annuelle:
+    source: sensor.energie_vph
+    name: consommation annuelle VPH
+    cycle: yearly
+    tariffs:
+      - jour
+      - nuit
+
+######  Calcul du cumul de ma consommation d'eau  ######
+
+  eau_heure:
+    source: sensor.consommation_total
+    net_consumption: true
+    cycle: hourly
+
+  eau_quotidien:
+    source: sensor.consommation_total
+    cycle: daily
+
+  eau_semaine:
+    source: sensor.consommation_total
+    cycle: weekly
+
+  eau_mois:
+    source: sensor.consommation_total
+    cycle: monthly
+
+  eau_annee:
+    source: sensor.consommation_total
+    net_consumption: true
+    cycle: yearly
+
+######   Calcul du cumul de pluie   ######
+
+  pluie_heure_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: hourly
+
+  pluie_aujourdhui_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: daily
+
+  pluie_semaine_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: weekly
+
+  pluie_mois_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: monthly
+
+  pluie_annee_netatmo:
+    source: sensor.netatmo_maison_piece_de_vie_pluviometre_rain_today
+    cycle: yearly
+

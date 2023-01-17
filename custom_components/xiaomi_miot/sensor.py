@@ -12,6 +12,7 @@ from homeassistant.helpers.entity import (
 )
 from homeassistant.components.sensor import (
     DOMAIN as ENTITY_DOMAIN,
+    SensorDeviceClass,
 )
 from homeassistant.helpers.restore_state import RestoreEntity, RestoreStateData
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -87,7 +88,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             'cooker', 'induction_cooker', 'pressure_cooker', 'air_fryer', 'juicer',
             'water_purifier', 'dishwasher', 'fruit_vegetable_purifier',
             'pet_feeder', 'fridge_chamber', 'plant_monitor', 'germicidal_lamp', 'vital_signs',
-            'sterilizer', 'steriliser', 'table', 'dryer', 'clothes_dryer',
+            'sterilizer', 'steriliser', 'table', 'chair', 'dryer', 'clothes_dryer',
         ):
             if srv.name in ['lock']:
                 if not srv.get_property('operation_method', 'operation_id'):
@@ -270,12 +271,11 @@ class MiotSensorEntity(MiotEntity, SensorEntity):
         )
         self._update_sub_entities(
             [
-                'mode', 'mode_time', 'hardness', 'start_pause', 'leg_pillow', 'rl_control',
+                'mode_time', 'start_pause', 'leg_pillow', 'rl_control',
                 'heat_level', 'heat_time', 'heat_zone', 'intensity_mode', 'massage_strength',
             ],
             [
-                'bed', 'backrest_control', 'leg_rest_control', 'massage_mattress',
-                'fridge',
+                'bed', 'backrest_control', 'leg_rest_control', 'massage_mattress', 'fridge',
             ],
             domain='fan',
         )
@@ -289,6 +289,11 @@ class MiotSensorEntity(MiotEntity, SensorEntity):
             ['fridge_chamber'],
             domain='number',
         )
+
+    @property
+    def device_class(self):
+        """Return the class of this entity."""
+        return self.get_device_class(SensorDeviceClass)
 
     @property
     def native_value(self):
@@ -421,7 +426,7 @@ class BaseSensorSubEntity(BaseSubEntity, SensorEntity):
         if hasattr(self, '_attr_native_value') and self._attr_native_value is not None:
             value = self._attr_native_value
         value = get_translation(value, [self._attr])
-        if self.device_class == DEVICE_CLASS_TIMESTAMP:
+        if self.device_class == SensorDeviceClass.TIMESTAMP:
             value = datetime_with_tzinfo(value)
         return value
 
@@ -490,7 +495,7 @@ class MiotSensorSubEntity(MiotPropertySubEntity, BaseSensorSubEntity):
             svd = self.custom_config_number('value_ratio') or 0
             if svd:
                 val = round(float(val) * svd, 3)
-            elif self.device_class in [DEVICE_CLASS_HUMIDITY, DEVICE_CLASS_TEMPERATURE]:
+            elif self.device_class in [SensorDeviceClass.HUMIDITY, SensorDeviceClass.TEMPERATURE]:
                 val = round(float(val), 3)
         return val
 
@@ -507,7 +512,7 @@ class WaterPurifierYunmiEntity(MiioEntity, Entity):
         self._subs = {
             'tds_in':  {'keys': ['tds_warn_thd'], 'unit': CONCENTRATION_PARTS_PER_MILLION, 'icon': 'mdi:water'},
             'tds_out': {'keys': ['tds_warn_thd'], 'unit': CONCENTRATION_PARTS_PER_MILLION, 'icon': 'mdi:water-check'},
-            'temperature': {'class': DEVICE_CLASS_TEMPERATURE, 'unit': TEMP_CELSIUS},
+            'temperature': {'class': SensorDeviceClass.TEMPERATURE, 'unit': TEMP_CELSIUS},
         }
         for i in [1, 2, 3]:
             self._subs.update({
