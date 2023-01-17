@@ -1,3 +1,5 @@
+# configuration de Home Assistant
+
 homeassistant:
   name: Maison
   latitude: !secret homeassistant_latitude
@@ -70,12 +72,6 @@ recorder:
 
 ########    Configuration de la partie materiel    ###############
 
-# Configuration NetAtmo à utiliser pour que Caméra Welcome remonte
-# DEPRECIE DANS LE FUTUR
-#netatmo:
-#  client_id: !secret netatmo_id
-#  client_secret: !secret netatmo_secret
-
 # InfluxDB
 influxdb:
   host: !secret ip_influxdb
@@ -92,13 +88,6 @@ influxdb:
 #  password: !secret rainbird_password
 #  trigger_time:
 #    minutes: 6
-
-# Configuration Withings pour la détection du couché
-# DEPRECIE DANS LE FUTUR
-#withings:
-#  client_id: !secret withings_client_id
-#  client_secret: !secret withings_consumer_secret
-#  use_webhook: true
 
 ###################################################################
 ##########          Utilisation Browser Mod           #############
@@ -159,59 +148,6 @@ light:
     name: Garage
     entities:
       - light.lumiere_07_sous_sol
-
-###################################################################
-##########                   Switch                  ##############
-###################################################################
-
-switch:
-
-# Pour arrêter ou démarrer la vidéo surveillance des Eufy Cam 2
-
-  - platform: template
-    switches:
-      eufy_surveillance:
-        friendly_name: "Cameras extérieures - Surveillance"
-        icon_template: mdi:video
-        value_template: "{{ is_state('sensor.eufy_status', 'Home') }}"
-        turn_on:
-          service: rest_command.eufy_guard_mode_home
-        turn_off:
-          service: rest_command.eufy_guard_mode_disarmed
-
-  - platform: template
-    switches:
-      connexion_octoprint:
-        friendly_name: "Connexion Octoprint"
-        value_template: "{{ not is_state('sensor.octoprint_current_state', 'unknown') }}"
-        turn_on:
-          service: shell_command.octoprint_connect
-        turn_off:
-          service: shell_command.octoprint_disconnect
-
-  - platform: command_line
-    switches:
-      preheat_bed_pla:
-        command_on: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":70}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-        command_off: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":0}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-
-  - platform: command_line
-    switches:
-      preheat_tool_pla:
-        command_on: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":210}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-        command_off: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":0}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-
-  - platform: command_line
-    switches:
-      preheat_bed_petg:
-        command_on: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":80}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-        command_off: "curl -s http://192.168.10.20/api/printer/bed -d '{\"command\":\"target\",\"target\":0}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-
-  - platform: command_line
-    switches:
-      preheat_tool_petg:
-        command_on: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":240}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
-        command_off: "curl -s http://192.168.10.20/api/printer/tool -d '{\"command\":\"target\",\"targets\":{\"tool0\":0}}' -H 'Content-Type: application/json' -H 'X-Api-Key: 4CF3F18366A146278ABF97002BF8D82A'"
 
 # Input text
 
@@ -1727,9 +1663,14 @@ notify:
 # Text to speech
 tts:
   - platform: google_translate
+    language: 'fr'
+    
+# définition des différents switch 
+switch: !include switch.yaml
 
-python_script:
+# définition des groupes
 group: !include groups.yaml
+
 automation: !include automations.yaml
 script: !include scripts.yaml
 panel_iframe: !include panel_iframe.yaml
