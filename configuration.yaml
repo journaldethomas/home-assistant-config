@@ -1,0 +1,244 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+homeassistant:
+  external_url: !secret homeassistant_external
+  internal_url: !secret homeassistant_interne
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - !secret proxyserver
+
+# Load frontend themes from the themes folder
+frontend:
+
+  extra_module_url:
+    - /hacsfiles/hass-hue-icons/hass-hue-icons.js
+
+  themes: !include_dir_merge_named themes
+
+cellar_tracker:
+  username:  !secret cellar_tracker_username
+  password:  !secret cellar_tracker_password
+
+withings:
+  use_webhook: true
+
+# Calendar
+
+calendar:
+  - platform: caldav
+    url: https://caldav.icloud.com
+    username: !secret userIcloud
+    password: !secret passIcloud
+    calendars:
+      - "Calendrier"
+      - "Pitchouns"
+      - "Delphine et Thomas"
+
+sensor:
+
+  - platform: unifigateway
+    host: 192.168.10.1
+    username: !secret unifi_username
+    password: !secret unifi_password
+    version: UDMP-unifiOS
+    monitored_conditions:
+      - www
+      - wlan
+      - lan
+      - wan
+      - firmware
+      
+
+  - platform: template
+    sensors:
+      jour_fr:
+        value_template: "{{ ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][now().weekday()] }}"
+      date_fr:
+        value_template: "{% set months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'] %} {{ now().day | string + ' ' + months[now().month-1]}}"
+
+      unifi_gateway_wan_cpu:
+        friendly_name: "CPU"
+        unit_of_measurement: "%"
+        value_template: "{{ states.sensor.unifi_gateway_wan.attributes['gw_system-stats']['cpu'] }}"
+      unifi_gateway_wan_mem:
+        friendly_name: "Memory"
+        unit_of_measurement: "%"
+        value_template: "{{ states.sensor.unifi_gateway_wan.attributes['gw_system-stats']['mem'] }}"
+      unifi_gateway_wan_ip:
+        friendly_name: "WAN IP"
+        value_template: "{{ states.sensor.unifi_gateway_wan.attributes.wan_ip }}"
+      unifi_gateway_wan_download:
+        friendly_name: "WAN Download"
+        unit_of_measurement: Kbps
+        icon_template: "mdi:progress-download"
+        value_template: "{{ (states.sensor.unifi_gateway_wan.attributes['rx_bytes-r'] / 1024) | int }}"
+      unifi_gateway_wan_uptime:
+        friendly_name: "UDM Uptime"
+        value_template: >
+          {%- set time = states.sensor.unifi_gateway_wan.attributes['gw_system-stats']['uptime'] | int %}
+          {%- set minutes = ((time % 3600) // 60) %}
+          {%- set minutes = '{}min'.format(minutes) if minutes > 0 else '' %}
+          {%- set hours = ((time % 86400) // 3600) %}
+          {%- set hours = '{}hr '.format(hours) if hours > 0 else '' %}
+          {%- set days = (time // 86400) %}
+          {%- set days = '{}d '.format(days) if days > 0 else '' %}
+          {{ 'Less than 1 min' if time < 60 else days + hours + minutes }}
+      unifi_gateway_firmware_version:
+        friendly_name: "UDM Firmware Version"
+        icon_template: "mdi:database-plus"
+        value_template: "{{ states.sensor.unifi_gateway_wan.attributes.gw_version }}"
+      unifi_gateway_www_xput_down:
+        friendly_name: "UDM Speedtest Download"
+        unit_of_measurement: Mbps
+        icon_template: "mdi:progress-download"
+        value_template: "{{ states.sensor.unifi_gateway_www.attributes.xput_down }}"
+      unifi_gateway_www_xput_up:
+        friendly_name: "UDM Speedtest Upload"
+        unit_of_measurement: Mbps
+        icon_template: "mdi:progress-upload"
+        value_template: "{{ states.sensor.unifi_gateway_www.attributes.xput_up }}"
+      unifi_gateway_www_speedtest_ping:
+        friendly_name: "UDM Speedtest Ping"
+        unit_of_measurement: ms
+        icon_template: "mdi:progress-clock"
+        value_template: "{{ states.sensor.unifi_gateway_www.attributes.speedtest_ping }}"
+      unifi_gateway_www_uptime:
+        friendly_name: "Internet Uptime"
+        value_template: >
+          {%- set time = states.sensor.unifi_gateway_www.attributes.uptime | int %}
+          {%- set minutes = ((time % 3600) // 60) %}
+          {%- set minutes = '{}min'.format(minutes) if minutes > 0 else '' %}
+          {%- set hours = ((time % 86400) // 3600) %}
+          {%- set hours = '{}hr '.format(hours) if hours > 0 else '' %}
+          {%- set days = (time // 86400) %}
+          {%- set days = '{}d '.format(days) if days > 0 else '' %}
+          {{ 'Less than 1 min' if time < 60 else days + hours + minutes }}
+      unifi_gateway_wlan_num_user:
+        friendly_name: "Users WLAN"
+        icon_template: "mdi:account-multiple"
+        value_template: "{{ states.sensor.unifi_gateway_wlan.attributes.num_user }}"
+      unifi_gateway_lan_num_user:
+        friendly_name: "Users LAN"
+        icon_template: "mdi:account-multiple"
+        value_template: "{{ states.sensor.unifi_gateway_lan.attributes.num_user }}"
+
+###################################################################
+##########              Les lumieres                 ##############
+###################################################################
+
+light:
+
+  - platform: group
+    name: cave_vin
+    entities:
+      - light.spots_cave_a_vin
+
+  - platform: group
+    name: sam
+    entities:
+      - light.salle_a_manger_01
+      - light.salle_a_manger_02
+      - light.salle_a_manger_03
+      - light.salle_a_manger_04
+      - light.salle_a_manger_05
+      - light.salle_a_manger_06
+
+  - platform: group
+    name: chambre_parentale
+    entities:
+      - light.chambre_parentale_1
+      - light.chambre_parentale_2
+      - light.chambre_parentale_3
+      - light.chambre_parentale_4
+
+  - platform: group
+    name: maxence
+    entities:
+      - light.chambre_maxence
+
+  - platform: group
+    name: chloe
+    entities:
+      - light.chambre_chloe
+
+  - platform: group
+    name: garage
+    entities:
+      - light.lumiere_07_sous_sol_dimmer_1
+
+mqtt:
+
+  sensor:
+
+  # Consommation d'eau
+    - name: "consommation_eau_total"
+      state_topic: "tele/eau/consommation"
+      unit_of_measurement: "m³"
+      state_class: total_increasing
+      device_class: water
+      value_template: "{{ value_json['total_m3']}}"
+      icon: mdi:counter
+
+    - name: "compteur eau status"
+      state_topic: "tele/eau/consommation"
+      value_template: "{{ value_json['status']}}"
+
+  # Imprimante 3D
+    - name: "longueur_filament"
+      state_topic: "octoPrint/hass/printing"
+      unit_of_measurement: "m"
+      value_template: "{{ ((value_json.job.filament.tool0.length)|float * 0.001)|round(2) }}"
+
+    - name: "dispo imprimante"
+      state_topic: "octoPrint/hass/Connected"
+
+  switch:
+
+    - name: Heiman Siren
+      state_topic: "zigbee2mqtt/sirene_alarme_01/set"
+      availability_topic: "zigbee2mqtt/bridge/state"
+      payload_off: '{"warning": {"duration": 0, "mode": "stop", "strobe": false}}'
+      payload_on: '{"warning": {"mode": burglar, "level": very_high, "strobe_level": high, "strobe": true, "strobe_duty_cycle": 10, "duration": 2}}'
+      command_topic: "zigbee2mqtt/sirene_alarme_01/set"
+
+########                   SCRIPT                         #########
+shell_command:
+
+# pour connecter / déconnecter l'imprimante à Octoprint
+  octoprint_connect: "curl -s http://192.168.10.110/api/connection -d '{\"command\":\"connect\"}' -H 'Content-Type: application/json' -H 'X-Api-Key: !secret octoprint_api'"
+  octoprint_disconnect: "curl -s http://192.168.10.110/api/connection -d '{\"command\":\"disconnect\"}' -H 'Content-Type: application/json' -H 'X-Api-Key: !secret octoprint_api'"
+
+# calcul des cumuls via utility meter
+utility_meter: !include utility_meter.yaml
+
+# Ajout de télégram pour les notifications - A VOIR POUR METTRE DANS FICHIER SPECIFIQUE
+telegram_bot:
+  - platform: polling
+    api_key: !secret telegram_token
+    allowed_chat_ids: 
+    - !secret id_telegram_thomas
+    - !secret id_telegram_famille
+      
+notify:
+  - platform: telegram
+    name: telegram_thomas
+    chat_id: !secret id_telegram_thomas
+  - platform: telegram
+    name: telegram_famille
+    chat_id: !secret id_telegram_famille
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+python_script:
+group: !include groups.yaml
+switch: !include switch.yaml
+template: !include templates.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
