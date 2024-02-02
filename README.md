@@ -2,15 +2,14 @@
 Il s'agit de ma configuration [Home Assistant](https://home-assistant.io) qui tourne desormais sur un cluster Proxmox.
 Si cela vous intéresse et si vous voulez suivre l'évolution de mon installation n'oubliez pas de cliquer sur ⭐️ .
 
-Dans un premier temps l'idée est de proposer un tableau de bord utilisé principalement sur un smartphone car au fil du temps je me suis paerçu que c'est bel et bien via mon smartphone que j'utilise le plus home assistant.
-Dans le futur ce tableau de bord sera adapté pour être plus agréable à utiliser sur une tablette qui pourra être au coeur de la maison et à partir de laquelle il sera possible de tout controller.
+Dans un premier temps l'idée est de proposer un tableau de bord utilisé principalement sur un smartphone car au fil du temps je me suis aperçu que c'est via mon smartphone que j'utilise le plus home assistant. Je n'utilise l'ordinateur que lorsque je veux faire des installations ou des modifications. Dans le futur, l'idée sera d'adapter ce tableau de bord pour être plus agréable à utiliser sur une tablette. Celle serait alors au coeur de la maison et à partir de celle-ci il sera possible de tout controller.
 
 Mon tableau de bord s'articule donc autour de plusieurs vues : un tableau principal où j'ai placé les informations qui sont primordiales pour la famille et les quelques actions que l'on fait quotidiennement ou presque.
 
 ### Mais où est le code ?
 Je suis en mode UI c'est à dire que mon tableau de bord est réalisé directement à partir de l'interface de Home Assistant. J'avais réalisé mes premiers tableaux de bord en mode YAML mais les dernières versions de Home Assistant me permettent de faire la même chose directement à partir de l'interface ce qui simplifie grandement les choses. Je partage donc mon tablea de bord en faisant un export de l'éditeur de configuration. Vous pourrez retrouver prochainement le code complet dans le fichier [export-lovelace.yaml](https://github.com/journaldethomas/home-assistant-config/blob/master/export-lovelace.yaml)
 
-Pour ce qui est de la configuration à proprement parlé avec la définition de mes sensors, des templates et des différentes informations que je souhaite connaitre sur mon système domotique, vous trouverez tout dans le fichier [configuration.yaml](https://github.com/journaldethomas/home-assistant-config/blob/master/configuration.yaml). Je scinde de plus en plus ce fichier de configuration et je vais donc mettre les différentes fichiers à disposition prochainement.
+Pour ce qui est de la configuration à proprement parlé avec la définition de mes sensors, des templates et des différentes informations que je souhaite connaitre sur mon système domotique, vous trouverez une petite partier dans le fichier [configuration.yaml](https://github.com/journaldethomas/home-assistant-config/blob/master/configuration.yaml). Mais depuis plusieurs mois je scinde de plus en plus ce fichier de configuration et je vais donc mettre les différentes fichiers à disposition prochainement.
 
 Cela fait maintenant bientôt 4 ans que j'utilise Home Assistant et je veux partager avec vous ma configuration complète. J'essaie de faire ça le mieux possible toujours en documentant mon travail et en versionnant mes mises à jour. Je garderais ainsi un historique de mes modifications.
 
@@ -33,13 +32,14 @@ Voici une partie de mon matériel :
 - Prise connectées Osram x3;
 - Prise connectée SmaBit;
 - Robot aspirateur Dreame D9;
-- Détecteur de fumée Fibaro x2.
+- Détecteur de fumée Fibaro x2;
+- Détecteur de fumée Heiman.
 
 Et pour la partie plus « IT » :
 - Un rack 15U dans le garage;
 - UniFi UDM Pro;
-- Switch D-Link 24 que je pense remplacer par un switch Unifi prochainement;
+- Switch Unifi 24 ports POE;
 - Access Point UniFi AC-Lite;
-- NUC Intel NUC8i3BEH 16GB;
+- 2x [HP EliteDesk 800 G2](https://amzn.to/3uavDiH);
 - NAS Synology DS418j;
 - Onduleur Eaton Ellipse Pro 650.
