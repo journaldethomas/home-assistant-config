@@ -16,9 +16,8 @@
   all_lights_cave:
     name: cave_vin
     entities:
-      - light.salle_a_manger_01
-      - light.salle_a_manger_02
-      - light.salle_a_manger_03
+      - light.spots_cave_a_vin
+      - light.prise_10_cave_l1
 
   all_motion_sensor_entities:
     name: All Motion Sensor Entities
