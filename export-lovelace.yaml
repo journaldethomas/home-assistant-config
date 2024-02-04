@@ -1,0 +1,579 @@
+button_card_templates:
+  scene:
+    template:
+      - rouge_on
+      - vert_off
+    size: 20px
+    show_label: false
+    show_name: false
+    label: |
+      [[[ return (entity.attributes.value )]]]
+    styles:
+      card:
+        - border-radius: 20px
+        - box-shadow: none
+        - padding: 10px 0px 8px 0px
+        - '--ha-card-border-width': 0px
+        - '--paper-card-background-color': rgba(0, 0, 0, 0.0)
+        - '--ha-card-background': rgba(0, 0, 0, 0.0)
+        - '--ha-card-box-shadow': none
+      grid:
+        - grid-template-areas: '"i" "n" "l"'
+      name:
+        - margin-top: 10px
+        - justify-self: center
+        - font-weight: bold
+        - font-size: 14px
+      label:
+        - justify-self: center
+        - align-self: start
+        - font-weight: bolder
+        - font-size: 12px
+        - filter: opacity(40%)
+      icon:
+        - color: rgba(51,51,51,0.2)
+      img_cell:
+        - border-radius: 50%
+        - place-self: center
+        - width: 42px
+        - height: 42px
+  vert_off:
+    state:
+      - id: vert_off
+        styles:
+          icon:
+            - color: rgba(1, 200, 82, 1)
+          img_cell:
+            - background-color: rgba(1, 200, 82, 0.2)
+        value: 'off'
+  vert_on:
+    state:
+      - id: vert_on
+        styles:
+          icon:
+            - color: rgba(1, 200, 82, 1)
+          img_cell:
+            - background-color: rgba(1, 200, 82, 0.2)
+        value: 'on'
+  rouge_on:
+    state:
+      - id: rouge_on
+        styles:
+          icon:
+            - color: rgba(245, 68, 54, 1)
+          img_cell:
+            - background-color: rgba(245, 68, 54, 0.2)
+        value: 'on'
+decluttering_templates:
+  header_temperature_graph:
+    card:
+      type: custom:mini-graph-card
+      entities:
+        - entity: sensor.station_meteo_temperature
+          color: null
+      hours_to_show: 24
+      hour24: true
+      animate: true
+      update_interval: 30
+      aggregate_func: avg
+      line_width: 1
+      bar_spacing: 10
+      height: 40
+      group: true
+      show:
+        labels: false
+        fill: false
+        state: false
+        name: false
+        icon: false
+      card_mod:
+        style: |
+          ha-card {
+            height: 84px;
+            position: absolute;
+            box-shadow: none;
+            background: none;
+            border-radius: 0;
+            opacity: 0.3;
+            margin-bottom: -90px;
+            margin-left: -0.6em;
+            margin-right: -0.6em;
+          }
+  header_main:
+    card:
+      type: custom:paper-buttons-row
+      styles:
+        justify-content: space-between
+        background: none
+        margin: 24px 20px 16px
+        text-shadow: 0px 0px 20px var(--card-background-color);
+      buttons:
+        - layout: name_state
+          name: '{{ states(''sensor.jour_fr'') }} {{ states(''sensor.date_fr'') }}'
+          state: '{{ now().strftime(''%H'') }}:{{ now().strftime(''%M'')}}'
+          styles:
+            name:
+              font-weight: 400
+              font-size: 14px
+              margin-left: 0
+              display: block
+              text-align: left
+              float: left
+              width: 140px
+            button:
+              pointer-events: none
+              align-items: left
+              width: 140px
+              line-height: 1.6em
+            state:
+              font-weight: 700
+              font-size: 26px
+              letter-spacing: '-1px'
+              margin-left: 0
+              display: block
+              text-align: left
+              float: left
+              width: 140px
+        - layout: icon|name_state
+          name: ⌂ {{ states('sensor.station_meteo_temperature') }}°C
+          state: >-
+            {{
+            states('sensor.station_meteo_station_meteo_station_meteo_capteur_jardin_temperature')
+            }}°C
+          image: |
+            {% set mapper =
+              { 'breezy':'cloudy',
+                'clear-night':'night',
+                'clear':'day',
+                'mostly-clear':'day',
+                'clear-day':'day',
+                'cloudy':'cloudy',
+                'fog':'fog',
+                'rainy':'rainy-7',
+                'haze':'haze',
+                'lightning':'thunder',
+                'mostly-cloudy':'cloudy',
+                'partlycloudy':'cloudy-day-3',
+                'partly-cloudy-day':'partly-cloudy-day',
+                'partly-cloudy-night':'partly-cloudy-night',
+                'rain':'rainy-4',
+                'scattered-showers':'rainy-3',
+                'showers':'rainy-6',
+                'sleet':'sleet',
+                'snow':'snowy-6',
+                'mostly-sunny':'day',
+                'sunny':'day',
+                'thunderstorm':'thunder',
+                'tornado':'tornado',
+                'wind':'wind',
+                'windy':'wind'} %}
+            {% set state = states('weather.sillingy') %}
+            {% set weather = mapper[state] if state in mapper else 'weather' %}
+            {% set path = '/local/images/weather_icons/animated/' %}
+            {% set ext = '.svg'%}
+              {{[path,weather,ext]|join('')}}
+          styles:
+            name:
+              font-weight: 400
+              font-size: 16px
+              margin-left: 0
+              display: block
+              text-align: right
+              width: 140px
+            button:
+              pointer-events: none
+              align-items: right
+              width: 140px
+              line-height: 1.6em
+            state:
+              font-weight: 600
+              font-size: 26px
+              letter-spacing: '-1px'
+              margin-left: 0
+              display: block
+              text-align: right
+              width: 140px
+            icon:
+              position: absolute
+              left: 2px
+              transform: scale(0.17)
+              transform-origin: 0 19.5%
+              top: '-48px;'
+              padding: 0;
+              height: 370px !important;
+              width: 370px !important;
+views:
+  - title: Accueil
+    icon: mdi:home
+    badges: []
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:vertical-stack-in-card
+            style: |
+              ha-card { 
+                border-radius: 20px !important;
+                border-color: rgba(12, 12, 14, 0.2);
+                border-style: outset;
+                border-width: 1px;
+              }
+            cards:
+              - type: custom:decluttering-card
+                template: header_temperature_graph
+              - type: custom:decluttering-card
+                template: header_main
+              - type: custom:meteofrance-weather-card
+                entity: weather.sillingy
+                number_of_forecasts: '5'
+                current: false
+                one_hour_forecast: false
+                forecast: true
+                details: false
+                alert_forecast: false
+                animated_icons: true
+          - type: custom:vertical-stack-in-card
+            horizontal: true
+            style: |
+              ha-card { 
+                box-shadow: none;
+                background: none;
+              }
+            cards:
+              - entity: alarm_control_panel.master
+                template: scene
+                type: custom:button-card
+                name: Alarme
+                state:
+                  - icon: mdi:alarm-light
+                    id: vert_off
+                    value: armed_home
+                  - icon: mdi:alarm-light-off
+                    id: rouge_on
+                    value: disarmed
+              - type: custom:button-card
+                entity: alarm_control_panel.eufy_base
+                template: scene
+                name: Caméras
+                state:
+                  - icon: mdi:video-outline
+                    id: vert_off
+                    value: armed_home
+                  - icon: mdi:video-off-outline
+                    id: rouge_on
+                    value: disarmed
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/alarme
+              - entity: lock.smart_lock_pro
+                template: scene
+                type: custom:button-card
+                name: Serrure
+                state:
+                  - icon: mdi:lock-alert
+                    id: rouge_on
+                    value: unlocked
+                  - icon: mdi:lock-check
+                    id: vert_off
+                    value: locked
+              - entity: group.all_open_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Ouvertures
+                state:
+                  - icon: mdi:door-open
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:door-closed
+                    id: vert_off
+                    value: 'off'
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/fermetures
+              - entity: group.all_motion_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Mouvements
+                icon: mdi:run
+                state:
+                  - id: rouge_on
+                    value: 'on'
+                  - id: vert_off
+                    value: 'off'
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/detection
+              - entity: group.all_smoke_sensor_entities
+                template: scene
+                type: custom:button-card
+                name: Fumée
+                state:
+                  - icon: mdi:fire
+                    id: rouge_on
+                    value: 'on'
+                  - icon: mdi:fire
+                    id: vert_off
+                    value: 'off'
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: sensor.station_meteo_temperature
+                name: Salon
+                icon: none
+                show_icon: true
+                show_name: false
+                show_state: true
+                show_label: false
+                styles:
+                  state:
+                    - color: white
+                    - top: 40%
+                    - left: 40%
+                    - font-size: 150%
+                    - position: absolute
+                  img_cell:
+                    - background-color: rgba(70,70,70,0.5)
+                    - border-radius: 50%
+                    - top: 29%
+                    - left: 37%
+                    - width: 80px
+                    - height: 50px
+                    - position: absolute
+                  card:
+                    - background: url(/local/images/background/salon.jpeg)
+                    - background-size: cover
+                    - height: 106px
+                    - padding: 10px
+                    - font-size: 100%
+                    - border-radius: 10px
+                  custom_fields:
+                    bouton:
+                      - position: absolute
+                      - top: 10%
+                      - left: 15%
+                      - width: calc(25% + 1px)
+                      - transform: translate(-50%, calc(-50% + 10px))
+                state:
+                  - value: '23.9'
+                    styles:
+                      img_cell:
+                        - background-color: rgba(100,0,0,0.5)
+                  - value: '24'
+                    styles:
+                      card:
+                        - animation: ball-scale 0.2s
+                      img_cell:
+                        - background-color: var(--button-card-light-color)
+                custom_fields:
+                  bouton:
+                    card:
+                      type: vertical-stack
+                      cards:
+                        - type: custom:button-card
+                          entity: cover.volet_salon
+                          template:
+                            - carte_bouton
+                            - carte_bouton_state
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/piece_principale
+              - type: custom:button-card
+                entity: sensor.temp_humidite_04_chambre_parents_temperature
+                name: Etage
+                icon: none
+                show_icon: true
+                show_name: false
+                show_state: true
+                show_label: false
+                styles:
+                  state:
+                    - color: white
+                    - top: 40%
+                    - left: 25%
+                    - font-size: 150%
+                    - position: absolute
+                  img_cell:
+                    - background-color: rgba(70,70,70,0.5)
+                    - border-radius: 50%
+                    - top: 29%
+                    - left: 22%
+                    - width: 80px
+                    - height: 50px
+                    - position: absolute
+                  card:
+                    - background: url(/local/images/background/chambre.jpeg)
+                    - background-size: cover
+                    - height: 106px
+                    - padding: 10px
+                    - font-size: 100%
+                    - border-radius: 10px
+                  custom_fields:
+                    bouton:
+                      - position: absolute
+                      - top: 10%
+                      - left: 85%
+                      - width: calc(25% + 1px)
+                      - transform: translate(-50%, calc(-50% + 10px))
+                custom_fields:
+                  bouton:
+                    card:
+                      type: vertical-stack
+                      cards:
+                        - type: custom:button-card
+                          entity: cover.velux_parents
+                          template:
+                            - carte_bouton
+                            - carte_bouton_state
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/etage
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: sensor.temp_humidite_03_garage_temperature
+                name: Garage
+                icon: none
+                show_icon: true
+                show_name: false
+                show_state: true
+                show_label: false
+                styles:
+                  state:
+                    - color: white
+                    - top: 40%
+                    - left: 40%
+                    - font-size: 150%
+                    - position: absolute
+                  img_cell:
+                    - background-color: rgba(70,70,70,0.5)
+                    - border-radius: 50%
+                    - top: 29%
+                    - left: 35%
+                    - width: 80px
+                    - height: 50px
+                    - position: absolute
+                  card:
+                    - background: url(/local/images/background/garage.jpeg)
+                    - background-size: cover
+                    - height: 106px
+                    - padding: 10px
+                    - font-size: 100%
+                    - border-radius: 10px
+                  custom_fields:
+                    bouton:
+                      - position: absolute
+                      - top: 70%
+                      - left: 15%
+                      - width: calc(25% + 1px)
+                      - transform: translate(-50%, calc(-50% + 10px))
+                custom_fields:
+                  bouton:
+                    card:
+                      type: vertical-stack
+                      cards:
+                        - type: custom:button-card
+                          entity: cover.garage
+                          template:
+                            - carte_bouton
+                            - carte_bouton_state
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/garage
+              - type: custom:button-card
+                entity: >-
+                  sensor.station_meteo_station_meteo_station_meteo_capteur_jardin_temperature
+                name: Jardin
+                icon: none
+                show_icon: true
+                show_name: false
+                show_state: true
+                show_label: false
+                styles:
+                  state:
+                    - color: white
+                    - top: 40%
+                    - left: 25%
+                    - font-size: 150%
+                    - position: absolute
+                  img_cell:
+                    - background-color: rgba(70,70,70,0.5)
+                    - border-radius: 50%
+                    - top: 29%
+                    - left: 22%
+                    - width: 80px
+                    - height: 50px
+                    - position: absolute
+                  card:
+                    - background: url(/local/images/background/jardin.jpeg)
+                    - background-size: cover
+                    - height: 106px
+                    - padding: 10px
+                    - font-size: 100%
+                    - border-radius: 10px
+                  custom_fields:
+                    bouton:
+                      - position: absolute
+                      - top: 40%
+                      - left: 80%
+                      - width: calc(25% + 1px)
+                      - transform: translate(-50%, calc(-50% + 10px))
+                tap_action:
+                  action: navigate
+                  navigation_path: /lovelace/jardin
+          - type: custom:atomic-calendar-revive
+            style: |
+              ha-card { 
+                box-shadow: none;
+                background: none;
+              }
+              .event-left{
+                display: flex;
+                flex-direction: column !important;
+                align-items: center;
+              }
+            name: Agenda
+            entities:
+              - entity: calendar.calendrier
+                name: My Calendar
+                color: black
+                max_results: 12
+                icon: mdi:calendar
+              - entity: calendar.pitchouns
+                name: Pitchouns
+                color: red
+                icon: mdi:calendar
+              - entity: calendar.delphine_et_thomas
+                name: Delphine et Thomas
+                color: blue
+                icon: mdi:calendar
+            titleSize: 10px
+            firstDayOfWeek: 1
+            refreshInterval: 60
+            showDate: false
+            hideDuplicates: false
+            hideFinishedEvents: true
+            showCurrentEventLine: false
+            showProgressBar: false
+            showMonth: true
+            showWeekDay: false
+            showDescription: false
+            disableEventLink: true
+            showFullDayProgress: false
+            showEventIcon: false
+            showHiddenText: false
+            showCalendarName: false
+            showWeekNumber: false
+            showRelativeTime: false
+            calShowDescription: false
+            showLastCalendarWeek: false
+            dimFinishedEvents: true
+            disableCalLink: true
+            disableCalLocationLink: true
+            disableCalEventLink: truemaxEventCount
+            noEventsForNextDaysText: Aucun événement dans les prochains jours
+            showLoader: false
+            maxEventCount: 4
+            cardHeight: 125px
+            maxDaysToShow: 30
+            showDatePerEvent: true
+            language: fr
+
