@@ -64,6 +64,109 @@ button_card_templates:
           img_cell:
             - background-color: rgba(245, 68, 54, 0.2)
         value: 'on'
+  carte_bouton:
+    show_name: false
+    show_state: false
+    show_icon: true
+    styles:
+      card:
+        - background-color: none
+        - border-radius: 12px
+        - height: 30px
+        - padding: 1px
+        - line-height: 77%
+      icon:
+        - width: 15px
+  carte_bouton_state:
+    state:
+      - value: 'on'
+        styles:
+          icon:
+            - color: |-
+                [[[ 
+                  var color = '253,49,34'; // Default Color
+                  if( states[entity.entity_id].attributes.rgb_color != undefined)
+                    color = states[entity.entity_id].attributes.rgb_color; 
+                  
+                  return 'rgb(' + color + ',1)';
+                ]]]
+      - value: closed
+        styles:
+          icon:
+            - color: rgb(1,200,82)
+            - opacity: 80%
+      - value: unlock
+        styles:
+          icon:
+            - color: rgb(1,200,82)
+            - opacity: 80%
+      - value: open
+        styles:
+          icon:
+            - color: rgb(1,200,82)
+            - opacity: 80%
+      - value: locked
+        styles:
+          icon:
+            - color: rgb(1,200,82)
+            - opacity: 80%
+      - value: home
+        styles:
+          icon:
+            - color: rgb(176, 196, 222)
+      - value: heat
+        styles:
+          icon:
+            - color: rgb(176, 196, 222)
+      - value: armed_away
+        styles:
+          icon:
+            - color: rgb(176, 196, 222)
+      - value: playing
+        styles:
+          icon:
+            - color: rgb(176, 196, 222)
+      - value: veille
+        styles:
+          icon:
+            - color: rgb(176, 196, 222)
+      - value: 'off'
+        styles:
+          icon:
+            - color: rgb(1,200,82)
+            - opacity: 80%
+      - value: not_home
+        styles:
+          icon:
+            - color: rgb(211,211,211)
+            - opacity: 30%
+      - value: disarmed
+        styles:
+          icon:
+            - color: rgb(211,211,211)
+            - opacity: 30%
+      - value: standby
+        styles:
+          icon:
+            - color: rgb(211,211,211)
+            - opacity: 30%
+      - value: idle
+        styles:
+          icon:
+            - color: rgb(211,211,211)
+            - opacity: 30%
+      - value: paused
+        styles:
+          icon:
+            - color: rgb(211,211,211)
+            - opacity: 30%
+      - value: unavailable
+        styles:
+          icon:
+            - color: red
+            - animation: blink 0.8s ease infinite
+    tap_action:
+      action: more-info
 decluttering_templates:
   header_temperature_graph:
     card:
@@ -576,4 +679,3 @@ views:
             maxDaysToShow: 30
             showDatePerEvent: true
             language: fr
-
