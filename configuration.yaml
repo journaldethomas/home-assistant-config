@@ -126,6 +126,27 @@ sensor:
         icon_template: "mdi:account-multiple"
         value_template: "{{ states.sensor.unifi_gateway_lan.attributes.num_user }}"
 
+      devices_with_low_battery:
+        friendly_name: 'Appareils avec batterie faible'
+        unit_of_measurement: devices
+        value_template: >-
+          {% set ignore_entities = [] %}
+          {{ states.sensor
+            | selectattr('attributes.device_class', 'eq', 'battery')
+            | rejectattr('entity_id', 'in', ignore_entities)
+            | map(attribute='state')
+            | reject('in', ['unknown', 'unavailable'])
+            | map('int', -1) | select('le', 15)
+            | select('ge', 0)
+            | list | count
+          }}
+        icon_template: >-
+          {% if is_state('sensor.devices_with_low_battery', '0') %}
+            mdi:battery-check
+          {% else %}
+            mdi:battery-alert
+          {% endif %}
+
 ###################################################################
 ##########              Les lumieres                 ##############
 ###################################################################
