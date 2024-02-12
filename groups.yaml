@@ -18,6 +18,7 @@
     entities:
       - light.spots_cave_a_vin
       - light.prise_10_cave_l1
+      - light.rubanled_01_cave
 
   all_motion_sensor_entities:
     name: All Motion Sensor Entities

@@ -157,6 +157,8 @@ light:
     name: cave_vin
     entities:
       - light.spots_cave_a_vin
+      - light.rubanled_01_cave
+      - light.prise_10_cave_l1
 
   - platform: group
     name: sam
