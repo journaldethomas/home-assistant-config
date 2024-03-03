@@ -1,18 +1,3 @@
-  volets_rdc:
-    name: volets_rdc
-    entities:
-      - cover.volet_salon
-      - cover.volet_cuisine
-
-  volets_haut:
-    name: volets_haut
-    entities:
-      - cover.velux_chloe
-      - cover.velux_maxence
-      - cover.velux_parents
-      - cover.volet_parents
-      - cover.volet_pitchouns
-
   all_lights_cave:
     name: cave_vin
     entities:
