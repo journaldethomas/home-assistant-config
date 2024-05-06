@@ -270,7 +270,7 @@ decluttering_templates:
                 'tornado':'tornado',
                 'wind':'wind',
                 'windy':'wind'} %}
-            {% set state = states('weather.sillingy') %}
+            {% set state = states('weather.maison') %}
             {% set weather = mapper[state] if state in mapper else 'weather' %}
             {% set path = '/local/images/weather_icons/animated/' %}
             {% set ext = '.svg'%}
@@ -326,7 +326,7 @@ views:
               - type: custom:decluttering-card
                 template: header_main
               - type: custom:meteofrance-weather-card
-                entity: weather.sillingy
+                entity: weather.maison
                 number_of_forecasts: '5'
                 current: false
                 one_hour_forecast: false
