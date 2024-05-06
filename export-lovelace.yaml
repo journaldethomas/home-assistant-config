@@ -241,7 +241,7 @@ decluttering_templates:
           name: ⌂ {{ states('sensor.station_meteo_temperature') }}°C
           state: >-
             {{
-            states('sensor.station_meteo_station_meteo_station_meteo_capteur_jardin_temperature')
+            states('sensor.station_meteo_capteur_jardin_temperature')
             }}°C
           image: |
             {% set mapper =
@@ -583,7 +583,7 @@ views:
                   navigation_path: /lovelace/garage
               - type: custom:button-card
                 entity: >-
-                  sensor.station_meteo_station_meteo_station_meteo_capteur_jardin_temperature
+                  sensor.station_meteo_capteur_jardin_temperature
                 name: Jardin
                 icon: none
                 show_icon: true

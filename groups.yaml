@@ -32,8 +32,8 @@
   all_open_sensor_entities:
     name: All Open Sensor Entities
     entities:
-#      - binary_sensor.capteur_ouverture_01_sam_door_state # à vérifier le bon fonctionnement
-      - binary_sensor.capteur_ouverture_02_salon_door_state # à vérifier le bon fonctionnement
+      - binary_sensor.capteur_ouverture_01_sam_door_state
+      - binary_sensor.capteur_ouverture_02_salon_door_state
       - binary_sensor.capteur_ouverture_03_chloe_door_state # velux de Chloé
       - binary_sensor.capteur_ouverture_04_maxence_door_state # velux de Maxence
       - binary_sensor.capteur_ouverture_05_descente_garage_contact
@@ -41,19 +41,21 @@
       - binary_sensor.capteur_ouverture_07_porte_entree_door_state_simple
       - binary_sensor.capteur_ouverture_09_salle_de_jeux_contact
       - binary_sensor.capteur_ouverture_10_bureau_contact
-      - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre du salon
+      - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre salle à manger
       - binary_sensor.capteur_ouverture_12_cave_vin_contact
+      - binary_sensor.capteur_ouverture_13_cuisine_contact
+      - binary_sensor.capteur_ouverture_100_enfants_porte # fenêtre commune aux enfants
 
   rdc_open_sensor_entities:
     name: RdC Open Sensor Entities
     entities:
-#      - binary_sensor.capteur_ouverture_01_sam_door_state # à vérifier le bon fonctionnement
-      - binary_sensor.capteur_ouverture_02_salon_door_state # à vérifier le bon fonctionnement
+      - binary_sensor.capteur_ouverture_01_sam_door_state
+      - binary_sensor.capteur_ouverture_02_salon_door_state
       - binary_sensor.capteur_ouverture_05_descente_garage_contact
       - binary_sensor.capteur_ouverture_07_porte_entree_door_state_simple
       - binary_sensor.capteur_ouverture_09_salle_de_jeux_contact
       - binary_sensor.capteur_ouverture_10_bureau_contact
-      - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre du salon
+      - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre salle à manger
 
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
