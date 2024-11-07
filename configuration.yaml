@@ -23,8 +23,8 @@ cellar_tracker:
   username:  !secret cellar_tracker_username
   password:  !secret cellar_tracker_password
 
-withings:
-  use_webhook: true
+#withings:
+#  use_webhook: true
 
 # Calendar
 
