@@ -1,0 +1,13 @@
+  actions:
+  - action: notify.telegram_thomas
+    metadata: {}
+    data:
+      message: 'Des capteurs Zigbee ne sont plus joignables : {% set result =     namespace(sensors=[])
+        %} {% for state in states.sensor |     selectattr(''attributes.device_class'',
+        ''=='', ''timestamp'') %} {% if     ''last_seen'' in state.entity_id and (states(state.entity_id)
+        == ''unavailable''     or ((as_timestamp(now()) - as_timestamp(states(state.entity_id)))
+        > ((24 |     int) * 60 * 60))) %} {% set result.sensors = [state.name |     regex_replace(find=''_last_seen'',
+        replace='''') ~ '' ('' ~     relative_time(strptime(states(state.entity_id),
+        ''%Y-%m-%dT%H:%M:%S%z'',     ''unavailable'')) ~ '')''] %} {{"*"}}{{ result.sensors
+        | join('', '') }}{{"*"}} {% endif %} {%     endfor %}'
+      title: Problème capteur Zigbee
