@@ -5,6 +5,7 @@ default_config:
 homeassistant:
   external_url: !secret homeassistant_external
   internal_url: !secret homeassistant_interne
+  packages: !include_dir_merge_named includes/packages
 
 http:
   use_x_forwarded_for: true
@@ -239,12 +240,12 @@ shell_command:
 utility_meter: !include utility_meter.yaml
 
 # Ajout de télégram pour les notifications - A VOIR POUR METTRE DANS FICHIER SPECIFIQUE
-telegram_bot:
-  - platform: polling
-    api_key: !secret telegram_token
-    allowed_chat_ids: 
-    - !secret id_telegram_thomas
-    - !secret id_telegram_famille
+#telegram_bot:
+#  - platform: polling
+#    api_key: !secret telegram_token
+#    allowed_chat_ids: 
+#    - !secret id_telegram_thomas
+#    - !secret id_telegram_famille
       
 notify:
   - platform: telegram

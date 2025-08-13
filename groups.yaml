@@ -13,8 +13,8 @@
       - binary_sensor.mouvement_03_garage_motion_sensor_status
       - binary_sensor.mouvement_04_cave_a_vin_motion_sensor_status # en fait cellier
       - binary_sensor.mouvement_05_cuisine_occupancy
-      - binary_sensor.mouvement_06_salle_a_manger_occupancy
-      - binary_sensor.mouvement_07_salon_occupancy
+      - binary_sensor.mouvement_06_salon_occupancy
+      - binary_sensor.mouvement_07_salle_a_manger_occupancy_2
       - binary_sensor.mouvement_08_bureau_presence
       - binary_sensor.mouvement_09_wc_occupancy
       - binary_sensor.entree_motion # caméra ubiquiti entrée de la maison
@@ -24,8 +24,8 @@
     entities:
       - binary_sensor.mouvement_01_salle_de_jeux_occupancy
       - binary_sensor.mouvement_05_cuisine_occupancy
-      - binary_sensor.mouvement_06_salle_a_manger_occupancy
-      - binary_sensor.mouvement_07_salon_occupancy
+      - binary_sensor.mouvement_06_salon_occupancy
+      - binary_sensor.mouvement_07_salle_a_manger_occupancy_2
       - binary_sensor.mouvement_08_bureau_presence
       - binary_sensor.mouvement_09_wc_occupancy
 
@@ -63,6 +63,6 @@
   all_smoke_sensor_entities:
     name: All Smoke Sensor Entities
     entities:
-      - binary_sensor.detecteur_fumee_01_rdc_smoke_alarm
+      - binary_sensor.detecteur_fumee_01_rdc_smoke
       - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm
       - binary_sensor.detecteur_fumee_03_garage_smoke
