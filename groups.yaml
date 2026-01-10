@@ -5,48 +5,34 @@
       - light.prise_10_cave_l1
       - light.rubanled_01_cave
 
-  all_motion_sensor_entities:
-    name: All Motion Sensor Entities
-    entities:
-      - binary_sensor.mouvement_01_salle_de_jeux_occupancy
-#      - binary_sensor.mouvement_02_bal_occupancy
-      - binary_sensor.mouvement_03_garage_motion_sensor_status
-      - binary_sensor.mouvement_04_cave_a_vin_motion_sensor_status # en fait cellier
-      - binary_sensor.mouvement_05_cuisine_occupancy
-      - binary_sensor.mouvement_06_salon_occupancy
-      - binary_sensor.mouvement_07_salle_a_manger_occupancy_2
-      - binary_sensor.mouvement_08_bureau_presence
-      - binary_sensor.mouvement_09_wc_occupancy
-      - binary_sensor.entree_motion # caméra ubiquiti entrée de la maison
+#  rdc_motion_sensor_entities:
+#    name: RdC Motion Sensor Entities
+#    entities:
+#      - binary_sensor.mouvement_01_salle_de_jeux_occupancy
+#      - binary_sensor.mouvement_05_cuisine_occupancy
+#      - binary_sensor.mouvement_06_salon_occupancy
+#      - binary_sensor.mouvement_07_salle_a_manger_occupancy_2
+#      - binary_sensor.mouvement_08_bureau_presence
+#      - binary_sensor.mouvement_09_wc_occupancy
 
-  rdc_motion_sensor_entities:
-    name: RdC Motion Sensor Entities
-    entities:
-      - binary_sensor.mouvement_01_salle_de_jeux_occupancy
-      - binary_sensor.mouvement_05_cuisine_occupancy
-      - binary_sensor.mouvement_06_salon_occupancy
-      - binary_sensor.mouvement_07_salle_a_manger_occupancy_2
-      - binary_sensor.mouvement_08_bureau_presence
-      - binary_sensor.mouvement_09_wc_occupancy
-
-  all_open_sensor_entities:
-    name: All Open Sensor Entities
-    entities:
-      - binary_sensor.capteur_ouverture_02_salon_door_state # porte-fenêtre salle à manger
-      - binary_sensor.capteur_ouverture_02_salon_contact # porte-fenêtre salon
-      - binary_sensor.capteur_ouverture_03_chloe_door_state # velux de Chloé
+#  all_open_sensor_entities:
+#    name: All Open Sensor Entities
+#    entities:
+#      - binary_sensor.capteur_ouverture_02_salon_door_state # porte-fenêtre salle à manger
+#      - binary_sensor.capteur_ouverture_02_salon_contact # porte-fenêtre salon
+#      - binary_sensor.capteur_ouverture_03_chloe_door_state # velux de Chloé
 #      - binary_sensor.capteur_ouverture_04_maxence_door_state # velux de Maxence
-      - binary_sensor.capteur_ouverture_05_descente_garage_contact
+#      - binary_sensor.capteur_ouverture_05_descente_garage_contact
 #      - binary_sensor.capteur_ouverture_06_parents_velux_contact
-      - binary_sensor.capteur_ouverture_07_porte_entree_door_state_simple
-      - binary_sensor.capteur_ouverture_09_salle_de_jeux_contact
-      - binary_sensor.capteur_ouverture_10_bureau_contact
-      - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre salle à manger
-      - binary_sensor.capteur_ouverture_12_cave_vin_contact
-      - binary_sensor.capteur_ouverture_13_cuisine_contact
-      - binary_sensor.capteur_ouverture_100_enfants_porte # fenêtre commune aux enfants
-      - binary_sensor.capteur_ouverture_101_parents_porte # fenêtre parents
-      - binary_sensor.capteur_ouverture_14_atelier_contact # fenêtre atelier/garage
+#      - binary_sensor.capteur_ouverture_07_porte_entree_door_state_simple
+#      - binary_sensor.capteur_ouverture_09_salle_de_jeux_contact
+#      - binary_sensor.capteur_ouverture_10_bureau_contact
+#      - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre salle à manger
+#      - binary_sensor.capteur_ouverture_12_cave_vin_contact
+#      - binary_sensor.capteur_ouverture_13_cuisine_contact
+#      - binary_sensor.capteur_ouverture_100_enfants_porte # fenêtre commune aux enfants
+#      - binary_sensor.capteur_ouverture_101_parents_porte # fenêtre parents
+#      - binary_sensor.capteur_ouverture_14_atelier_contact # fenêtre atelier/garage
 
   rdc_open_sensor_entities:
     name: RdC Open Sensor Entities
@@ -60,9 +46,9 @@
       - binary_sensor.capteur_ouverture_11_salon_contact # fenêtre salle à manger
       - binary_sensor.capteur_ouverture_13_cuisine_contact
 
-  all_smoke_sensor_entities:
-    name: All Smoke Sensor Entities
-    entities:
-      - binary_sensor.detecteur_fumee_01_rdc_smoke
-      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm
-      - binary_sensor.detecteur_fumee_03_garage_smoke
+#  all_smoke_sensor_entities:
+#    name: All Smoke Sensor Entities
+#    entities:
+#      - binary_sensor.detecteur_fumee_01_rdc_smoke
+#      - binary_sensor.detecteur_fumee_02_pallier_smoke_alarm
+#      - binary_sensor.detecteur_fumee_03_garage_smoke
