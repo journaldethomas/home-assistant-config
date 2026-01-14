@@ -5,6 +5,9 @@ default_config:
 homeassistant:
   external_url: !secret homeassistant_external
   internal_url: !secret homeassistant_interne
+  allowlist_external_dirs:
+    - /config/www
+    - /config
 
 http:
   use_x_forwarded_for: true
