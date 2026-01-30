@@ -9,6 +9,19 @@ homeassistant:
     - /config/www
     - /config
 
+recorder:
+  purge_keep_days: 7
+  exclude:
+    domains:
+      - automation
+      - update
+    entity_globs:
+      - sensor.sun*
+      - weather.*
+    entities:
+      - sensor.last_boot # Comes from 'systemmonitor' sensor platform
+      - sun.sun # Don't record sun data
+
 http:
   use_x_forwarded_for: true
   trusted_proxies:
@@ -16,10 +29,8 @@ http:
 
 # Load frontend themes from the themes folder
 frontend:
-
   extra_module_url:
     - /hacsfiles/hass-hue-icons/hass-hue-icons.js
-
   themes: !include_dir_merge_named themes
 
 cellar_tracker:
@@ -50,99 +61,6 @@ sensor:
       - lan
       - wan
       - firmware
-#  - platform: template
-#    sensors:
-#      jour_fr:
-#        value_template: "{{ ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][now().weekday()] }}"
-#      date_fr:
-#        value_template: "{% set months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'] %} {{ now().day | string + ' ' + months[now().month-1]}}"
-
-#      unifi_gateway_wan_cpu:
-#        friendly_name: "CPU"
-#        unit_of_measurement: "%"
-#        value_template: "{{ states.sensor.unifi_gateway_wan.attributes['gw_system-stats']['cpu'] }}"
-#      unifi_gateway_wan_mem:
-#        friendly_name: "Memory"
-#        unit_of_measurement: "%"
-#        value_template: "{{ states.sensor.unifi_gateway_wan.attributes['gw_system-stats']['mem'] }}"
-#      unifi_gateway_wan_ip:
-#        friendly_name: "WAN IP"
-#        value_template: "{{ states.sensor.unifi_gateway_wan.attributes.wan_ip }}"
-#      unifi_gateway_wan_download:
-#        friendly_name: "WAN Download"
-#        unit_of_measurement: Kbps
-#        icon_template: "mdi:progress-download"
-#        value_template: "{{ (states.sensor.unifi_gateway_wan.attributes['rx_bytes-r'] / 1024) | int }}"
-#      unifi_gateway_wan_uptime:
-#        friendly_name: "UDM Uptime"
-#        value_template: >
-#          {%- set time = states.sensor.unifi_gateway_wan.attributes['gw_system-stats']['uptime'] | int %}
-#          {%- set minutes = ((time % 3600) // 60) %}
-#          {%- set minutes = '{}min'.format(minutes) if minutes > 0 else '' %}
-#          {%- set hours = ((time % 86400) // 3600) %}
-#          {%- set hours = '{}hr '.format(hours) if hours > 0 else '' %}
-#          {%- set days = (time // 86400) %}
-#          {%- set days = '{}d '.format(days) if days > 0 else '' %}
-#          {{ 'Less than 1 min' if time < 60 else days + hours + minutes }}
-#      unifi_gateway_firmware_version:
-#        friendly_name: "UDM Firmware Version"
-#        icon_template: "mdi:database-plus"
-#        value_template: "{{ states.sensor.unifi_gateway_wan.attributes.gw_version }}"
-#      unifi_gateway_www_xput_down:
-#        friendly_name: "UDM Speedtest Download"
-#        unit_of_measurement: Mbps
-#        icon_template: "mdi:progress-download"
-#        value_template: "{{ states.sensor.unifi_gateway_www.attributes.xput_down }}"
-#      unifi_gateway_www_xput_up:
-#        friendly_name: "UDM Speedtest Upload"
-#        unit_of_measurement: Mbps
-#        icon_template: "mdi:progress-upload"
-#        value_template: "{{ states.sensor.unifi_gateway_www.attributes.xput_up }}"
-#      unifi_gateway_www_speedtest_ping:
-#        friendly_name: "UDM Speedtest Ping"
-#        unit_of_measurement: ms
-#        icon_template: "mdi:progress-clock"
-#        value_template: "{{ states.sensor.unifi_gateway_www.attributes.speedtest_ping }}"
-#      unifi_gateway_www_uptime:
-#        friendly_name: "Internet Uptime"
-#        value_template: >
-#          {%- set time = states.sensor.unifi_gateway_www.attributes.uptime | int %}
-#          {%- set minutes = ((time % 3600) // 60) %}
-#          {%- set minutes = '{}min'.format(minutes) if minutes > 0 else '' %}
-#          {%- set hours = ((time % 86400) // 3600) %}
-#          {%- set hours = '{}hr '.format(hours) if hours > 0 else '' %}
-#          {%- set days = (time // 86400) %}
-#          {%- set days = '{}d '.format(days) if days > 0 else '' %}
-#          {{ 'Less than 1 min' if time < 60 else days + hours + minutes }}
-#      unifi_gateway_wlan_num_user:
-#        friendly_name: "Users WLAN"
-#        icon_template: "mdi:account-multiple"
-#        value_template: "{{ states.sensor.unifi_gateway_wlan.attributes.num_user }}"
-#      unifi_gateway_lan_num_user:
-#        friendly_name: "Users LAN"
-#        icon_template: "mdi:account-multiple"
-#        value_template: "{{ states.sensor.unifi_gateway_lan.attributes.num_user }}"
-
-#      devices_with_low_battery:
-#        friendly_name: 'Appareils avec batterie faible'
-#        unit_of_measurement: devices
-#        value_template: >-
-#          {% set ignore_entities = [] %}
-#          {{ states.sensor
-#            | selectattr('attributes.device_class', 'eq', 'battery')
-#            | rejectattr('entity_id', 'in', ignore_entities)
-#            | map(attribute='state')
-#            | reject('in', ['unknown', 'unavailable'])
-#            | map('int', -1) | select('le', 15)
-#            | select('ge', 0)
-#            | list | count
-#          }}
-#        icon_template: >-
-#          {% if is_state('sensor.devices_with_low_battery', '0') %}
-#            mdi:battery-check
-#          {% else %}
-#            mdi:battery-alert
-#          {% endif %}
 
 ###################################################################
 ##########              Les lumieres                 ##############
@@ -156,34 +74,6 @@ light:
       - light.spots_cave_a_vin
       - light.rubanled_01_cave
       - light.prise_10_cave_l1
-
-#  - platform: group
-#    name: sam
-#    entities:
-#      - light.salle_a_manger_01
-#      - light.salle_a_manger_02
-#      - light.salle_a_manger_03
-#      - light.salle_a_manger_04
-#      - light.salle_a_manger_05
-#      - light.salle_a_manger_06
-
-#  - platform: group
-#    name: chambre_parentale
-#    entities:
-#      - light.chambre_parentale_1
-#      - light.chambre_parentale_2
-#      - light.chambre_parentale_3
-#      - light.chambre_parentale_4
-
-#  - platform: group
-#    name: maxence
-#    entities:
-#      - light.chambre_maxence
-
-#  - platform: group
-#    name: chloe
-#    entities:
-#      - light.chambre_chloe
 
   - platform: group
     name: garage
