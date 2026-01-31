@@ -19,10 +19,12 @@ recorder:
       - sensor.sun*
       - weather.*
       - sensor.*_last_seen
+      - sensor.*_linkquality
+      - sensor.golf_pga*
     entities:
       - sensor.freebox_download_speed
       - sensor.freebox_upload_speed
-      - sensor.golf_pga
+      - sensor.mouvement_08_bureau_target_distance
 
 http:
   use_x_forwarded_for: true
